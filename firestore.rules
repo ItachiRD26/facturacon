@@ -69,6 +69,10 @@ service cloud.firestore {
       match /cotizaciones/{docId}       { allow read, write: if hasMembership(tenantId); }
       match /cuentas_por_cobrar/{docId} { allow read, write: if hasMembership(tenantId); }
       match /facturas_recibidas/{docId} { allow read, write: if hasMembership(tenantId); }
+      // Métodos de pago: solo datos de visualización (marca, últimos 4
+      // dígitos, vencimiento) — nunca el número completo de tarjeta ni CVV,
+      // así que no requiere el mismo aislamiento que /config/certificado.
+      match /metodos_pago/{docId}       { allow read, write: if hasMembership(tenantId); }
     }
   }
 }

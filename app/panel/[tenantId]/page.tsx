@@ -1,9 +1,10 @@
-import { redirect } from "next/navigation";
-import { getSessionUid } from "@/lib/auth/session";
-import { getMembership, listMembershipsForUser } from "@/lib/tenant/get-memberships";
+import {
+  contarComprobantesEsteMes, contarMetodosPago,
+  obtenerComprobantesPorMes, obtenerDesglosePorEstado,
+} from "@/lib/tenant/estadisticas";
 import { getTenantById } from "@/lib/tenant/resolve-tenant";
-import { contarComprobantesEsteMes } from "@/lib/tenant/estadisticas";
 import Badge from "@/components/ui/badge";
+import BarChart from "@/components/ui/bar-chart";
 
 const ESTADO_LABEL: Record<string, string> = {
   demo:                     "Entorno de prueba",
@@ -13,41 +14,37 @@ const ESTADO_LABEL: Record<string, string> = {
   suspendido:               "Suspendido",
 };
 
-export default async function CuentaTenantPage({ params }: { params: Promise<{ tenantId: string }> }) {
+const ESTADO_FACTURA_LABEL: Record<string, string> = {
+  pagada: "Pagadas", pendiente: "Pendientes", anulada: "Anuladas",
+};
+const ESTADO_FACTURA_COLOR: Record<string, string> = {
+  pagada: "#166534", pendiente: "#92400e", anulada: "#991b1b",
+};
+
+export default async function CuentaResumenPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const { tenantId } = await params;
-  const uid = await getSessionUid();
-  if (!uid) redirect(`/login?redirect=/panel/${tenantId}`);
 
-  const [membership, tenant, memberships] = await Promise.all([
-    getMembership(uid, tenantId),
+  const [tenant, comprobantesEsteMes, metodosPago, porMes, desglose] = await Promise.all([
     getTenantById(tenantId),
-    listMembershipsForUser(uid),
+    contarComprobantesEsteMes(tenantId),
+    contarMetodosPago(tenantId),
+    obtenerComprobantesPorMes(tenantId),
+    obtenerDesglosePorEstado(tenantId),
   ]);
-  if (!membership || !tenant) redirect("/panel");
+  if (!tenant) return null;
 
-  const comprobantesEsteMes = await contarComprobantesEsteMes(tenantId);
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
   const esCertificado = tenant.estado === "activo" && !!tenant.slug;
+  const totalFacturas = desglose.reduce((acc, d) => acc + d.cantidad, 0);
 
   return (
-    <main style={{ maxWidth: 860, margin: "48px auto", padding: "0 24px", fontFamily: "var(--font-sans)" }}>
-      {memberships.length > 1 && (
-        <a href="/panel" style={{ fontSize: 13, color: "var(--c-text-3)", display: "inline-block", marginBottom: 16 }}>
-          ← Cambiar de empresa
-        </a>
-      )}
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, gap: 12, flexWrap: "wrap" }}>
-        <div>
-          <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.7rem", marginBottom: 6 }}>
-            {tenant.nombreNegocio}
-          </h1>
-          <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>RNC {tenant.rnc} · rol: {membership.rol}</div>
-        </div>
+    <div style={{ maxWidth: 980, margin: "0 auto", fontFamily: "var(--font-sans)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, gap: 12, flexWrap: "wrap" }}>
+        <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.5rem" }}>Resumen de cuenta</h1>
         <Badge tipo={esCertificado ? "success" : "warning"}>{ESTADO_LABEL[tenant.estado] ?? tenant.estado}</Badge>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 20 }}>
         <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "16px 18px", background: "var(--c-surface)" }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: "var(--c-text-3)", textTransform: "uppercase", marginBottom: 8 }}>
             Plan
@@ -64,7 +61,7 @@ export default async function CuentaTenantPage({ params }: { params: Promise<{ t
 
         <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "16px 18px", background: "var(--c-surface)" }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: "var(--c-text-3)", textTransform: "uppercase", marginBottom: 8 }}>
-            Comprobantes emitidos este mes
+            Comprobantes este mes
           </div>
           <div style={{ fontSize: 22, fontWeight: 700 }}>{comprobantesEsteMes}</div>
           <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 4 }}>
@@ -78,18 +75,55 @@ export default async function CuentaTenantPage({ params }: { params: Promise<{ t
           </div>
           <div style={{ fontSize: 15, fontWeight: 600 }}>RD$ 0.00</div>
           <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 4 }}>
-            Aún no se han generado cargos. Verás aquí el detalle una vez tu cuenta esté certificada y activa.
+            Aún no se han generado cargos. Verás el detalle aquí una vez tu cuenta esté certificada y activa.
           </div>
         </div>
 
-        <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "16px 18px", background: "var(--c-surface)" }}>
+        <a href={`/panel/${tenantId}/metodos-pago`} style={{
+          border: "1px solid var(--c-border)", borderRadius: 8, padding: "16px 18px",
+          background: "var(--c-surface)", textDecoration: "none", color: "inherit", display: "block",
+        }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: "var(--c-text-3)", textTransform: "uppercase", marginBottom: 8 }}>
             Métodos de pago
           </div>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>Ninguno configurado</div>
-          <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 4 }}>
-            Podrás agregar un método de pago cuando inicies el proceso de certificación.
+          <div style={{ fontSize: 15, fontWeight: 600 }}>
+            {metodosPago === 0 ? "Ninguno configurado" : `${metodosPago} guardado${metodosPago > 1 ? "s" : ""}`}
           </div>
+          <div style={{ fontSize: 12, color: "var(--c-brand)", marginTop: 4, fontWeight: 600 }}>
+            Administrar →
+          </div>
+        </a>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14, marginBottom: 20 }}>
+        <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "18px 20px", background: "var(--c-surface)" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Comprobantes emitidos — últimos 6 meses</div>
+          <BarChart data={porMes} />
+        </div>
+
+        <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "18px 20px", background: "var(--c-surface)" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Estado de tus facturas</div>
+          {totalFacturas === 0 ? (
+            <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>Aún no has emitido facturas.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {desglose.map((d) => (
+                <div key={d.estado}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                    <span style={{ color: "var(--c-text-3)" }}>{ESTADO_FACTURA_LABEL[d.estado]}</span>
+                    <span style={{ fontWeight: 600 }}>{d.cantidad}</span>
+                  </div>
+                  <div style={{ height: 6, background: "var(--c-bg)", borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 3,
+                      width: `${totalFacturas ? (d.cantidad / totalFacturas) * 100 : 0}%`,
+                      background: ESTADO_FACTURA_COLOR[d.estado],
+                    }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -126,13 +160,12 @@ export default async function CuentaTenantPage({ params }: { params: Promise<{ t
         }}>
           <strong>Próximo paso: certificación ante la DGII.</strong> Estamos terminando de construir el
           asistente de certificación (carga de tu certificado de firma digital, validación de tu cédula
-          y los pasos ante la DGII) — todavía no está disponible aquí. Si quieres que te avisemos en
-          cuanto esté listo,{" "}
-          <a href="mailto:contacto@facturacon.cfd" style={{ color: "var(--c-brand)", fontWeight: 600 }}>
-            escríbenos
+          y los pasos ante la DGII) — todavía no está disponible aquí. Si tienes preguntas, visita{" "}
+          <a href={`/panel/${tenantId}/soporte`} style={{ color: "var(--c-brand)", fontWeight: 600 }}>
+            soporte
           </a>.
         </div>
       )}
-    </main>
+    </div>
   );
 }
