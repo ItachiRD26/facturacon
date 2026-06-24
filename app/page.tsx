@@ -183,17 +183,48 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Precios (sin tramos aún — pendiente de decidir) */}
-        <section id="precios" style={{ padding: "64px 24px", maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
+        {/* Precios — cifras de referencia, no son aun definitivas (ver nota abajo) */}
+        <section id="precios" style={{ padding: "64px 24px", maxWidth: 860, margin: "0 auto", textAlign: "center" }}>
           <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", marginBottom: 12 }}>
             Precios
           </h2>
-          <p style={{ color: "var(--c-text-2)", marginBottom: 8 }}>
-            Un pago único por el proceso de certificación, y una suscripción mensual según el
-            volumen de comprobantes que emitas.
+          <p style={{ color: "var(--c-text-2)", marginBottom: 36, maxWidth: 560, margin: "0 auto 36px" }}>
+            Un pago único por el proceso de certificación, y una suscripción mensual según cuántos
+            comprobantes electrónicos emitas.
           </p>
-          <p style={{ fontSize: 13, color: "var(--c-text-3)" }}>
-            Los montos exactos se confirman durante el registro.
+
+          <div style={{
+            background: "var(--gradient-hero)", borderRadius: 14, padding: "28px 24px",
+            color: "#fff", marginBottom: 24, maxWidth: 360, margin: "0 auto 24px",
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 600, opacity: 0.8, marginBottom: 6 }}>Activación / certificación</div>
+            <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "var(--font-serif)" }}>RD$ 15,000</div>
+            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>Pago único, una sola vez</div>
+          </div>
+
+          <div style={{ border: "1px solid var(--c-border)", borderRadius: 12, overflow: "hidden", textAlign: "left" }}>
+            {[
+              { rango: "Hasta 50 comprobantes / mes",        precio: "RD$ 1,500 / mes" },
+              { rango: "51 a 200 comprobantes / mes",        precio: "RD$ 3,000 / mes" },
+              { rango: "201 a 500 comprobantes / mes",       precio: "RD$ 5,500 / mes" },
+              { rango: "501 a 1,500 comprobantes / mes",     precio: "RD$ 9,000 / mes" },
+              { rango: "Más de 1,500 comprobantes / mes",    precio: "Plan a medida — contáctanos" },
+            ].map((t, i) => (
+              <div key={t.rango} style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                padding: "14px 18px", fontSize: 13,
+                borderTop: i > 0 ? "1px solid var(--c-border-lt)" : "none",
+                background: i % 2 === 0 ? "var(--c-surface)" : "var(--c-bg)",
+              }}>
+                <span style={{ color: "var(--c-text-2)" }}>{t.rango}</span>
+                <span style={{ fontWeight: 700 }}>{t.precio}</span>
+              </div>
+            ))}
+          </div>
+
+          <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 20 }}>
+            Cifras de referencia mientras confirmamos los montos finales — no son precios cerrados
+            todavía. Te avisaremos antes de que se active cualquier cobro.
           </p>
         </section>
 

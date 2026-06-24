@@ -23,7 +23,7 @@ export default function DemoBanner() {
         }}>
           ← Mi cuenta
         </button>
-        <button onClick={() => router.push(`/panel/${tenantId}`)} data-tour="btn-comenzar-certificacion" style={{
+        <button onClick={() => router.push(`/onboarding/requisitos?t=${tenantId}`)} data-tour="btn-comenzar-certificacion" style={{
           padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer",
           border: "none", background: "var(--c-brand)", color: "#fff",
         }}>
