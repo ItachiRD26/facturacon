@@ -6,7 +6,7 @@ const SESSION_COOKIE = "__session";
 const ROOT_DOMAIN     = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
 // Rutas públicas en el dominio raíz (marketing, auth, sesión).
-const PUBLIC_ROOT_PATHS = ["/", "/precios", "/login", "/registro", "/api/auth/session", "/_next", "/favicon.ico"];
+const PUBLIC_ROOT_PATHS = ["/", "/login", "/registro", "/api/auth/session", "/_next", "/favicon.ico"];
 
 // Rutas públicas dentro de un subdominio de tenant: DGII llama a /fe/* sin
 // cookies de sesión. Estas rutas viven en app/fe/* (no bajo app/sites/[slug]/)

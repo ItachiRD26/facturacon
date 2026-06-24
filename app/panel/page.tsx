@@ -8,6 +8,8 @@ export default async function PanelPage() {
   if (!uid) redirect("/login?redirect=/panel");
 
   const memberships = await listMembershipsForUser(uid);
+  if (memberships.length === 0) redirect("/onboarding");
+
   const tenants = await Promise.all(
     memberships.map(async (m) => ({ membership: m, tenant: await getTenantById(m.tenantId) }))
   );
@@ -17,12 +19,6 @@ export default async function PanelPage() {
       <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", marginBottom: 24 }}>
         Tus empresas
       </h1>
-
-      {tenants.length === 0 && (
-        <p style={{ color: "var(--c-text-3)" }}>
-          Todavía no tienes ninguna empresa registrada. (El flujo de alta llega en la Fase 3.)
-        </p>
-      )}
 
       <ul style={{ display: "flex", flexDirection: "column", gap: 12, listStyle: "none" }}>
         {tenants.map(({ membership, tenant }) => (

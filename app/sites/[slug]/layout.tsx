@@ -24,14 +24,16 @@ export default async function TenantLayout({
   const otrasEmpresas: TenantSummary[] = (
     await Promise.all(otrasMemberships.map(async (m) => {
       const t = await getTenantById(m.tenantId);
-      return t ? { tenantId: t.id, slug: t.slug, nombreNegocio: t.nombreNegocio, rol: m.rol } : null;
+      // Solo se listan empresas ya certificadas (con subdominio propio) —
+      // las que aún están en onboarding no tienen a dónde enlazar todavía.
+      return t?.slug ? { tenantId: t.id, slug: t.slug, nombreNegocio: t.nombreNegocio, rol: m.rol } : null;
     }))
   ).filter((t): t is TenantSummary => t !== null);
 
   return (
     <TenantProvider value={{
       tenantId: tenant.id,
-      slug: tenant.slug,
+      slug,
       nombreNegocio: tenant.nombreNegocio,
       rol: membership.rol,
       otrasEmpresas,

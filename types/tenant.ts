@@ -15,14 +15,17 @@ export type TipoNegocio =
   | "otro";
 
 export interface Tenant {
-  id:           string;
-  slug:         string;
+  id:            string;
+  // Asignado en la Fase 6 al completar la certificación — antes de eso el
+  // tenant no tiene subdominio propio (vive en el flujo de onboarding del
+  // dominio raíz).
+  slug?:         string;
   nombreNegocio: string;
-  rnc:          string;
-  tipoNegocio:  TipoNegocio;
-  estado:       EstadoTenant;
-  creadoEn:     string;
-  creadoPorUid: string;
+  rnc:           string;
+  tipoNegocio:   TipoNegocio;
+  estado:        EstadoTenant;
+  creadoEn:      string;
+  creadoPorUid:  string;
 }
 
 // Configuración del emisor para el motor e-CF (Fase 2) — separada del doc
