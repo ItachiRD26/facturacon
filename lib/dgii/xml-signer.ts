@@ -55,8 +55,14 @@ export function extraerRncDelCertificado(p12Buffer: Buffer, password: string): s
   const cert     = certBags[forge.pki.oids.certBag]?.[0]?.cert;
   if (!cert) return null;
 
-  const serialNumberAttr = cert.subject.getField("serialNumber");
-  const cnAttr            = cert.subject.getField("CN");
+  // node-forge no registra un "shortName" para el OID de serialNumber
+  // (2.5.4.5) — cert.subject.getField("serialNumber") busca por shortName y
+  // por eso nunca encuentra nada, incluso en certificados reales. Hay que
+  // buscarlo directamente en el arreglo de atributos por OID/nombre.
+  const serialNumberAttr = cert.subject.attributes.find(
+    (a) => a.type === "2.5.4.5" || a.name === "serialNumber"
+  );
+  const cnAttr = cert.subject.getField("CN");
   const candidate = serialNumberAttr?.value ?? cnAttr?.value ?? "";
   const digits = candidate.replace(/\D/g, "");
   return digits.length === 9 || digits.length === 11 ? digits : null;
