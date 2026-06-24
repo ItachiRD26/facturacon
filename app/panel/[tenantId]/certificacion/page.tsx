@@ -52,6 +52,35 @@ function Boton({ onClick, disabled, children, variante = "primario" }: {
   );
 }
 
+// Botón de subida de archivo con ícono visible — un <input type="file">
+// pelado se confunde con texto normal, esto deja claro que ahí se hace clic.
+function SubidaArchivo({ onFile, cargando, etiqueta, nombreArchivo }: {
+  onFile: (f: File) => void; cargando: boolean; etiqueta: string; nombreArchivo?: string;
+}) {
+  return (
+    <label style={{
+      display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 16px",
+      border: "1.5px dashed var(--c-brand)", borderRadius: 8, cursor: cargando ? "not-allowed" : "pointer",
+      background: "var(--c-brand-bg)", fontSize: 13, fontWeight: 600, color: "var(--c-brand)",
+    }}>
+      <span style={{ fontSize: 18 }}>📄</span>
+      {cargando ? "Subiendo…" : nombreArchivo ? `✓ ${nombreArchivo} — cambiar archivo` : etiqueta}
+      <input type="file" accept=".xlsx,.xls" disabled={cargando} onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} style={{ display: "none" }} />
+    </label>
+  );
+}
+
+// Botón para saltar al siguiente Paso una vez el actual quedó completo — el
+// cliente no tiene que adivinar que debe volver a la barra de arriba.
+function SiguientePaso({ n, onClick }: { n: Paso; onClick: () => void }) {
+  const info = PASOS.find((p) => p.n === n);
+  return (
+    <div style={{ marginTop: 20 }}>
+      <Boton onClick={onClick}>Siguiente: {info?.t} →</Boton>
+    </div>
+  );
+}
+
 const ESTADO_COLOR: Record<string, string> = {
   pendiente: "var(--c-text-3)", enviando: "#92400e", enviado: "#1d4ed8",
   aceptado: "#166534", rechazado: "#991b1b", error: "#991b1b",
@@ -159,12 +188,14 @@ export default function CertificacionPage() {
   // Paso 2
   const [filas, setFilas] = useState<Record<string, FilaSetPrueba>>({});
   const [subiendoSet, setSubiendoSet] = useState(false);
+  const [nombreArchivoSet, setNombreArchivoSet] = useState("");
   const [enviandoTodos, setEnviandoTodos] = useState(false);
   const [logEnvio, setLogEnvio] = useState<string[]>([]);
 
   // Paso 3
   const [acItems, setAcItems] = useState<Record<string, ItemAC>>({});
   const [subiendoAC, setSubiendoAC] = useState(false);
+  const [nombreArchivoAC, setNombreArchivoAC] = useState("");
   const [enviandoAC, setEnviandoAC] = useState(false);
   const [edicionesAC, setEdicionesAC] = useState<Record<string, { estado: 1 | 2; motivo: string }>>({});
 
@@ -239,6 +270,7 @@ export default function CertificacionPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setTokenValido(true); setTokenExpira(data.expira);
+      setPaso(2);
     } catch (e) {
       alert(e instanceof Error ? e.message : "No se pudo obtener el token");
     } finally {
@@ -258,6 +290,7 @@ export default function CertificacionPage() {
       const mapa: Record<string, FilaSetPrueba> = {};
       for (const f of data.filas as FilaSetPrueba[]) mapa[f.encf] = f;
       setFilas(mapa);
+      setNombreArchivoSet(file.name);
     } catch (e) {
       alert(e instanceof Error ? e.message : "No se pudo subir el Excel");
     } finally {
@@ -348,6 +381,7 @@ export default function CertificacionPage() {
       const mapa: Record<string, ItemAC> = {};
       for (const it of data.items as ItemAC[]) mapa[it.encf] = it;
       setAcItems(mapa);
+      setNombreArchivoAC(file.name);
     } catch (e) {
       alert(e instanceof Error ? e.message : "No se pudo subir el Excel de AC");
     } finally {
@@ -526,7 +560,7 @@ export default function CertificacionPage() {
           <TuYNosotros tu="Descargar el Excel de 25 casos desde el portal de la DGII y subirlo aquí." nosotros="Firmar y enviar los 25 comprobantes en el orden correcto." />
           <ScreenshotPlaceholder titulo="Dónde descargar el set de pruebas" descripcion="Ejemplo de dónde, dentro del portal de la DGII, se descarga el Excel de los 25 casos de prueba." />
           <div style={{ marginTop: 16 }}>
-            <input type="file" accept=".xlsx,.xls" onChange={(e) => e.target.files?.[0] && subirSet(e.target.files[0])} disabled={subiendoSet} />
+            <SubidaArchivo onFile={subirSet} cargando={subiendoSet} etiqueta="Subir Excel del set de pruebas" nombreArchivo={nombreArchivoSet} />
           </div>
           {totalPaso2 > 0 && (
             <>
@@ -558,6 +592,7 @@ export default function CertificacionPage() {
                   {logEnvio.join("\n")}
                 </pre>
               )}
+              {enviadosPaso2 === totalPaso2 && <SiguientePaso n={3} onClick={() => setPaso(3)} />}
             </>
           )}
         </Card>
@@ -574,7 +609,7 @@ export default function CertificacionPage() {
           <TuYNosotros tu="Descargar el Excel de Aprobación Comercial desde el portal y subirlo aquí." nosotros="Firmar y enviar cada aprobación/rechazo a la DGII." />
           <ScreenshotPlaceholder titulo="Dónde descargar el Excel de Aprobación Comercial" descripcion="Aparece en el portal de la DGII una vez tu set de pruebas del Paso 2 fue aceptado." />
           <div style={{ marginTop: 16 }}>
-            <input type="file" accept=".xlsx,.xls" onChange={(e) => e.target.files?.[0] && subirAC(e.target.files[0])} disabled={subiendoAC} />
+            <SubidaArchivo onFile={subirAC} cargando={subiendoAC} etiqueta="Subir Excel de Aprobación Comercial" nombreArchivo={nombreArchivoAC} />
           </div>
           {Object.keys(acItems).length > 0 && (
             <>
@@ -608,6 +643,7 @@ export default function CertificacionPage() {
                   </div>
                 ))}
               </div>
+              {Object.values(acItems).every((it) => it.enviado) && <SiguientePaso n={4} onClick={() => setPaso(4)} />}
             </>
           )}
         </Card>
@@ -701,6 +737,7 @@ export default function CertificacionPage() {
               </table>
             </div>
           )}
+          <SiguientePaso n={5} onClick={() => setPaso(5)} />
         </Card>
       )}
 
@@ -724,6 +761,7 @@ export default function CertificacionPage() {
               <p style={{ fontSize: 12, color: "var(--c-text-3)" }}>Todavía no hay e-CF RFCE enviados.</p>
             )}
           </div>
+          <SiguientePaso n={6} onClick={() => setPaso(6)} />
         </Card>
       )}
 
