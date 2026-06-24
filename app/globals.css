@@ -72,10 +72,43 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
 .fade-in { animation: fadeIn 0.2s ease-out both; }
 
 @media print {
   .no-print { display: none !important; }
   body { background: #fff; }
+}
+
+.hamburger-btn { display: none !important; }
+@media (max-width: 1023px) {
+  .hamburger-btn { display: flex !important; }
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 199;
+}
+.sidebar-overlay.open { display: block; }
+
+.sidebar-responsive {
+  position: fixed !important;
+  top: 0; left: 0; bottom: 0;
+  z-index: 200;
+  transform: translateX(-100%);
+  transition: transform 0.22s ease;
+}
+.sidebar-responsive.open { transform: translateX(0); }
+
+@media (min-width: 1024px) {
+  .sidebar-responsive {
+    position: relative !important;
+    transform: none !important;
+    transition: none;
+  }
+  .sidebar-overlay { display: none !important; }
 }
