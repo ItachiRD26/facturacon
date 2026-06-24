@@ -45,43 +45,49 @@ export default function LandingPage() {
       <main style={{ fontFamily: "var(--font-sans)", color: "var(--c-text-1)" }}>
         {/* Hero */}
         <section style={{
-          padding: "64px 24px 40px", textAlign: "center",
-          background: "linear-gradient(180deg, var(--c-brand-bg), var(--c-bg))",
-          borderBottom: "1px solid var(--c-border)",
+          padding: "84px 24px 96px", textAlign: "center",
+          background: "var(--gradient-hero)", position: "relative", overflow: "hidden",
         }}>
           <div style={{
-            display: "inline-block", marginBottom: 18, padding: "4px 12px",
-            background: "var(--c-brand-bg)", border: "1px solid var(--c-brand-border)",
-            borderRadius: 20, fontSize: 12, fontWeight: 600, color: "var(--c-brand)",
-            letterSpacing: "0.03em",
-          }}>
-            Facturación Electrónica · República Dominicana
-          </div>
-          <h1 style={{
-            fontFamily: "var(--font-serif)", fontSize: "2.4rem", lineHeight: 1.15,
-            maxWidth: 720, margin: "0 auto 18px",
-          }}>
-            Certifícate ante la DGII y factura electrónicamente desde el primer día
-          </h1>
-          <p style={{ fontSize: 16, color: "var(--c-text-2)", maxWidth: 560, margin: "0 auto 32px" }}>
-            Te guiamos por todo el proceso de certificación de emisor electrónico y te entregamos
-            un sistema de facturación listo para usar — sin contratar un desarrollador, sin montar
-            servidores propios.
-          </p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href="/registro" style={{
-              padding: "12px 28px", background: "var(--c-brand)", color: "#fff",
-              borderRadius: 6, fontWeight: 600, fontSize: 14, textDecoration: "none",
+            position: "absolute", inset: 0, opacity: 0.5, pointerEvents: "none",
+            background: "radial-gradient(circle at 18% 22%, rgba(255,255,255,0.12), transparent 38%), radial-gradient(circle at 82% 78%, rgba(255,255,255,0.10), transparent 42%)",
+          }} />
+          <div style={{ position: "relative" }}>
+            <div style={{
+              display: "inline-block", marginBottom: 20, padding: "5px 14px",
+              background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)",
+              borderRadius: 20, fontSize: 12, fontWeight: 600, color: "#fff",
+              letterSpacing: "0.03em",
             }}>
-              Empezar gratis
-            </Link>
-            <a href="#como-funciona" style={{
-              padding: "12px 28px", background: "var(--c-surface)", color: "var(--c-text-1)",
-              border: "1px solid var(--c-border)", borderRadius: 6, fontWeight: 600, fontSize: 14,
-              textDecoration: "none",
+              Facturación Electrónica · República Dominicana
+            </div>
+            <h1 style={{
+              fontFamily: "var(--font-serif)", fontSize: "2.6rem", lineHeight: 1.15,
+              maxWidth: 740, margin: "0 auto 18px", color: "#fff",
             }}>
-              Ver cómo funciona
-            </a>
+              Certifícate ante la DGII y factura electrónicamente desde el primer día
+            </h1>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.78)", maxWidth: 560, margin: "0 auto 32px" }}>
+              Te guiamos por todo el proceso de certificación de emisor electrónico y te entregamos
+              un sistema de facturación listo para usar — sin contratar un desarrollador, sin montar
+              servidores propios.
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+              <Link href="/registro" style={{
+                padding: "13px 28px", background: "#fff", color: "var(--c-navy)",
+                borderRadius: 6, fontWeight: 700, fontSize: 14, textDecoration: "none",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+              }}>
+                Empezar gratis
+              </Link>
+              <a href="#como-funciona" style={{
+                padding: "13px 28px", background: "transparent", color: "#fff",
+                border: "1px solid rgba(255,255,255,0.4)", borderRadius: 6, fontWeight: 600, fontSize: 14,
+                textDecoration: "none",
+              }}>
+                Ver cómo funciona
+              </a>
+            </div>
           </div>
         </section>
 
@@ -168,17 +174,22 @@ export default function LandingPage() {
         </section>
 
         {/* CTA final */}
-        <section style={{ padding: "64px 24px", textAlign: "center" }}>
-          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.4rem", marginBottom: 16 }}>
-            ¿Listo para certificarte como emisor electrónico?
-          </h2>
-          <Link href="/registro" style={{
-            padding: "12px 28px", background: "var(--c-brand)", color: "#fff",
-            borderRadius: 6, fontWeight: 600, fontSize: 14, textDecoration: "none",
-            display: "inline-block",
+        <section style={{ padding: "0 24px 64px", maxWidth: 960, margin: "0 auto" }}>
+          <div style={{
+            background: "var(--gradient-hero)", borderRadius: 16, padding: "48px 24px",
+            textAlign: "center",
           }}>
-            Crear mi cuenta
-          </Link>
+            <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.4rem", marginBottom: 16, color: "#fff" }}>
+              ¿Listo para certificarte como emisor electrónico?
+            </h2>
+            <Link href="/registro" style={{
+              padding: "12px 28px", background: "#fff", color: "var(--c-navy)",
+              borderRadius: 6, fontWeight: 700, fontSize: 14, textDecoration: "none",
+              display: "inline-block",
+            }}>
+              Crear mi cuenta
+            </Link>
+          </div>
         </section>
       </main>
       <SiteFooter />

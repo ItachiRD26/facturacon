@@ -12,7 +12,7 @@ export default function SiteHeader() {
       }}>
         <Link href="/" style={{
           fontFamily: "var(--font-serif)", fontSize: "1.15rem", fontWeight: 700,
-          color: "var(--c-text-1)", textDecoration: "none",
+          color: "var(--c-navy)", textDecoration: "none",
         }}>
           Facturacon
         </Link>
@@ -25,7 +25,7 @@ export default function SiteHeader() {
             Iniciar sesión
           </Link>
           <Link href="/registro" style={{
-            padding: "8px 16px", background: "var(--c-brand)", color: "#fff",
+            padding: "8px 16px", background: "var(--gradient-hero)", color: "#fff",
             borderRadius: 6, fontWeight: 600, textDecoration: "none",
           }}>
             Crear cuenta

@@ -5,7 +5,7 @@
   --font-sans:  "IBM Plex Sans", system-ui, sans-serif;
   --font-mono:  "IBM Plex Mono", "Courier New", monospace;
 
-  --c-bg:        #f3f4f6;
+  --c-bg:        #F8F8F9;
   --c-surface:   #ffffff;
   --c-border:    #e5e7eb;
   --c-border-lt: #f3f4f6;
@@ -18,6 +18,13 @@
   --c-brand:        #0e7490;
   --c-brand-bg:     #ecfeff;
   --c-brand-border: #a5f3fc;
+
+  /* Identidad de marketing: degradé azul oscuro → marca, estilo Stripe.
+     Solo se usa en superficies de venta (landing, footer) — el producto
+     funcional (sandbox/panel) se queda en blanco/gris para no distraer. */
+  --c-navy:      #111439;
+  --c-navy-2:    #1c2563;
+  --gradient-hero: linear-gradient(135deg, #111439 0%, #1c2563 45%, #0e7490 100%);
 
   --c-green:        #166534;
   --c-green-bg:     #f0faf4;
