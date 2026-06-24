@@ -123,18 +123,37 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Así se ve por dentro — espacios listos para capturas reales */}
-        <section style={{ padding: "16px 24px 64px", maxWidth: 960, margin: "0 auto" }}>
+        {/* Así se ve por dentro — espacios listos para capturas reales, uno a la vez para que cada uno se vea grande y completo */}
+        <section style={{ padding: "16px 24px 72px", maxWidth: 1040, margin: "0 auto" }}>
           <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", textAlign: "center", marginBottom: 8 }}>
             Así se ve por dentro
           </h2>
-          <p style={{ textAlign: "center", color: "var(--c-text-3)", fontSize: 13, maxWidth: 480, margin: "0 auto 32px" }}>
+          <p style={{ textAlign: "center", color: "var(--c-text-3)", fontSize: 13, maxWidth: 480, margin: "0 auto 40px" }}>
             Capturas reales del sistema — próximamente.
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 18 }}>
-            <ScreenshotPlaceholder titulo="Dashboard" descripcion="Vista general de tu negocio: facturado, por cobrar, comprobantes del mes." />
-            <ScreenshotPlaceholder titulo="Factura con QR" descripcion="Comprobante fiscal electrónico, listo para imprimir en A4 o térmica." />
-            <ScreenshotPlaceholder titulo="Inventario y códigos de barra" descripcion="Productos con control de stock, etiquetas y escaneo en facturación." />
+          <div style={{ display: "flex", flexDirection: "column", gap: 56 }}>
+            {[
+              { titulo: "Dashboard", descripcion: "Vista general de tu negocio: facturado, por cobrar, comprobantes del mes." },
+              { titulo: "Factura con QR", descripcion: "Comprobante fiscal electrónico, listo para imprimir en A4 o térmica." },
+              { titulo: "Inventario y códigos de barra", descripcion: "Productos con control de stock, etiquetas y escaneo en facturación." },
+            ].map((s, i) => (
+              <div key={s.titulo} style={{
+                display: "flex", flexWrap: "wrap", gap: 28, alignItems: "center",
+                flexDirection: i % 2 === 1 ? "row-reverse" : "row",
+              }}>
+                <div style={{ flex: "1 1 480px", minWidth: 280 }}>
+                  <ScreenshotPlaceholder titulo={s.titulo} descripcion={s.descripcion} />
+                </div>
+                <div style={{ flex: "1 1 260px", minWidth: 220 }}>
+                  <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.2rem", fontWeight: 700, marginBottom: 8 }}>
+                    {s.titulo}
+                  </div>
+                  <div style={{ fontSize: 14, color: "var(--c-text-3)", lineHeight: 1.6 }}>
+                    {s.descripcion}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
