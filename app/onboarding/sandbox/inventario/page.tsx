@@ -8,19 +8,23 @@ import { fmt } from "@/types";
 import Badge from "@/components/ui/badge";
 import Icon  from "@/components/ui/icon";
 import ModalProductoForm from "@/components/modals/modal-producto-form";
+import ModalLoteEtiquetas from "@/components/sandbox/modal-lote-etiquetas";
+import { generarEtiquetasHTML, abrirVentanaEtiquetas } from "@/lib/inventario/etiquetas";
 
 const sans  = "var(--font-sans)";
 const mono  = "var(--font-mono)";
 const serif = "var(--font-serif)";
 
 export default function SandboxInventarioPage() {
-  const { tenantId } = useSandbox();
+  const { tenantId, tenant } = useSandbox();
   const { productos, loading, agregar, actualizar, eliminar } = useProductos(tenantId);
   const [showForm,  setShowForm]  = useState(false);
   const [editando,  setEditando]  = useState<Producto | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [busqueda,  setBusqueda]  = useState("");
   const [filtroTipo, setFiltroTipo] = useState<"todos" | "productos" | "servicios">("todos");
+  const [showLote,   setShowLote]   = useState(false);
+  const [showAyuda,  setShowAyuda]  = useState(false);
 
   const filtrados = productos.filter((p) => {
     const q = busqueda.toLowerCase();
@@ -29,6 +33,13 @@ export default function SandboxInventarioPage() {
     return matchBusq && matchTipo;
   });
 
+  const hayProductosConStock = productos.some((p) => p.controlaStock);
+
+  const imprimirEtiqueta = (p: Producto) => {
+    const html = generarEtiquetasHTML([{ producto: p, cantidad: 1 }], "70x40", tenant.nombreNegocio);
+    abrirVentanaEtiquetas(html, `Etiqueta — ${p.nombre}`);
+  };
+
   return (
     <div className="fade-in" data-tour="page-inventario">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
@@ -36,11 +47,45 @@ export default function SandboxInventarioPage() {
           <h1 style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 2 }}>Inventario</h1>
           <div style={{ fontSize: 13, color: "#6b7280", fontFamily: sans }}>Productos y servicios de prueba disponibles para facturar</div>
         </div>
-        <button onClick={() => { setEditando(null); setShowForm(true); }} data-tour="btn-nuevo-producto"
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#0e7490", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 500, fontFamily: sans }}>
-          <Icon name="plus" size={14} /> Nuevo Producto/Servicio
-        </button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {hayProductosConStock && (
+            <button onClick={() => setShowLote(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", background: "#fff", color: "#374151", border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer", fontSize: 13, fontFamily: sans }}>
+              <Icon name="print" size={14} /> Imprimir etiquetas
+            </button>
+          )}
+          <button onClick={() => { setEditando(null); setShowForm(true); }} data-tour="btn-nuevo-producto"
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#0e7490", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 500, fontFamily: sans }}>
+            <Icon name="plus" size={14} /> Nuevo Producto/Servicio
+          </button>
+        </div>
       </div>
+
+      {hayProductosConStock && (
+        <div style={{ marginBottom: 16, border: "1px solid #e5e7eb", borderRadius: 6, background: "#f9fafb" }}>
+          <button onClick={() => setShowAyuda((v) => !v)} style={{
+            width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "10px 14px", background: "none", border: "none", cursor: "pointer",
+            fontSize: 12, fontWeight: 600, color: "#0e7490", fontFamily: sans,
+          }}>
+            🏷 ¿Cómo funcionan los códigos de barra?
+            <span>{showAyuda ? "−" : "+"}</span>
+          </button>
+          {showAyuda && (
+            <div style={{ padding: "0 14px 14px", fontSize: 12, color: "#374151", lineHeight: 1.6, fontFamily: sans }}>
+              <p style={{ marginBottom: 8 }}>
+                <strong>Imprimir:</strong> usa el botón &quot;🏷 Etiqueta&quot; en cada producto, o &quot;Imprimir etiquetas&quot; arriba
+                para generar varias a la vez. Cada etiqueta incluye un código de barras (CODE128) generado a partir
+                del código del producto — imprímelas en una impresora normal o de etiquetas térmica.
+              </p>
+              <p>
+                <strong>Escanear:</strong> conecta un lector de código de barras USB (funciona como un teclado) y,
+                desde &quot;Nueva factura&quot;, simplemente escanea el producto — se agrega automáticamente a la lista,
+                sin necesidad de hacer clic en ningún campo primero.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
         <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
@@ -96,6 +141,9 @@ export default function SandboxInventarioPage() {
                   <td style={{ padding: "12px 14px" }}><Badge tipo={p.activo ? "success" : "neutral"}>{p.activo ? "Activo" : "Inactivo"}</Badge></td>
                   <td style={{ padding: "12px 14px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
+                      {p.controlaStock && (
+                        <button onClick={() => imprimirEtiqueta(p)} title="Imprimir etiqueta con código de barras" style={{ padding: "5px 8px", background: "none", border: "1px solid #bfdbfe", borderRadius: 4, cursor: "pointer", color: "#1d4ed8", fontSize: 11, fontFamily: sans, display: "flex", alignItems: "center", gap: 4 }}>🏷 Etiqueta</button>
+                      )}
                       <button onClick={() => { setEditando(p); setShowForm(true); }} style={{ padding: "5px 10px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer", fontSize: 12, fontFamily: sans, color: "#374151" }}>Editar</button>
                       <button onClick={() => setConfirmId(p.id)} style={{ padding: "5px 10px", background: "#fff", border: "1px solid #fecaca", borderRadius: 4, cursor: "pointer", color: "#dc2626", display: "flex", alignItems: "center" }}><Icon name="trash" size={13} /></button>
                     </div>
@@ -128,6 +176,14 @@ export default function SandboxInventarioPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showLote && (
+        <ModalLoteEtiquetas
+          productos={productos.filter((p) => p.controlaStock)}
+          nombreNegocio={tenant.nombreNegocio}
+          onClose={() => setShowLote(false)}
+        />
       )}
     </div>
   );

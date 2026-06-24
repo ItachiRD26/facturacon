@@ -43,6 +43,63 @@ export default function ModalNuevaFactura({
     setNotas(""); setError(""); setConfirmando(false);
   }, [open, clientes]);
 
+  // ── Scanner de pistola de código de barras ───────────────────────
+  // Funciona siempre, con o sin input enfocado. Detecta pistola por
+  // velocidad: chars < 60ms entre sí = scan, no tipeo manual. Bloquea
+  // esos chars para que no caigan en el input enfocado.
+  useEffect(() => {
+    if (!open) return;
+    let buffer      = "";
+    let lastKeyTime = 0;
+    let enModoScan  = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const procesarScan = (codigo: string) => {
+      const p = productos.find((prod) => prod.controlaStock && prod.codigo.toLowerCase() === codigo.toLowerCase());
+      if (!p) return;
+      setItems((prev) => {
+        const existIdx = prev.findIndex((it) => it.codigo === p.codigo && it.fromCatalog);
+        if (existIdx >= 0) {
+          return prev.map((it, i) => (i === existIdx ? { ...it, cant: it.cant + 1 } : it));
+        }
+        return [...prev, {
+          codigo: p.codigo, descripcion: p.nombre, modo: "unidad",
+          cant: 1, pax: 1, precio: p.precio, descuentoMonto: 0, itbis: p.itbis,
+          servicioId: p.id, fromCatalog: true,
+        }];
+      });
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      const now         = Date.now();
+      const msSinceLast = now - lastKeyTime;
+      lastKeyTime       = now;
+
+      if (e.key === "Enter") {
+        if (enModoScan && buffer.length > 2) {
+          e.preventDefault();
+          procesarScan(buffer.trim());
+        }
+        buffer     = "";
+        enModoScan = false;
+        clearTimeout(timer);
+        return;
+      }
+
+      if (e.key.length !== 1) return;
+
+      if (msSinceLast < 60 && buffer.length > 0) enModoScan = true;
+      if (enModoScan) e.preventDefault();
+
+      buffer += e.key;
+      clearTimeout(timer);
+      timer = setTimeout(() => { buffer = ""; enModoScan = false; }, 250);
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("keydown", onKey); clearTimeout(timer); };
+  }, [open, productos]);
+
   const cliente = clientes.find((c) => c.id === clienteId);
   const ecfConfig = useMemo(() => resolverECFConfig(cliente, esWalkIn, false), [cliente, esWalkIn]);
   const tipoECF = ecfConfig.locked ? ecfConfig.tipoDefault : (tipoECFManual ?? ecfConfig.tipoDefault);
@@ -109,6 +166,11 @@ export default function ModalNuevaFactura({
         </Campo>
 
         <Campo label="Líneas de la factura">
+          {productos.some((p) => p.controlaStock) && (
+            <div style={{ fontSize: 11, color: "var(--c-text-3)", marginBottom: 6 }}>
+              📷 Puedes escanear un código de barras en cualquier momento para agregar el producto.
+            </div>
+          )}
           <TablaItems items={items} onChange={setItems} productos={productos} />
         </Campo>
 

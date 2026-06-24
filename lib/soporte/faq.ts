@@ -55,6 +55,12 @@ export const FAQ: PreguntaFrecuente[] = [
     palabrasClave: ["varias empresas", "multiples", "gestor", "otra empresa", "agregar empresa"],
   },
   {
+    id: "codigo-barras",
+    pregunta: "¿Cómo imprimo y escaneo códigos de barra para mis productos?",
+    respuesta: "En Inventario, cualquier producto que controle stock tiene un botón \"🏷 Etiqueta\" para imprimir su código de barras (o usa \"Imprimir etiquetas\" para varias a la vez). Para escanear, conecta un lector USB normal (funciona como teclado) y, desde \"Nueva factura\", escanea el producto — se agrega solo, sin necesidad de hacer clic en ningún campo.",
+    palabrasClave: ["codigo de barras", "barras", "escanear", "etiqueta", "imprimir etiqueta", "lector", "pistola"],
+  },
+  {
     id: "seguridad-certificado",
     pregunta: "¿Es seguro subir mi certificado digital?",
     respuesta: "Sí. Tu certificado y su contraseña se cifran con Google Cloud KMS antes de guardarse — nunca se almacenan en texto plano ni se exponen a otros usuarios.",
