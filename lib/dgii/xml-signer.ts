@@ -221,3 +221,11 @@ export async function firmarXML(xmlOriginal: string, p12Buffer: Buffer, password
 export async function firmarSemilla(semillaXml: string, p12Buffer: Buffer, password: string): Promise<string> {
   return firmarXML(semillaXml, p12Buffer, password);
 }
+
+// Extrae <SignatureValue> de un XML ya firmado — lo necesita qr-builder.ts
+// (calcularCodigoSeguridad toma los primeros 6 chars de este valor).
+export function extraerSignatureValue(xmlFirmado: string): string {
+  const match = xmlFirmado.match(/<SignatureValue>([^<]+)<\/SignatureValue>/);
+  if (!match) throw new Error("El XML firmado no contiene SignatureValue");
+  return match[1];
+}

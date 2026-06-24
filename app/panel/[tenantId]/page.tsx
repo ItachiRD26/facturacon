@@ -190,25 +190,39 @@ export default async function CuentaResumenPage({ params }: { params: Promise<{ 
 
       {tenant.estado === "pendiente_certificacion" && (
         <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
           padding: "14px 16px", background: "var(--c-yellow-bg)",
           border: "1px solid var(--c-yellow-border)", borderRadius: 8, fontSize: 13,
         }}>
-          <strong>Certificado y cédula verificados ✓</strong> Estamos terminando de construir el
-          asistente de los pasos técnicos ante la DGII — todavía no está disponible aquí. Te
-          avisaremos por correo en cuanto esté listo. Si tienes preguntas, visita{" "}
-          <a href={`/panel/${tenantId}/soporte`} style={{ color: "var(--c-brand)", fontWeight: 600 }}>
-            soporte
-          </a>.
+          <div>
+            <strong>Certificado y cédula verificados ✓</strong> Sigue con el asistente de
+            certificación técnica ante la DGII — son varios pasos, puedes pausar y volver cuando
+            quieras.
+          </div>
+          <a href={`/panel/${tenantId}/certificacion`} style={{
+            fontSize: 13, fontWeight: 700, color: "#fff", background: "var(--c-brand)",
+            padding: "8px 16px", borderRadius: 6, textDecoration: "none", flexShrink: 0,
+          }}>
+            Ir al asistente →
+          </a>
         </div>
       )}
 
       {tenant.estado === "certificando" && (
         <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
           padding: "14px 16px", background: "var(--c-brand-bg)",
           border: "1px solid var(--c-brand-border)", borderRadius: 8, fontSize: 13,
         }}>
-          <strong>Certificación en proceso.</strong> Estamos completando los pasos técnicos ante la
-          DGII junto a tu equipo. Te avisaremos en cuanto tu sistema esté listo.
+          <div>
+            <strong>Certificación en proceso.</strong> Continúa el asistente donde lo dejaste.
+          </div>
+          <a href={`/panel/${tenantId}/certificacion`} style={{
+            fontSize: 13, fontWeight: 700, color: "#fff", background: "var(--c-brand)",
+            padding: "8px 16px", borderRadius: 6, textDecoration: "none", flexShrink: 0,
+          }}>
+            Continuar →
+          </a>
         </div>
       )}
     </div>

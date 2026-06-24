@@ -31,6 +31,11 @@ function urls(ambiente: AmbienteDGII) {
     rfce:           `${FC_HOST}/${ambiente}/recepcionfc/api/recepcion/ecf`,
     consulta:       `${ECF_HOST}/CerteCF/ConsultaResultado/api/Consultas/Estado`,
     anulacion:      `${ECF_HOST}/${ambiente}/anulacion/api/Anulacion`,
+    // Aprobación Comercial: certecf usa un patrón de Swagger distinto al de
+    // los demás ambientes (sin el segmento "emisorreceptor/fe").
+    aprobacionComercial: ambiente === "certecf"
+      ? `${ECF_HOST}/CerteCF/AprobacionComercial/api/AprobacionComercial`
+      : `${ECF_HOST}/${ambiente}/emisorreceptor/fe/aprobacioncomercial/api/ecf`,
   };
 }
 
@@ -164,6 +169,30 @@ export async function consultarEstado(trackId: string, tenant: DgiiTenantConfig,
     mensajes: data.mensajes?.map((m: {valor?: string; codigo?: string}) => m.valor ?? m.codigo ?? "") ?? [],
     eCF:      data.encf      ?? data.eNCF,
   };
+}
+
+// ─── Enviar Aprobación Comercial (ACECF) ──────────────────────────────────────
+export async function enviarACECF(xmlFirmado: string, tenant: DgiiTenantConfig, token: string): Promise<{ estado: string; mensaje: string }> {
+  const form = new FormData();
+  form.append("xml", new Blob([xmlFirmado], { type: "text/xml" }), "acecf.xml");
+
+  const res  = await fetch(urls(tenant.ambiente).aprobacionComercial, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: form,
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Envío ACECF: ${res.status} — ${text}`);
+
+  try {
+    const data = JSON.parse(text);
+    return {
+      estado:  data.estado ?? "OK",
+      mensaje: Array.isArray(data.mensaje) ? data.mensaje.join("; ") : (data.mensaje ?? "OK"),
+    };
+  } catch {
+    return { estado: "OK", mensaje: text.substring(0, 300) };
+  }
 }
 
 // ─── Anular e-NCF ─────────────────────────────────────────────────────────────
