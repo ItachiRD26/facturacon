@@ -44,14 +44,33 @@ export const ITBIS_RATES = [
 export const TERMINOS_PAGO  = ["Contado", "Crédito"] as const;
 export const PLAZOS_CREDITO = ["15 Días", "30 Días", "45 Días", "60 Días", "90 Días"] as const;
 
+// ── Producto / Servicio (catálogo genérico) ───────────────────────
+// Modelo único para inventario y servicios — un "servicio" es simplemente
+// un producto con controlaStock=false. Cubre ferretería, farmacia, retail,
+// restaurante, salón, taller, clínica, etc. (no aplica al modelo "tour" de
+// pax/grupo, que se mantiene aparte solo por compatibilidad de tipos).
+export interface Producto {
+  id:            string;
+  codigo:        string;
+  nombre:        string;
+  descripcion?:  string;
+  precio:        number;
+  itbis:         number;
+  controlaStock: boolean;
+  stock?:        number;
+  activo:        boolean;
+  creadoEn?:     string;
+  actualizadoEn?: string;
+}
+
 // ── Línea de Servicio ─────────────────────────────────────────────
-// NOTA: este modelo (modo por_persona/por_grupo, pax) viene del negocio de
-// origen (tours) y se reusa tal cual en la Fase 2 porque el motor e-CF ya
-// depende de él. La Fase 7 introduce un modelo de Producto/Servicio
-// genérico (cantidad × precio unitario) para negocios que no facturan por
-// persona; en ese momento se decide si conviven como union type o si cada
-// tipo de negocio usa un modelo exclusivo.
-export type ModoLinea = "por_persona" | "por_grupo";
+// "unidad": modelo genérico cantidad × precio unitario (ferretería, farmacia,
+// retail, restaurante, servicios, etc.) — usa el campo `cant`.
+// "por_persona"/"por_grupo": modelo heredado del negocio de origen (tours),
+// usa el campo `pax` — se mantiene por compatibilidad de tipos del motor
+// e-CF, pero el catálogo de negocios genéricos de Facturacon solo emite
+// líneas en modo "unidad".
+export type ModoLinea = "unidad" | "por_persona" | "por_grupo";
 
 export interface LineaServicio {
   servicioId?:    string;
@@ -147,7 +166,7 @@ export interface FacturaRecibida {
   fechaACECF?:           string;
   xmlACECF?:             string;
   xmlRecibido?:          string;
-  recibidoEn:            string;
+  recibidoEn?:           string;
 }
 
 // ── Cotización ────────────────────────────────────────────────────
@@ -201,9 +220,8 @@ export interface CuentaPorCobrar {
 // Por grupo: precio es PLANO (total del grupo, no × cant)
 // Por persona: precio × cant
 export function calcLinea(item: LineaServicio) {
-  const bruto   = item.modo === "por_grupo"
-    ? item.precio
-    : item.precio * (item.pax || 1);
+  const cantidad = item.modo === "unidad" ? (item.cant || 1) : (item.pax || 1);
+  const bruto    = item.modo === "por_grupo" ? item.precio : item.precio * cantidad;
   const descAmt  = Math.min(item.descuentoMonto || 0, bruto);
   const sub      = Math.max(0, bruto - descAmt);
   const itbisAmt = sub * (item.itbis || 0);
@@ -313,5 +331,14 @@ export function resolverECFConfig(
 }
 
 export function labelModo(modo: ModoLinea): string {
-  return modo === "por_persona" ? "Por Persona" : "Por Grupo";
+  if (modo === "unidad")      return "Por Unidad";
+  if (modo === "por_persona") return "Por Persona";
+  return "Por Grupo";
+}
+
+export function nuevaLineaUnidad(): LineaServicio {
+  return {
+    codigo: "", descripcion: "", modo: "unidad",
+    cant: 1, pax: 1, precio: 0, descuentoMonto: 0, itbis: 0.18,
+  };
 }

@@ -11,6 +11,16 @@ export type TipoNegocio =
   | "servicios"
   | "retail"
   | "restaurante"
+  | "colmado_supermercado"
+  | "salon_spa"
+  | "taller_mecanico"
+  | "clinica_consultorio"
+  | "gimnasio"
+  | "distribuidora_mayorista"
+  | "tienda_ropa"
+  | "panaderia_reposteria"
+  | "agencia_consultoria"
+  | "bar_colmadon"
   | "hotel"
   | "otro";
 

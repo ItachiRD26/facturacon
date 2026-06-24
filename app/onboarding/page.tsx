@@ -1,15 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TIPOS_NEGOCIO } from "@/lib/onboarding/tipos-negocio";
-import { resolverECFConfig, calcLinea, calcTotales, fmt, type LineaServicio } from "@/types";
 import type { TipoCuenta, TipoNegocio } from "@/types/tenant";
 
 const sans = "var(--font-sans)";
 const serif = "var(--font-serif)";
 
-type Paso = 1 | 2 | 3 | 4;
+type Paso = 1 | 2 | 3;
 
 interface RncValidado { valid: boolean; name?: string; rnc?: string; activo?: boolean | null }
 
@@ -56,12 +55,6 @@ export default function OnboardingPage() {
   const [rncError, setRncError] = useState("");
 
   const [tipoNegocio, setTipoNegocio] = useState<TipoNegocio | null>(null);
-
-  const [demoCliente, setDemoCliente] = useState<"con_rnc" | "sin_rnc" | "consumidor">("consumidor");
-  const [demoItems, setDemoItems] = useState<LineaServicio[]>([]);
-  const [nombreItem, setNombreItem] = useState("");
-  const [precioItem, setPrecioItem] = useState("");
-
   const [creando, setCreando] = useState(false);
   const [errorFinal, setErrorFinal] = useState("");
 
@@ -81,27 +74,9 @@ export default function OnboardingPage() {
     } finally { setValidando(false); }
   };
 
-  const agregarItem = () => {
-    const precio = parseFloat(precioItem);
-    if (!nombreItem.trim() || isNaN(precio) || precio <= 0) return;
-    setDemoItems((prev) => [...prev, {
-      codigo: `DEMO${prev.length + 1}`, descripcion: nombreItem.trim(),
-      modo: "por_persona", cant: 1, pax: 1, precio, descuentoMonto: 0, itbis: 0.18,
-    }]);
-    setNombreItem(""); setPrecioItem("");
-  };
-
-  const totales = useMemo(() => calcTotales(demoItems), [demoItems]);
-
-  const ecfConfig = useMemo(() => {
-    if (demoCliente === "consumidor") return resolverECFConfig(undefined, true, false);
-    if (demoCliente === "sin_rnc") return resolverECFConfig({ tipo: "fisica", rnc: "" }, false, false);
-    return resolverECFConfig({ tipo: "juridica", subtipo: "regular", rnc: "131880681" }, false, false);
-  }, [demoCliente]);
-
   const tipoInfo = TIPOS_NEGOCIO.find((t) => t.codigo === tipoNegocio);
 
-  const finalizar = async () => {
+  const entrarAlSandbox = async () => {
     setCreando(true); setErrorFinal("");
     try {
       const res = await fetch("/api/onboarding/crear-tenant", {
@@ -110,8 +85,7 @@ export default function OnboardingPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "No se pudo crear tu empresa");
-      router.push("/panel");
-      router.refresh();
+      router.push(`/onboarding/sandbox?t=${data.tenantId}`);
     } catch (err) {
       setErrorFinal(err instanceof Error ? err.message : "Error inesperado");
     } finally { setCreando(false); }
@@ -120,7 +94,7 @@ export default function OnboardingPage() {
   return (
     <main style={{ maxWidth: 720, margin: "48px auto", padding: "0 24px", fontFamily: sans }}>
       <div style={{ display: "flex", gap: 6, marginBottom: 32 }}>
-        {[1, 2, 3, 4].map((n) => (
+        {[1, 2, 3].map((n) => (
           <div key={n} style={{
             flex: 1, height: 4, borderRadius: 2,
             background: n <= paso ? "var(--c-brand)" : "var(--c-border)",
@@ -185,7 +159,8 @@ export default function OnboardingPage() {
         <section>
           <h1 style={{ fontFamily: serif, fontSize: "1.5rem", marginBottom: 8 }}>¿Qué tipo de negocio tienes?</h1>
           <p style={{ color: "var(--c-text-3)", fontSize: 13, marginBottom: 20 }}>
-            Esto nos ayuda a mostrarte el sistema configurado de forma relevante para ti.
+            Esto nos ayuda a mostrarte el sistema configurado de forma relevante para ti. Después de
+            elegir podrás probar el sistema completo con datos de prueba antes de certificarte.
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10, marginBottom: 20 }}>
             {TIPOS_NEGOCIO.map((t) => (
@@ -202,83 +177,15 @@ export default function OnboardingPage() {
               </a>.
             </div>
           )}
-          <div style={{ display: "flex", gap: 8 }}>
-            <Boton variant="secondary" onClick={() => setPaso(2)}>Atrás</Boton>
-            <Boton onClick={() => setPaso(4)} disabled={!tipoNegocio || !tipoInfo?.disponible}>Continuar</Boton>
-          </div>
-        </section>
-      )}
-
-      {paso === 4 && (
-        <section>
-          <h1 style={{ fontFamily: serif, fontSize: "1.5rem", marginBottom: 8 }}>Pruébalo antes de seguir</h1>
-          <p style={{ color: "var(--c-text-3)", fontSize: 13, marginBottom: 20 }}>
-            Esto es solo una demo en tu navegador — nada de esto se guarda. Agrega un producto o
-            servicio de ejemplo y mira cómo el sistema decide qué tipo de comprobante fiscal aplica
-            según el cliente.
-          </p>
-
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#374151", textTransform: "uppercase", marginBottom: 8 }}>Tipo de cliente (demo)</label>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {([
-                ["consumidor", "Consumidor final"],
-                ["sin_rnc", "Persona sin RNC"],
-                ["con_rnc", "Empresa con RNC"],
-              ] as const).map(([v, label]) => (
-                <button key={v} type="button" onClick={() => setDemoCliente(v)} style={{
-                  padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  border: `1px solid ${demoCliente === v ? "var(--c-brand)" : "var(--c-border)"}`,
-                  background: demoCliente === v ? "var(--c-brand-bg)" : "var(--c-surface)",
-                }}>{label}</button>
-              ))}
-            </div>
-            <div style={{ marginTop: 8, fontSize: 12, color: "var(--c-text-3)" }}>
-              → Se emitiría un <strong>{ecfConfig.tipoDefault}</strong> ({ecfConfig.motivo})
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#374151", textTransform: "uppercase", marginBottom: 8 }}>
-              Agregar producto/servicio de ejemplo
-            </label>
-            <div style={{ display: "flex", gap: 8 }}>
-              <input value={nombreItem} onChange={(e) => setNombreItem(e.target.value)} placeholder="Ej. Consultoría, tornillos, etc."
-                style={{ flex: 2, padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13 }} />
-              <input value={precioItem} onChange={(e) => setPrecioItem(e.target.value)} placeholder="Precio RD$" type="number"
-                style={{ flex: 1, padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13 }} />
-              <Boton variant="secondary" onClick={agregarItem}>Agregar</Boton>
-            </div>
-          </div>
-
-          {demoItems.length > 0 && (
-            <div style={{ border: "1px solid var(--c-border)", borderRadius: 6, overflow: "hidden", marginBottom: 20 }}>
-              {demoItems.map((item, i) => {
-                const c = calcLinea(item);
-                return (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid var(--c-border-lt)", fontSize: 13 }}>
-                    <span>{item.descripcion}</span>
-                    <span>RD$ {fmt(c.total)}</span>
-                  </div>
-                );
-              })}
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", background: "var(--c-bg)", fontSize: 13, fontWeight: 700 }}>
-                <span>Total estimado</span>
-                <span>RD$ {fmt(totales.total)}</span>
-              </div>
-            </div>
-          )}
-
           {errorFinal && (
             <div style={{ padding: "9px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 4, fontSize: 12, color: "#991b1b", marginBottom: 12 }}>
               {errorFinal}
             </div>
           )}
-
           <div style={{ display: "flex", gap: 8 }}>
-            <Boton variant="secondary" onClick={() => setPaso(3)}>Atrás</Boton>
-            <Boton onClick={finalizar} disabled={creando}>
-              {creando ? "Creando tu empresa..." : "Me gusta, continuar"}
+            <Boton variant="secondary" onClick={() => setPaso(2)}>Atrás</Boton>
+            <Boton onClick={entrarAlSandbox} disabled={!tipoNegocio || !tipoInfo?.disponible || creando}>
+              {creando ? "Preparando tu entorno de prueba..." : "Probar el sistema completo →"}
             </Boton>
           </div>
         </section>

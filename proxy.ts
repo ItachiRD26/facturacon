@@ -6,7 +6,10 @@ const SESSION_COOKIE = "__session";
 const ROOT_DOMAIN     = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
 // Rutas públicas en el dominio raíz (marketing, auth, sesión).
-const PUBLIC_ROOT_PATHS = ["/", "/login", "/registro", "/api/auth/session", "/_next", "/favicon.ico"];
+const PUBLIC_ROOT_PATHS = [
+  "/", "/login", "/registro", "/api/auth/session", "/_next", "/favicon.ico",
+  "/demo", "/terminos", "/privacidad", "/api/validate-rnc",
+];
 
 // Rutas públicas dentro de un subdominio de tenant: DGII llama a /fe/* sin
 // cookies de sesión. Estas rutas viven en app/fe/* (no bajo app/sites/[slug]/)
@@ -14,7 +17,13 @@ const PUBLIC_ROOT_PATHS = ["/", "/login", "/registro", "/api/auth/session", "/_n
 const PUBLIC_TENANT_PATHS = ["/fe/", "/_next", "/favicon.ico"];
 
 function isPublic(pathname: string, list: string[]): boolean {
-  return list.some((p) => pathname === p || pathname.startsWith(p));
+  // "/" debe matchear solo la raíz exacta — con startsWith("/") a secas
+  // cualquier pathname la matchea (todos empiezan con "/"), lo que volvía
+  // "público" cualquier ruta del dominio raíz (incl. /onboarding, /panel).
+  return list.some((p) => {
+    if (p === "/") return pathname === "/";
+    return pathname === p || pathname.startsWith(p.endsWith("/") ? p : `${p}/`);
+  });
 }
 
 export function proxy(request: NextRequest) {
