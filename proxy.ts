@@ -42,7 +42,7 @@ export function proxy(request: NextRequest) {
     }
     if (!session) {
       const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
+      loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
       return NextResponse.redirect(loginUrl);
     }
     return NextResponse.next();
@@ -55,7 +55,7 @@ export function proxy(request: NextRequest) {
 
   if (!session) {
     return NextResponse.redirect(
-      new URL(`https://${ROOT_DOMAIN}/login?redirect=${encodeURIComponent(pathname)}`, request.url)
+      new URL(`https://${ROOT_DOMAIN}/login?redirect=${encodeURIComponent(pathname + request.nextUrl.search)}`, request.url)
     );
   }
 
