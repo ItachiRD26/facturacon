@@ -22,11 +22,14 @@ export async function POST(req: NextRequest) {
   if (!form) return NextResponse.json({ error: "Formulario inválido" }, { status: 400 });
 
   const tenantId = form.get("tenantId")?.toString() ?? "";
-  const password = form.get("password")?.toString() ?? "";
+  // Un espacio de más al copiar la contraseña del .p12 es el error más común
+  // al subir el certificado — la recortamos también del lado del servidor
+  // (defensa en profundidad, sin depender de que el cliente ya la recortó).
+  const password = form.get("password")?.toString().trim() ?? "";
   const cedula   = form.get("cedula")?.toString() ?? "";
   const p12File  = form.get("p12");
 
-  if (!tenantId || !password.trim() || !cedula.trim() || !(p12File instanceof Blob)) {
+  if (!tenantId || !password || !cedula.trim() || !(p12File instanceof Blob)) {
     return NextResponse.json({ error: "Faltan datos: certificado, contraseña o cédula" }, { status: 400 });
   }
 
