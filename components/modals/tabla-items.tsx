@@ -20,13 +20,6 @@ export default function TablaItems({
     setBuscando(false); setBusqueda("");
   };
 
-  const agregarManual = () => {
-    onChange([...items, {
-      codigo: "", descripcion: "", modo: "unidad",
-      cant: 1, pax: 1, precio: 0, descuentoMonto: 0, itbis: 0.18,
-    }]);
-  };
-
   const actualizarLinea = (i: number, patch: Partial<LineaServicio>) => {
     onChange(items.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
   };
@@ -42,8 +35,7 @@ export default function TablaItems({
   return (
     <div>
       <div style={{ display: "flex", gap: 8, marginBottom: 10, position: "relative" }}>
-        <Boton variant="secondary" onClick={() => setBuscando((b) => !b)}>+ Del inventario</Boton>
-        <Boton variant="secondary" onClick={agregarManual}>+ Línea manual</Boton>
+        <Boton variant="secondary" onClick={() => setBuscando((b) => !b)}>+ Agregar producto</Boton>
 
         {buscando && (
           <div style={{
@@ -75,7 +67,7 @@ export default function TablaItems({
 
       {items.length === 0 ? (
         <div style={{ padding: 20, textAlign: "center", fontSize: 12, color: "var(--c-text-3)", border: "1px dashed var(--c-border)", borderRadius: 8 }}>
-          Agrega al menos una línea.
+          Agrega al menos un producto del inventario, o escanea un código de barras.
         </div>
       ) : (
         <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, overflow: "hidden" }}>
@@ -93,12 +85,7 @@ export default function TablaItems({
                 display: "grid", gridTemplateColumns: "2.2fr 0.7fr 1fr 1fr 0.9fr 1fr 28px",
                 gap: 6, padding: "8px 10px", borderTop: "1px solid var(--c-border-lt)", alignItems: "center",
               }}>
-                {item.fromCatalog ? (
-                  <span style={{ fontSize: 12 }}>{item.descripcion}</span>
-                ) : (
-                  <Input value={item.descripcion} onChange={(e) => actualizarLinea(i, { descripcion: e.target.value })}
-                    placeholder="Descripción" style={{ padding: "5px 8px", fontSize: 12 }} />
-                )}
+                <span style={{ fontSize: 12 }}>{item.descripcion}</span>
                 <Input type="number" min={1} value={item.cant} onChange={(e) => actualizarLinea(i, { cant: parseFloat(e.target.value) || 1 })}
                   style={{ padding: "5px 6px", fontSize: 12 }} />
                 <Input type="number" min={0} step="0.01" value={item.precio} onChange={(e) => actualizarLinea(i, { precio: parseFloat(e.target.value) || 0 })}

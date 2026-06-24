@@ -24,17 +24,23 @@ const ESTADO_FACTURA_COLOR: Record<string, string> = {
 export default async function CuentaResumenPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const { tenantId } = await params;
 
-  const [tenant, comprobantesEsteMes, metodosPago, porMes, desglose] = await Promise.all([
-    getTenantById(tenantId),
-    contarComprobantesEsteMes(tenantId),
-    contarMetodosPago(tenantId),
-    obtenerComprobantesPorMes(tenantId),
-    obtenerDesglosePorEstado(tenantId),
-  ]);
+  const tenant = await getTenantById(tenantId);
   if (!tenant) return null;
 
+  // Las facturas del entorno de prueba viven en la misma colección que las
+  // reales (para que el sandbox se vea/comporte igual), pero son simuladas
+  // y no deben contarse como actividad real de negocio en el resumen de
+  // cuenta — solo se calculan estas métricas una vez el tenant está activo.
+  const esActivo = tenant.estado === "activo";
+  const [comprobantesEsteMes, metodosPago, porMes, desglose] = await Promise.all([
+    esActivo ? contarComprobantesEsteMes(tenantId) : Promise.resolve(0),
+    contarMetodosPago(tenantId),
+    esActivo ? obtenerComprobantesPorMes(tenantId) : Promise.resolve([]),
+    esActivo ? obtenerDesglosePorEstado(tenantId) : Promise.resolve([]),
+  ]);
+
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
-  const esCertificado = tenant.estado === "activo" && !!tenant.slug;
+  const esCertificado = esActivo && !!tenant.slug;
   const totalFacturas = desglose.reduce((acc, d) => acc + d.cantidad, 0);
 
   return (
@@ -63,9 +69,11 @@ export default async function CuentaResumenPage({ params }: { params: Promise<{ 
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: "var(--c-text-3)", textTransform: "uppercase", marginBottom: 8 }}>
             Comprobantes este mes
           </div>
-          <div style={{ fontSize: 22, fontWeight: 700 }}>{comprobantesEsteMes}</div>
+          <div style={{ fontSize: 22, fontWeight: 700 }}>{esActivo ? comprobantesEsteMes : "—"}</div>
           <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 4 }}>
-            {tenant.estado === "demo" ? "Comprobantes simulados en el entorno de prueba." : "Comprobantes electrónicos reales emitidos a la DGII."}
+            {esActivo
+              ? "Comprobantes electrónicos reales emitidos a la DGII."
+              : "Se activa cuando tu cuenta esté certificada. Lo que emitas en el entorno de prueba no cuenta aquí."}
           </div>
         </div>
 
@@ -98,12 +106,20 @@ export default async function CuentaResumenPage({ params }: { params: Promise<{ 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14, marginBottom: 20 }}>
         <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "18px 20px", background: "var(--c-surface)" }}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Comprobantes emitidos — últimos 6 meses</div>
-          <BarChart data={porMes} />
+          {esActivo ? <BarChart data={porMes} /> : (
+            <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>
+              Esta gráfica se activa cuando tu cuenta esté certificada.
+            </div>
+          )}
         </div>
 
         <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "18px 20px", background: "var(--c-surface)" }}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Estado de tus facturas</div>
-          {totalFacturas === 0 ? (
+          {!esActivo ? (
+            <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>
+              Esta métrica se activa cuando tu cuenta esté certificada.
+            </div>
+          ) : totalFacturas === 0 ? (
             <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>Aún no has emitido facturas.</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

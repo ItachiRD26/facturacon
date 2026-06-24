@@ -1,20 +1,10 @@
-import { QRCodeSVG } from "qrcode.react";
-import type { Cliente, Factura } from "@/types";
+import type { Cliente, Cotizacion } from "@/types";
 import { calcLinea, calcTotales, fmt, fmtDate } from "@/types";
+import type { EmpresaImpresion } from "./factura-a4";
 import SelloMuestra from "./sello-muestra";
 
-export interface EmpresaImpresion { nombre: string; rnc: string; direccion?: string; telefono?: string }
-
-function fmtFechaFirma(iso?: string): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-}
-
-export default function FacturaA4({ factura, cliente, empresa, esMuestra = true }: { factura: Factura; cliente?: Cliente; empresa: EmpresaImpresion; esMuestra?: boolean }) {
-  const totales = calcTotales(factura.items);
-  const titulo = `Comprobante Fiscal Electrónico ${factura.tipoECF}`;
+export default function CotizacionA4({ cotizacion, cliente, empresa, esMuestra = true }: { cotizacion: Cotizacion; cliente?: Cliente; empresa: EmpresaImpresion; esMuestra?: boolean }) {
+  const totales = calcTotales(cotizacion.items);
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif", color: "#111", fontSize: 12, padding: 0, position: "relative" }}>
@@ -26,31 +16,25 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
           <div>RNC: {empresa.rnc}</div>
           {empresa.direccion && <div>{empresa.direccion}</div>}
           {empresa.telefono && <div>Tel: {empresa.telefono}</div>}
-          <div>Fecha emisión: {fmtDate(factura.fecha)}</div>
+          <div>Fecha: {fmtDate(cotizacion.fecha)}</div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontWeight: 700 }}>{titulo}</div>
-          <div>e-NCF: {factura.eCF}</div>
-          {factura.tipoECF !== "E32" && factura.tipoECF !== "E34" && (
-            <div>Válido hasta: {fmtDate(factura.vencimientoECF)}</div>
-          )}
-          <div>Términos: {factura.terminos}</div>
-          {factura.metodoPago && <div>Pago: {factura.metodoPago}</div>}
+          <div style={{ fontWeight: 700 }}>Cotización</div>
+          <div>No. {cotizacion.noCotizacion}</div>
+          <div>Vence: {fmtDate(cotizacion.vencimiento)}</div>
+          {cotizacion.validez && <div>Validez: {cotizacion.validez}</div>}
         </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontWeight: 700, marginBottom: 4 }}>Cliente</div>
-        {factura.esConsumidorFinal ? (
-          <div>{factura.nombreConsumidor || "Consumidor Final"}</div>
-        ) : cliente ? (
+        {cliente ? (
           <>
             <div>{cliente.nombre}{cliente.rnc ? ` — RNC: ${cliente.rnc}` : ""}</div>
             <div>{cliente.direccion} {cliente.ciudad}</div>
             {cliente.telefono && <div>Tel: {cliente.telefono}</div>}
           </>
         ) : <div>—</div>}
-        {factura.rncCompradorOcasional && <div>Identificación: {factura.rncCompradorOcasional}</div>}
       </div>
 
       <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 12 }}>
@@ -65,7 +49,7 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
           </tr>
         </thead>
         <tbody>
-          {factura.items.map((item, i) => {
+          {cotizacion.items.map((item, i) => {
             const c = calcLinea(item);
             return (
               <tr key={i} style={{ borderBottom: "1px solid #ddd" }}>
@@ -97,27 +81,14 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
         </table>
       </div>
 
-      {factura.notas && (
+      {cotizacion.notas && (
         <div style={{ padding: 10, background: "#fffbeb", border: "1px solid #fde68a", marginBottom: 16, fontSize: 11 }}>
-          {factura.notas}
+          {cotizacion.notas}
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 20, alignItems: "flex-start", borderTop: "1px dashed #999", paddingTop: 14 }}>
-        {factura.urlQR ? <QRCodeSVG value={factura.urlQR} size={80} level="M" /> : (
-          <div style={{ width: 80, height: 80, border: "1px dashed #999", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#999" }}>
-            QR DGII
-          </div>
-        )}
-        <div style={{ fontSize: 10, color: "#444" }}>
-          {factura.codigoSeguridad && <div>Código de Seguridad: <strong>{factura.codigoSeguridad}</strong></div>}
-          <div>Fecha Firma Digital: {fmtFechaFirma(factura.fechaEnvioDGII)}</div>
-          <div style={{ marginTop: 4 }}>Verifique en ecf.dgii.gov.do</div>
-        </div>
-      </div>
-
       <div style={{ textAlign: "center", fontSize: 10, color: "#888", marginTop: 18, borderTop: "1px dashed #ccc", paddingTop: 8 }}>
-        Comprobante Fiscal Electrónico — {empresa.nombre}
+        Esta cotización no es un comprobante fiscal — válida según los términos indicados arriba.
       </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import SiteHeader from "@/components/marketing/site-header";
 import SiteFooter from "@/components/marketing/site-footer";
 import VideoTutorial from "@/components/marketing/video-tutorial";
 import NegociosSection from "@/components/marketing/negocios-section";
+import ProductMockup from "@/components/marketing/product-mockup";
 
 const faqs = [
   {
@@ -43,10 +44,11 @@ export default function LandingPage() {
     <>
       <SiteHeader />
       <main style={{ fontFamily: "var(--font-sans)", color: "var(--c-text-1)" }}>
-        {/* Hero */}
+        {/* Hero — ocupa toda la primera vista (debajo del header sticky) */}
         <section style={{
-          padding: "84px 24px 96px", textAlign: "center",
+          minHeight: "calc(100vh - 64px)", padding: "48px 24px", textAlign: "center",
           background: "var(--gradient-hero)", position: "relative", overflow: "hidden",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         }}>
           <div style={{
             position: "absolute", inset: 0, opacity: 0.5, pointerEvents: "none",
@@ -90,6 +92,10 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        <div style={{ marginTop: -56, position: "relative", zIndex: 1 }}>
+          <ProductMockup />
+        </div>
 
         <VideoTutorial />
 

@@ -13,6 +13,7 @@ import Badge from "@/components/ui/badge";
 import Icon  from "@/components/ui/icon";
 import ModalNuevaCotizacion from "@/components/modals/modal-nueva-cotizacion";
 import ModalConvertirCotizacion, { type DatosConversion } from "@/components/modals/modal-convertir-cotizacion";
+import PrintModalCotizacion from "@/components/print/print-modal-cotizacion";
 import { convertirCotizacionEnFactura } from "@/lib/sandbox/acciones";
 
 const sans  = "var(--font-sans)";
@@ -31,6 +32,7 @@ export default function SandboxCotizacionesPage() {
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [convirtiendo, setConvirtiendo] = useState<Cotizacion | null>(null);
+  const [imprimiendo,  setImprimiendo]  = useState<Cotizacion | null>(null);
   const [busqueda,     setBusqueda]     = useState("");
   const [filtroEstado, setFiltroEstado] = useState<EstadoCotizacion | "todos">("todos");
 
@@ -127,16 +129,21 @@ export default function SandboxCotizacionesPage() {
                   <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#111" }}>RD$ {fmt(calcTotales(c.items).total)}</td>
                   <td style={{ padding: "11px 14px" }}><Badge estado={c.estado} /></td>
                   <td style={{ padding: "11px 14px" }}>
-                    {c.estado === "vigente" && (
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => setConvirtiendo(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "#fff", border: "1px solid #a5f3fc", borderRadius: 4, cursor: "pointer", color: "#0e7490", fontSize: 12, fontFamily: sans }}>
-                          <Icon name="convert" size={12} /> Convertir
-                        </button>
-                        <button onClick={() => cambiarEstado(c.id, "anulada")} style={{ padding: "5px 10px", background: "#fff", border: "1px solid #fecaca", borderRadius: 4, cursor: "pointer", color: "#dc2626", fontSize: 12, fontFamily: sans }}>
-                          Anular
-                        </button>
-                      </div>
-                    )}
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => setImprimiendo(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer", color: "#374151", fontSize: 12, fontFamily: sans }}>
+                        <Icon name="print" size={12} /> Ver
+                      </button>
+                      {c.estado === "vigente" && (
+                        <>
+                          <button onClick={() => setConvirtiendo(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "#fff", border: "1px solid #a5f3fc", borderRadius: 4, cursor: "pointer", color: "#0e7490", fontSize: 12, fontFamily: sans }}>
+                            <Icon name="convert" size={12} /> Convertir
+                          </button>
+                          <button onClick={() => cambiarEstado(c.id, "anulada")} style={{ padding: "5px 10px", background: "#fff", border: "1px solid #fecaca", borderRadius: 4, cursor: "pointer", color: "#dc2626", fontSize: 12, fontFamily: sans }}>
+                            Anular
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -154,6 +161,12 @@ export default function SandboxCotizacionesPage() {
         open={!!convirtiendo} onClose={() => setConvirtiendo(null)} cotizacion={convirtiendo}
         cliente={convirtiendo ? clientePor(convirtiendo.clienteId) : undefined}
         onConfirmar={async (datos) => { if (convirtiendo) await onConvertir(convirtiendo, datos); }}
+      />
+
+      <PrintModalCotizacion
+        open={!!imprimiendo} onClose={() => setImprimiendo(null)} cotizacion={imprimiendo}
+        cliente={imprimiendo ? clientePor(imprimiendo.clienteId) : undefined}
+        empresa={{ nombre: tenant.nombreNegocio, rnc: tenant.rnc }}
       />
     </div>
   );

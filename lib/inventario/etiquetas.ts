@@ -45,8 +45,6 @@ export function generarEtiquetasHTML(
     if (lineasNeeded > 3)      descPt = Math.max(3.5, basePt * 0.72);
     else if (lineasNeeded > 2) descPt = Math.max(4,   basePt * 0.85);
 
-    const precioFinal = p.precio * (1 + (p.itbis || 0));
-    const tieneITBIS  = (p.itbis || 0) > 0;
     const mostrarEmpresa = !(wMm <= 55 && hMm <= 32 && desc.length > 20);
 
     return Array.from({ length: cantidad }).map(() => `
@@ -54,8 +52,6 @@ export function generarEtiquetasHTML(
         ${mostrarEmpresa ? `<div class="empresa">${nombreNegocio}</div>` : ""}
         <div class="desc" style="font-size:${descPt}pt">${desc}</div>
         <div class="barcode-wrap" style="width:${bcW}mm">${barcodeSVG}</div>
-        <div class="precio">RD$ ${precioFinal.toLocaleString("es-DO", { minimumFractionDigits: 2 })}</div>
-        ${tieneITBIS ? `<div class="itbis-tag">ITBIS incl.</div>` : ""}
         <div class="codigo">${p.codigo}</div>
       </div>
     `);
@@ -102,14 +98,6 @@ export function generarEtiquetasHTML(
   }
   .barcode-wrap { display: flex; justify-content: center; }
   .barcode-wrap svg { display: block; }
-  .precio {
-    font-size: ${Math.max(5.5, hMm * 0.19)}pt;
-    font-weight: 700; color: #111; line-height: 1;
-  }
-  .itbis-tag {
-    font-size: ${Math.max(3, hMm * 0.10)}pt;
-    color: #6b7280; font-style: italic; line-height: 1;
-  }
   .codigo {
     font-size: ${Math.max(3.5, hMm * 0.11)}pt;
     color: #999; font-family: monospace; line-height: 1;

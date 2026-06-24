@@ -2,12 +2,15 @@ import { QRCodeSVG } from "qrcode.react";
 import type { Cliente, Factura } from "@/types";
 import { calcLinea, calcTotales, fmt, fmtDate } from "@/types";
 import type { EmpresaImpresion } from "./factura-a4";
+import SelloMuestra from "./sello-muestra";
 
-export default function FacturaTermica({ factura, cliente, empresa }: { factura: Factura; cliente?: Cliente; empresa: EmpresaImpresion }) {
+export default function FacturaTermica({ factura, cliente, empresa, esMuestra = true }: { factura: Factura; cliente?: Cliente; empresa: EmpresaImpresion; esMuestra?: boolean }) {
   const totales = calcTotales(factura.items);
 
   return (
-    <div style={{ fontFamily: "monospace", fontSize: 11, color: "#111", width: 280 }}>
+    <div style={{ fontFamily: "monospace", fontSize: 11, color: "#111", width: 280, position: "relative" }}>
+      {esMuestra && <SelloMuestra compacto />}
+      <div style={{ position: "relative", zIndex: 1 }}>
       <div style={{ textAlign: "center", marginBottom: 6 }}>
         <div style={{ fontWeight: 700 }}>{empresa.nombre}</div>
         <div>RNC: {empresa.rnc}</div>
@@ -68,6 +71,7 @@ export default function FacturaTermica({ factura, cliente, empresa }: { factura:
 
       <div style={{ textAlign: "center", marginTop: 8, fontWeight: 700 }}>
         Comprobante Fiscal Electrónico<br />{empresa.nombre}<br />¡Gracias por preferirnos!
+      </div>
       </div>
     </div>
   );
