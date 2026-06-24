@@ -26,3 +26,5 @@ next-env.d.ts
 # secrets / certificados — nunca deben entrar al repo
 *.p12
 /credentials/
+__pycache__/
+*.pyc
