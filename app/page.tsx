@@ -4,6 +4,7 @@ import SiteFooter from "@/components/marketing/site-footer";
 import VideoTutorial from "@/components/marketing/video-tutorial";
 import NegociosSection from "@/components/marketing/negocios-section";
 import ProductMockup from "@/components/marketing/product-mockup";
+import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder";
 
 const faqs = [
   {
@@ -119,6 +120,21 @@ export default function LandingPage() {
                 <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>{b.d}</div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Así se ve por dentro — espacios listos para capturas reales */}
+        <section style={{ padding: "16px 24px 64px", maxWidth: 960, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", textAlign: "center", marginBottom: 8 }}>
+            Así se ve por dentro
+          </h2>
+          <p style={{ textAlign: "center", color: "var(--c-text-3)", fontSize: 13, maxWidth: 480, margin: "0 auto 32px" }}>
+            Capturas reales del sistema — próximamente.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 18 }}>
+            <ScreenshotPlaceholder titulo="Dashboard" descripcion="Vista general de tu negocio: facturado, por cobrar, comprobantes del mes." />
+            <ScreenshotPlaceholder titulo="Factura con QR" descripcion="Comprobante fiscal electrónico, listo para imprimir en A4 o térmica." />
+            <ScreenshotPlaceholder titulo="Inventario y códigos de barra" descripcion="Productos con control de stock, etiquetas y escaneo en facturación." />
           </div>
         </section>
 
