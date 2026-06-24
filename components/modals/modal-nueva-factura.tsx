@@ -8,6 +8,7 @@ import { construirFacturaSimulada } from "@/lib/sandbox/emitir-factura";
 import Modal from "./modal";
 import TablaItems from "./tabla-items";
 import { Boton, Campo, Input, Select } from "@/components/sandbox/ui";
+import Icon from "@/components/ui/icon";
 
 const METODOS = ["Efectivo", "Tarjeta", "Transferencia", "Cheque"];
 const LIMITE_IDENTIFICACION = 250_000;
@@ -167,8 +168,9 @@ export default function ModalNuevaFactura({
 
         <Campo label="Líneas de la factura">
           {productos.some((p) => p.controlaStock) && (
-            <div style={{ fontSize: 11, color: "var(--c-text-3)", marginBottom: 6 }}>
-              📷 Puedes escanear un código de barras en cualquier momento para agregar el producto.
+            <div style={{ fontSize: 11, color: "var(--c-text-3)", marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}>
+              <Icon name="scan" size={12} />
+              Puedes escanear un código de barras en cualquier momento para agregar el producto.
             </div>
           )}
           <TablaItems items={items} onChange={setItems} productos={productos} />

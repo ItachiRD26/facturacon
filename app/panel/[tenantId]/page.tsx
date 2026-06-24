@@ -1,5 +1,5 @@
 import {
-  contarComprobantesEsteMes, contarMetodosPago,
+  contarActividadSandbox, contarComprobantesEsteMes, contarMetodosPago,
   obtenerComprobantesPorMes, obtenerDesglosePorEstado,
 } from "@/lib/tenant/estadisticas";
 import { getTenantById } from "@/lib/tenant/resolve-tenant";
@@ -13,6 +13,43 @@ const ESTADO_LABEL: Record<string, string> = {
   activo:                   "Activo",
   suspendido:               "Suspendido",
 };
+
+const PASOS_ESTADO: { estado: string; t: string }[] = [
+  { estado: "demo",                    t: "Probar el sistema" },
+  { estado: "pendiente_certificacion", t: "Subir certificado y cédula" },
+  { estado: "certificando",            t: "Certificarte ante la DGII" },
+  { estado: "activo",                  t: "Facturar de verdad" },
+];
+
+function ProgresoEstado({ estado }: { estado: string }) {
+  const idx = PASOS_ESTADO.findIndex((p) => p.estado === estado);
+  if (idx === -1) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", marginBottom: 24 }}>
+      {PASOS_ESTADO.map((p, i) => (
+        <div key={p.estado} style={{ display: "flex", alignItems: "center", flex: i < PASOS_ESTADO.length - 1 ? 1 : "0 0 auto" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 11, fontWeight: 700,
+              background: i <= idx ? "var(--c-brand)" : "var(--c-bg)",
+              color: i <= idx ? "#fff" : "var(--c-text-4)",
+              border: i <= idx ? "none" : "1px solid var(--c-border)",
+            }}>
+              {i < idx ? "✓" : i + 1}
+            </div>
+            <div style={{ fontSize: 10, color: i <= idx ? "var(--c-text-2)" : "var(--c-text-4)", fontWeight: i === idx ? 700 : 500, textAlign: "center", maxWidth: 92 }}>
+              {p.t}
+            </div>
+          </div>
+          {i < PASOS_ESTADO.length - 1 && (
+            <div style={{ flex: 1, height: 2, background: i < idx ? "var(--c-brand)" : "var(--c-border)", margin: "0 6px", marginBottom: 18 }} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const ESTADO_FACTURA_LABEL: Record<string, string> = {
   pagada: "Pagadas", pendiente: "Pendientes", anulada: "Anuladas",
@@ -32,11 +69,12 @@ export default async function CuentaResumenPage({ params }: { params: Promise<{ 
   // y no deben contarse como actividad real de negocio en el resumen de
   // cuenta — solo se calculan estas métricas una vez el tenant está activo.
   const esActivo = tenant.estado === "activo";
-  const [comprobantesEsteMes, metodosPago, porMes, desglose] = await Promise.all([
+  const [comprobantesEsteMes, metodosPago, porMes, desglose, actividadSandbox] = await Promise.all([
     esActivo ? contarComprobantesEsteMes(tenantId) : Promise.resolve(0),
     contarMetodosPago(tenantId),
     esActivo ? obtenerComprobantesPorMes(tenantId) : Promise.resolve([]),
     esActivo ? obtenerDesglosePorEstado(tenantId) : Promise.resolve([]),
+    !esActivo ? contarActividadSandbox(tenantId) : Promise.resolve(null),
   ]);
 
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
@@ -49,6 +87,8 @@ export default async function CuentaResumenPage({ params }: { params: Promise<{ 
         <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.5rem" }}>Resumen de cuenta</h1>
         <Badge tipo={esCertificado ? "success" : "warning"}>{ESTADO_LABEL[tenant.estado] ?? tenant.estado}</Badge>
       </div>
+
+      {!esActivo && <ProgresoEstado estado={tenant.estado} />}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 20 }}>
         <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "16px 18px", background: "var(--c-surface)" }}>
@@ -114,10 +154,22 @@ export default async function CuentaResumenPage({ params }: { params: Promise<{ 
         </div>
 
         <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "18px 20px", background: "var(--c-surface)" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Estado de tus facturas</div>
-          {!esActivo ? (
-            <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>
-              Esta métrica se activa cuando tu cuenta esté certificada.
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
+            {esActivo ? "Estado de tus facturas" : "Tu actividad en el entorno de prueba"}
+          </div>
+          {!esActivo && actividadSandbox ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+              {[
+                { l: "Clientes", v: actividadSandbox.clientes },
+                { l: "Productos", v: actividadSandbox.productos },
+                { l: "Facturas de prueba", v: actividadSandbox.facturas },
+                { l: "Cotizaciones", v: actividadSandbox.cotizaciones },
+              ].map((s) => (
+                <div key={s.l}>
+                  <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "var(--font-serif)" }}>{s.v}</div>
+                  <div style={{ fontSize: 11, color: "var(--c-text-3)" }}>{s.l}</div>
+                </div>
+              ))}
             </div>
           ) : totalFacturas === 0 ? (
             <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>Aún no has emitido facturas.</div>

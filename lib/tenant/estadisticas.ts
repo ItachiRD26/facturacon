@@ -56,6 +56,29 @@ export async function contarMetodosPago(tenantId: string): Promise<number> {
   return snap.data().count;
 }
 
+export interface ActividadSandbox { clientes: number; productos: number; facturas: number; cotizaciones: number }
+
+// A diferencia de contarComprobantesEsteMes (que solo cuenta una vez el
+// tenant está "activo" porque ahí sí es facturación real ante la DGII),
+// esto cuenta TODO lo que el usuario ya creó en el entorno de prueba — sirve
+// para que el resumen de cuenta no se vea vacío mientras el tenant todavía
+// está en "demo"/certificándose, sin mezclar esos números con actividad real.
+export async function contarActividadSandbox(tenantId: string): Promise<ActividadSandbox> {
+  const ref = adminDb.collection("tenants").doc(tenantId);
+  const [clientes, productos, facturas, cotizaciones] = await Promise.all([
+    ref.collection("clientes").count().get(),
+    ref.collection("productos").count().get(),
+    ref.collection("facturas").count().get(),
+    ref.collection("cotizaciones").count().get(),
+  ]);
+  return {
+    clientes: clientes.data().count,
+    productos: productos.data().count,
+    facturas: facturas.data().count,
+    cotizaciones: cotizaciones.data().count,
+  };
+}
+
 export interface DesgloseEstado { estado: string; cantidad: number }
 
 export async function obtenerDesglosePorEstado(tenantId: string): Promise<DesgloseEstado[]> {

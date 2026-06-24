@@ -26,6 +26,7 @@ const PATHS: Record<string, string> = {
   user:        "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z",
   chart:       "M18 20V10M12 20V4M6 20v-6",
   "chevron-down": "M6 9l6 6 6-6",
+  scan:        "M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M7 12h10",
 };
 
 interface IconProps {

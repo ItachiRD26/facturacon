@@ -32,11 +32,15 @@ export default function RegistroPage() {
   const [email,   setEmail]   = useState("");
   const [pass,    setPass]    = useState("");
   const [error,   setError]   = useState("");
+  // Cuando el correo ya tiene cuenta, en vez de solo mostrar un error
+  // mostramos un botón directo a /login con el correo precargado — antes el
+  // usuario se quedaba "atascado" viendo el mensaje sin un camino claro.
+  const [yaExiste, setYaExiste] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(""); setLoading(true);
+    setError(""); setYaExiste(false); setLoading(true);
     try {
       const credential = await createUserWithEmailAndPassword(auth, email, pass);
       const idToken    = await credential.user.getIdToken();
@@ -44,7 +48,8 @@ export default function RegistroPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("email-already-in-use")) {
-        setError("Ya existe una cuenta con ese correo. Inicia sesión en su lugar.");
+        setError("Ya existe una cuenta con ese correo.");
+        setYaExiste(true);
       } else if (msg.includes("weak-password")) {
         setError("La contraseña debe tener al menos 6 caracteres.");
       } else if (msg.includes("invalid-email")) {
@@ -56,7 +61,7 @@ export default function RegistroPage() {
   };
 
   const handleGoogle = async () => {
-    setError(""); setLoading(true);
+    setError(""); setYaExiste(false); setLoading(true);
     try {
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
       const idToken    = await credential.user.getIdToken();
@@ -68,22 +73,22 @@ export default function RegistroPage() {
 
   return (
     <div style={{
-      background: "#fff", border: "1px solid #e5e7eb", borderRadius: 6,
+      background: "#fff", border: "1px solid var(--c-border)", borderRadius: 10,
       padding: "40px 36px", width: "100%", maxWidth: 380,
-      boxShadow: "0 4px 24px rgba(0,0,0,0.07)", fontFamily: sans,
+      boxShadow: "0 4px 24px rgba(0,0,0,0.05)", fontFamily: sans,
     }}>
       <div style={{ textAlign: "center", marginBottom: 32 }}>
-        <div style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: "#111", lineHeight: 1.2 }}>
+        <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 600, color: "var(--c-navy)", lineHeight: 1.2 }}>
           Facturacon
         </div>
-        <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4, fontFamily: mono }}>
+        <div style={{ fontSize: 11, color: "var(--c-text-4)", marginTop: 4, fontFamily: mono }}>
           Crea tu cuenta
         </div>
       </div>
 
       <button onClick={handleGoogle} disabled={loading} type="button" style={{
         width: "100%", padding: "10px", marginBottom: 16, background: "#fff",
-        border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13, fontWeight: 600,
+        border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, fontWeight: 600,
         color: "#111", cursor: loading ? "not-allowed" : "pointer", fontFamily: sans,
       }}>
         Continuar con Google
@@ -100,9 +105,9 @@ export default function RegistroPage() {
           <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#374151", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 5 }}>
             Correo electrónico
           </label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+          <input type="email" required value={email} onChange={(e) => { setEmail(e.target.value); setYaExiste(false); }}
             placeholder="usuario@ejemplo.com"
-            style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13, color: "#111", outline: "none", fontFamily: sans, background: "#fff" }} />
+            style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111", outline: "none", fontFamily: sans, background: "#fff" }} />
         </div>
         <div>
           <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#374151", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 5 }}>
@@ -110,23 +115,31 @@ export default function RegistroPage() {
           </label>
           <input type="password" required minLength={6} value={pass} onChange={(e) => setPass(e.target.value)}
             placeholder="Mínimo 6 caracteres"
-            style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13, color: "#111", outline: "none", fontFamily: sans, background: "#fff" }} />
+            style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#111", outline: "none", fontFamily: sans, background: "#fff" }} />
         </div>
 
         {error && (
-          <div style={{ padding: "9px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 4, fontSize: 12, color: "#991b1b" }}>
-            {error}
+          <div style={{ padding: "9px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, fontSize: 12, color: "#991b1b" }}>
+            <div style={{ marginBottom: yaExiste ? 8 : 0 }}>{error}</div>
+            {yaExiste && (
+              <a href={`/login?email=${encodeURIComponent(email)}`} style={{
+                display: "inline-block", fontSize: 12, fontWeight: 700, color: "#fff",
+                background: "var(--c-brand)", padding: "6px 12px", borderRadius: 6, textDecoration: "none",
+              }}>
+                Iniciar sesión →
+              </a>
+            )}
           </div>
         )}
 
         <button type="submit" disabled={loading}
-          style={{ padding: "11px", background: loading ? "#9ca3af" : "#0e7490", color: "#fff", border: "none", borderRadius: 4, cursor: loading ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: sans }}>
+          style={{ padding: "11px", background: loading ? "#9ca3af" : "var(--c-brand)", color: "#fff", border: "none", borderRadius: 6, cursor: loading ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: sans }}>
           {loading ? "Creando cuenta..." : "Crear cuenta"}
         </button>
       </form>
 
       <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "#6b7280" }}>
-        ¿Ya tienes cuenta? <a href="/login" style={{ color: "#0e7490", fontWeight: 600 }}>Inicia sesión</a>
+        ¿Ya tienes cuenta? <a href="/login" style={{ color: "var(--c-brand)", fontWeight: 600 }}>Inicia sesión</a>
       </div>
     </div>
   );

@@ -111,6 +111,10 @@ body {
 }
 .sidebar-overlay.open { display: block; }
 
+@media (min-width: 900px) {
+  .auth-brand-panel { display: flex !important; }
+}
+
 @media (max-width: 768px) {
   .resolvemos-grid {
     grid-template-columns: 1fr !important;
