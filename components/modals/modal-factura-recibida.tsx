@@ -15,16 +15,17 @@ export default function ModalFacturaRecibida({
   const [fechaEmision, setFechaEmision] = useState(today());
   const [montoTotal, setMontoTotal] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open) return;
-    setEncf(""); setRncEmisor(""); setRazonSocialEmisor(""); setFechaEmision(today()); setMontoTotal("");
+    setEncf(""); setRncEmisor(""); setRazonSocialEmisor(""); setFechaEmision(today()); setMontoTotal(""); setError("");
   }, [open]);
 
   const submit = async () => {
     const monto = parseFloat(montoTotal);
     if (!encf.trim() || !rncEmisor.trim() || isNaN(monto)) return;
-    setGuardando(true);
+    setGuardando(true); setError("");
     try {
       await onSave({
         encf: encf.trim(), tipoECF: encf.trim().slice(0, 3), rncEmisor: rncEmisor.replace(/\D/g, ""),
@@ -32,6 +33,8 @@ export default function ModalFacturaRecibida({
         fechaEmision, montoTotal: monto, estadoARECF: "pendiente", estadoACECF: "pendiente",
       });
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo registrar la factura recibida.");
     } finally { setGuardando(false); }
   };
 

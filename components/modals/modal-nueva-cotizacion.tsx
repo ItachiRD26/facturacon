@@ -42,8 +42,8 @@ export default function ModalNuevaCotizacion({
         items: items.filter((i) => i.descripcion.trim()), notas: notas.trim() || undefined,
       });
       onClose();
-    } catch {
-      setError("No se pudo crear la cotización. Intenta de nuevo.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo crear la cotización. Intenta de nuevo.");
     } finally { setGuardando(false); }
   };
 

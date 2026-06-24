@@ -38,6 +38,7 @@ export default function ModalClienteForm({
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -45,6 +46,7 @@ export default function ModalClienteForm({
     setSubtipo(inicial?.subtipo ?? "regular");
     setRnc(inicial?.rnc ?? "");
     setRncEstado("idle"); setRncNombre("");
+    setError("");
     setNombre(inicial?.nombre ?? "");
     setDireccion(inicial?.direccion ?? "");
     setCiudad(inicial?.ciudad ?? "");
@@ -69,7 +71,7 @@ export default function ModalClienteForm({
 
   const submit = async () => {
     if (!nombre.trim()) return;
-    setGuardando(true);
+    setGuardando(true); setError("");
     try {
       await onSave({
         tipo, subtipo: tipo === "juridica" ? subtipo : undefined,
@@ -78,6 +80,8 @@ export default function ModalClienteForm({
         email: email.trim() || undefined,
       });
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo guardar el cliente.");
     } finally { setGuardando(false); }
   };
 
@@ -142,6 +146,8 @@ export default function ModalClienteForm({
         <Campo label="Email (opcional)">
           <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
         </Campo>
+
+        {error && <div style={{ fontSize: 12, color: "#991b1b" }}>{error}</div>}
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
           <Boton variant="secondary" onClick={onClose}>Cancelar</Boton>

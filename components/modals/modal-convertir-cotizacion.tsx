@@ -26,17 +26,18 @@ export default function ModalConvertirCotizacion({
   const [referencia, setReferencia] = useState("");
   const [plazo, setPlazo] = useState<string>(PLAZOS_CREDITO[1]);
   const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open) return;
-    setTerminos("Contado"); setMetodoPago("Efectivo"); setReferencia(""); setPlazo(PLAZOS_CREDITO[1]);
+    setTerminos("Contado"); setMetodoPago("Efectivo"); setReferencia(""); setPlazo(PLAZOS_CREDITO[1]); setError("");
   }, [open]);
 
   if (!cotizacion) return null;
   const totales = calcTotales(cotizacion.items);
 
   const confirmar = async () => {
-    setEnviando(true);
+    setEnviando(true); setError("");
     try {
       await onConfirmar({
         terminos, metodoPago: terminos === "Contado" ? metodoPago : undefined,
@@ -44,6 +45,8 @@ export default function ModalConvertirCotizacion({
         plazo: terminos === "Crédito" ? plazo : undefined,
       });
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo convertir la cotización. Intenta de nuevo.");
     } finally { setEnviando(false); }
   };
 
@@ -86,6 +89,8 @@ export default function ModalConvertirCotizacion({
             </Select>
           </Campo>
         )}
+
+        {error && <div style={{ fontSize: 12, color: "#991b1b" }}>{error}</div>}
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <Boton variant="secondary" onClick={onClose}>Cancelar</Boton>

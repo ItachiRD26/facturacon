@@ -7,6 +7,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Cliente } from "@/types";
+import { verificarLimite } from "@/lib/sandbox/verificar-limite";
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -30,6 +31,7 @@ export function useClientes(tenantId: string) {
   }, [tenantId]);
 
   const agregar = async (data: Omit<Cliente, "id">) => {
+    await verificarLimite(tenantId, "clientes");
     await addDoc(collection(db, "tenants", tenantId, "clientes"), cleanData({ ...data, creadoEn: serverTimestamp() }));
   };
   const actualizar = async (id: string, data: Partial<Cliente>) => {

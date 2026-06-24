@@ -21,6 +21,7 @@ export default function ModalProductoForm({
   const [controlaStock, setControlaStock] = useState(true);
   const [stock, setStock] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -32,12 +33,13 @@ export default function ModalProductoForm({
     setItbis(inicial?.itbis ?? 0.18);
     setControlaStock(inicial?.controlaStock ?? true);
     setStock(inicial?.stock !== undefined ? String(inicial.stock) : "");
+    setError("");
   }, [open, inicial]);
 
   const submit = async () => {
     const precioNum = parseFloat(precio);
     if (!nombre.trim() || isNaN(precioNum) || precioNum < 0) return;
-    setGuardando(true);
+    setGuardando(true); setError("");
     try {
       const controla = !esServicio && controlaStock;
       await onSave({
@@ -48,6 +50,8 @@ export default function ModalProductoForm({
         activo: true,
       });
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo guardar el producto/servicio.");
     } finally { setGuardando(false); }
   };
 
@@ -102,6 +106,8 @@ export default function ModalProductoForm({
             )}
           </div>
         )}
+
+        {error && <div style={{ fontSize: 12, color: "#991b1b" }}>{error}</div>}
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
           <Boton variant="secondary" onClick={onClose}>Cancelar</Boton>

@@ -7,6 +7,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { FacturaRecibida } from "@/types";
+import { verificarLimite } from "@/lib/sandbox/verificar-limite";
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -34,6 +35,7 @@ export function useFacturasRecibidas(tenantId: string) {
   }, [tenantId]);
 
   const agregar = async (data: Omit<FacturaRecibida, "id">) => {
+    await verificarLimite(tenantId, "facturas_recibidas");
     await addDoc(collection(db, "tenants", tenantId, "facturas_recibidas"), cleanData({ ...data, recibidoEn: serverTimestamp() }));
   };
   const eliminar = async (id: string) => {

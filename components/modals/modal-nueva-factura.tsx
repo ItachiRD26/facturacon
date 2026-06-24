@@ -76,8 +76,8 @@ export default function ModalNuevaFactura({
       });
       await onSave(factura);
       onClose();
-    } catch {
-      setError("No se pudo emitir la factura. Intenta de nuevo.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo emitir la factura. Intenta de nuevo.");
     } finally { setEmitiendo(false); }
   };
 

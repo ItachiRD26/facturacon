@@ -8,7 +8,7 @@ export async function nextSecuencia(tenantId: string, tipo: TipoECF | "COT"): Pr
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ tenantId, tipo }),
   });
-  if (!res.ok) throw new Error("No se pudo generar el número de secuencia");
-  const data = await res.json();
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.error ?? "No se pudo generar el número de secuencia");
   return data.secuencia as number;
 }
