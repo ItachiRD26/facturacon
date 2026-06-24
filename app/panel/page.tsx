@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionUid } from "@/lib/auth/session";
 import { listMembershipsForUser } from "@/lib/tenant/get-memberships";
 import { getTenantById } from "@/lib/tenant/resolve-tenant";
+import LogoutButton from "@/components/panel/logout-button";
 
 export default async function PanelPage() {
   const uid = await getSessionUid();
@@ -17,9 +18,12 @@ export default async function PanelPage() {
 
   return (
     <main style={{ maxWidth: 720, margin: "60px auto", padding: "0 24px", fontFamily: "var(--font-sans)" }}>
-      <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", marginBottom: 24 }}>
-        Tus empresas
-      </h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, gap: 12, flexWrap: "wrap" }}>
+        <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem" }}>
+          Tus empresas
+        </h1>
+        <LogoutButton />
+      </div>
 
       <ul style={{ display: "flex", flexDirection: "column", gap: 12, listStyle: "none" }}>
         {tenants.map(({ membership, tenant }) => (
