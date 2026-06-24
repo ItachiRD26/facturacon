@@ -9,6 +9,7 @@ export default async function PanelPage() {
 
   const memberships = await listMembershipsForUser(uid);
   if (memberships.length === 0) redirect("/onboarding");
+  if (memberships.length === 1) redirect(`/panel/${memberships[0].tenantId}`);
 
   const tenants = await Promise.all(
     memberships.map(async (m) => ({ membership: m, tenant: await getTenantById(m.tenantId) }))
@@ -22,46 +23,22 @@ export default async function PanelPage() {
 
       <ul style={{ display: "flex", flexDirection: "column", gap: 12, listStyle: "none" }}>
         {tenants.map(({ membership, tenant }) => (
-          <li key={membership.tenantId} style={{
-            border: "1px solid var(--c-border)", borderRadius: 6, padding: "16px 18px",
-            background: "var(--c-surface)",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: tenant?.estado === "demo" ? 14 : 0 }}>
+          <li key={membership.tenantId}>
+            <a href={`/panel/${membership.tenantId}`} style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              border: "1px solid var(--c-border)", borderRadius: 6, padding: "16px 18px",
+              background: "var(--c-surface)", textDecoration: "none", color: "inherit",
+            }}>
               <div>
                 <div style={{ fontWeight: 600 }}>{tenant?.nombreNegocio ?? "(sin nombre)"}</div>
                 <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>
                   RNC {tenant?.rnc ?? "—"} · estado: {tenant?.estado ?? "—"} · rol: {membership.rol}
                 </div>
               </div>
-              {tenant?.estado === "activo" && tenant.slug && (
-                <a href={`https://${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`}
-                   style={{ fontSize: 13, color: "var(--c-brand)", fontWeight: 600 }}>
-                  Abrir sistema →
-                </a>
-              )}
-              {tenant?.estado === "demo" && (
-                <a href={`/onboarding/sandbox/dashboard?t=${membership.tenantId}`}
-                   style={{ fontSize: 13, color: "var(--c-brand)", fontWeight: 600 }}>
-                  Seguir probando →
-                </a>
-              )}
-            </div>
-
-            {tenant?.estado === "demo" && (
-              <div style={{
-                padding: "12px 14px", background: "var(--c-yellow-bg)",
-                border: "1px solid var(--c-yellow-border)", borderRadius: 6, fontSize: 13,
-              }}>
-                <strong>Próximo paso: certificación ante la DGII.</strong> Estamos terminando de
-                construir el asistente de certificación (carga de tu certificado de firma digital,
-                validación de tu cédula y los pasos ante la DGII) — todavía no está disponible aquí.
-                Mientras tanto, puedes seguir probando el sistema completo con datos de ejemplo.
-                Si quieres que te avisemos en cuanto esté listo,{" "}
-                <a href="mailto:contacto@facturacon.cfd" style={{ color: "var(--c-brand)", fontWeight: 600 }}>
-                  escríbenos
-                </a>.
-              </div>
-            )}
+              <span style={{ fontSize: 13, color: "var(--c-brand)", fontWeight: 600, flexShrink: 0 }}>
+                Ver cuenta →
+              </span>
+            </a>
           </li>
         ))}
       </ul>
