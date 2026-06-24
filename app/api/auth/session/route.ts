@@ -7,10 +7,20 @@ const SESSION_SECONDS = Math.floor(SESSION_MS / 1000);
 const IS_PROD         = process.env.NODE_ENV === "production";
 const ROOT_DOMAIN      = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000").split(":")[0];
 
-// "localhost" no acepta el atributo Domain con punto inicial; en producción
-// el punto inicial hace que el navegador comparta la cookie con todos los
-// subdominios de tenant (slug.facturacon.cfd).
-const COOKIE_DOMAIN = ROOT_DOMAIN === "localhost" ? undefined : `.${ROOT_DOMAIN}`;
+// El dominio de la cookie se decide por el host REAL de la request, no por
+// la env var: NEXT_PUBLIC_ROOT_DOMAIN suele quedar fija en el dominio de
+// producción (facturacon.cfd) incluso en local. Si se usara esa env var a
+// secas, el navegador descartaría la cookie en cualquier prueba contra
+// localhost/127.0.0.1 (el atributo Domain no puede apuntar a un dominio
+// distinto al de la respuesta) — el login "funcionaba" pero la sesión nunca
+// quedaba guardada. En producción, el punto inicial sigue haciendo que el
+// navegador comparta la cookie con todos los subdominios de tenant
+// (slug.facturacon.cfd).
+function cookieDomainPara(hostHeader: string): string | undefined {
+  const hostname = hostHeader.split(":")[0];
+  const esLocal = hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".localhost");
+  return esLocal ? undefined : `.${ROOT_DOMAIN}`;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +47,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set(SESSION_COOKIE, sessionCookie, {
       maxAge: SESSION_SECONDS, httpOnly: true,
       secure: IS_PROD, sameSite: "lax", path: "/",
-      domain: COOKIE_DOMAIN,
+      domain: cookieDomainPara(request.headers.get("host") ?? ""),
     });
     return response;
   } catch (error: unknown) {
@@ -65,7 +75,7 @@ export async function DELETE(request: NextRequest) {
   const response = NextResponse.json({ success: true });
   response.cookies.set(SESSION_COOKIE, "", {
     maxAge: 0, httpOnly: true, secure: IS_PROD, sameSite: "lax", path: "/",
-    domain: COOKIE_DOMAIN,
+    domain: cookieDomainPara(request.headers.get("host") ?? ""),
   });
   return response;
 }
