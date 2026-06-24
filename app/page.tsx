@@ -55,18 +55,20 @@ export default function LandingPage() {
             position: "absolute", inset: 0, opacity: 0.5, pointerEvents: "none",
             background: "radial-gradient(circle at 18% 22%, rgba(255,255,255,0.12), transparent 38%), radial-gradient(circle at 82% 78%, rgba(255,255,255,0.10), transparent 42%)",
           }} />
+          <div className="grain-overlay" />
           <div style={{ position: "relative" }}>
             <div style={{
-              display: "inline-block", marginBottom: 20, padding: "5px 14px",
+              display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 24, padding: "5px 14px",
               background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)",
               borderRadius: 20, fontSize: 12, fontWeight: 600, color: "#fff",
-              letterSpacing: "0.03em",
+              letterSpacing: "0.08em", textTransform: "uppercase",
             }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#5eead4", flexShrink: 0 }} />
               Facturación Electrónica · República Dominicana
             </div>
             <h1 style={{
-              fontFamily: "var(--font-serif)", fontSize: "2.6rem", lineHeight: 1.15,
-              maxWidth: 740, margin: "0 auto 18px", color: "#fff",
+              fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: "clamp(2.4rem, 5vw, 3.4rem)", lineHeight: 1.1,
+              maxWidth: 760, margin: "0 auto 20px", color: "#fff", letterSpacing: "-0.01em",
             }}>
               Certifícate ante la DGII y factura electrónicamente desde el primer día
             </h1>
@@ -100,26 +102,41 @@ export default function LandingPage() {
 
         <VideoTutorial />
 
-        {/* Qué resolvemos */}
-        <section style={{ padding: "16px 24px 64px", maxWidth: 960, margin: "0 auto" }}>
-          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", textAlign: "center", marginBottom: 32 }}>
+        {/* Qué resolvemos — el primer punto lleva más peso visual a propósito,
+            rompe la grilla perfectamente simétrica por una más editorial. */}
+        <section style={{ padding: "16px 24px 64px", maxWidth: 1040, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.7rem", textAlign: "center", marginBottom: 40, maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
             La certificación de emisor electrónico no es trivial — nosotros nos encargamos
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24 }}>
-            {[
-              { t: "Sin desarrollar nada", d: "No necesitas construir ni mantener tu propio software de facturación electrónica." },
-              { t: "Sin perder semanas", d: "El proceso de certificación de la DGII tiene ~15 pasos técnicos. Te los manejamos nosotros." },
-              { t: "Pruébalo antes de pagar", d: "Usa el sistema completo con datos de ejemplo — facturas, cotizaciones, impresión y QR de prueba — antes de comprometerte." },
-              { t: "Listo en un día", d: "Una vez certificado, tu sistema de facturación queda funcionando de inmediato en tu propio dominio." },
-            ].map((b) => (
-              <div key={b.t} style={{
-                background: "var(--c-surface)", border: "1px solid var(--c-border)",
-                borderRadius: 8, padding: 20,
-              }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>{b.t}</div>
-                <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>{b.d}</div>
+          <div className="resolvemos-grid" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gridTemplateRows: "auto auto", gap: 20 }}>
+            <div style={{
+              background: "var(--c-navy)", borderRadius: 12, padding: 28,
+              gridColumn: "1", gridRow: "1 / 3",
+              color: "#fff", display: "flex", flexDirection: "column", justifyContent: "space-between",
+            }}>
+              <div style={{ fontFamily: "var(--font-serif)", fontSize: "2.4rem", opacity: 0.5, marginBottom: 12 }}>01</div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8 }}>Sin desarrollar nada</div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>
+                  No necesitas construir ni mantener tu propio software de facturación electrónica.
+                </div>
               </div>
-            ))}
+            </div>
+            <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, padding: 22, gridColumn: "2", gridRow: "1" }}>
+              <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.3rem", color: "var(--c-text-4)", marginBottom: 8 }}>02</div>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Sin perder semanas</div>
+              <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>El proceso de certificación de la DGII tiene ~15 pasos técnicos. Te los manejamos nosotros.</div>
+            </div>
+            <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, padding: 22, gridColumn: "3", gridRow: "1" }}>
+              <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.3rem", color: "var(--c-text-4)", marginBottom: 8 }}>03</div>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Pruébalo antes de pagar</div>
+              <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>Usa el sistema completo con datos de ejemplo antes de comprometerte.</div>
+            </div>
+            <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, padding: 22, gridColumn: "2 / 4", gridRow: "2" }}>
+              <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.3rem", color: "var(--c-text-4)", marginBottom: 8 }}>04</div>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Listo en un día</div>
+              <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>Una vez certificado, tu sistema queda funcionando de inmediato en tu propio dominio.</div>
+            </div>
           </div>
         </section>
 
@@ -159,24 +176,25 @@ export default function LandingPage() {
 
         <NegociosSection />
 
-        {/* Cómo funciona */}
-        <section id="como-funciona" style={{ padding: "64px 24px", background: "var(--c-surface)", borderTop: "1px solid var(--c-border)", borderBottom: "1px solid var(--c-border)" }}>
-          <div style={{ maxWidth: 960, margin: "0 auto" }}>
-            <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", textAlign: "center", marginBottom: 32 }}>
+        {/* Cómo funciona — fondo navy para romper la alternancia blanco/blanco
+            del resto de la página y darle un punto de anclaje visual fuerte. */}
+        <section id="como-funciona" style={{ padding: "72px 24px", background: "var(--c-navy)", position: "relative", overflow: "hidden" }}>
+          <div style={{
+            position: "absolute", inset: 0, opacity: 0.4, pointerEvents: "none",
+            background: "radial-gradient(circle at 90% 10%, rgba(94,234,212,0.10), transparent 45%)",
+          }} />
+          <div style={{ maxWidth: 960, margin: "0 auto", position: "relative" }}>
+            <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.7rem", textAlign: "center", marginBottom: 40, color: "#fff" }}>
               Cómo funciona
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 28 }}>
               {pasos.map((p) => (
-                <div key={p.n}>
-                  <div style={{
-                    width: 32, height: 32, borderRadius: "50%", background: "var(--c-brand)",
-                    color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-                    fontWeight: 700, fontSize: 14, marginBottom: 10,
-                  }}>
+                <div key={p.n} style={{ borderLeft: "2px solid rgba(255,255,255,0.18)", paddingLeft: 18 }}>
+                  <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", color: "#5eead4", marginBottom: 10 }}>
                     {p.n}
                   </div>
-                  <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 14 }}>{p.t}</div>
-                  <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>{p.d}</div>
+                  <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 14, color: "#fff" }}>{p.t}</div>
+                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>{p.d}</div>
                 </div>
               ))}
             </div>

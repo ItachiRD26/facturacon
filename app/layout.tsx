@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
-import { Sora, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Libre_Bodoni, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
 
+// Serif de alto contraste para títulos — reemplaza a Sora (sans-serif
+// geométrico) para dar el carácter editorial/"bien trabajado" que pedía el
+// negocio, distinto de las fuentes de IA genéricas (Inter, Space Grotesk).
 // La variable se sigue llamando --font-serif por compatibilidad con el resto
-// del código (cientos de usos de var(--font-serif) en títulos) — aunque
-// ahora carga Sora, un sans-serif geométrico, no un serif literal.
-const heading = Sora({
-  subsets: ["latin"], weight: ["600", "700", "800"],
+// del código (cientos de usos de var(--font-serif) en títulos) — y ahora sí
+// es un serif literal.
+const heading = Libre_Bodoni({
+  subsets: ["latin"], weight: ["500", "600", "700"],
   variable: "--font-serif", display: "swap",
 });
 const sans = IBM_Plex_Sans({
