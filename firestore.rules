@@ -1,12 +1,74 @@
 rules_version = '2';
 
-// Reglas provisionales de Fase 0: deny-all. Se reemplazan en Fase 1 con el
-// modelo real de membership (users/{uid}, memberships/{uid}_{tenantId},
-// tenants/{tenantId}/**).
+// Modelo: users/{uid} (perfil global) + memberships/{uid}_{tenantId} (acceso)
+// + tenants/{tenantId}/** (datos de cada empresa). Los IDs de Firebase Auth
+// (uid) y los IDs autogenerados de Firestore (tenantId) son alfanuméricos
+// sin guion bajo, así que "uid_tenantId" se puede separar de forma segura
+// con split('_') tomando el primer elemento.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function hasMembership(tenantId) {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/memberships/$(request.auth.uid + '_' + tenantId));
+    }
+
+    // ── Perfil de usuario (global, no tenant-scoped) ──
+    match /users/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // ── Membership: cada usuario solo ve las suyas; nunca se escriben
+    //    desde el cliente (las crea el backend con Admin SDK al certificarse
+    //    o al ser invitado) ──
+    match /memberships/{membershipId} {
+      allow read: if isSignedIn() && membershipId.split('_')[0] == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ── Tenants: solo lectura para miembros; toda escritura (creación,
+    //    cambios de estado, asignación de slug) pasa por el backend ──
+    match /tenants/{tenantId} {
+      allow read: if hasMembership(tenantId);
+      allow write: if false;
+
+      // Datos sensibles del emisor (certificado .p12 cifrado, token DGII,
+      // secuencias de e-CF): nunca expuestos al cliente, ni siquiera lectura.
+      match /config/certificado { allow read, write: if false; }
+      match /config/dgii_token  { allow read, write: if false; }
+      match /config/secuencias  { allow read, write: if false; }
+
+      // Datos de empresa visibles para mostrarlos en UI (nombre, RNC, etc.).
+      match /config/empresa {
+        allow read: if hasMembership(tenantId);
+        allow write: if false;
+      }
+
+      // Estado del wizard de certificación: visible para miembros, lo
+      // actualiza el backend.
+      match /certificacion/{paso} {
+        allow read: if hasMembership(tenantId);
+        allow write: if false;
+      }
+
+      // Datos operativos del negocio: cualquier miembro puede leer/escribir.
+      // Permisos más finos por rol se añaden cuando haya UI que los necesite
+      // (Fase 7). IMPORTANTE: Firestore evalúa el OR de todos los bloques
+      // match que coincidan con una ruta — un wildcard genérico aquí
+      // (/{collection}/{docId}) volvería a exponer config/certificado pese
+      // a la regla "if false" de arriba. Por eso se enumeran las colecciones
+      // operativas en vez de usar un wildcard.
+      match /clientes/{docId}           { allow read, write: if hasMembership(tenantId); }
+      match /servicios/{docId}          { allow read, write: if hasMembership(tenantId); }
+      match /productos/{docId}          { allow read, write: if hasMembership(tenantId); }
+      match /facturas/{docId}           { allow read, write: if hasMembership(tenantId); }
+      match /cotizaciones/{docId}       { allow read, write: if hasMembership(tenantId); }
+      match /cuentas_por_cobrar/{docId} { allow read, write: if hasMembership(tenantId); }
+      match /facturas_recibidas/{docId} { allow read, write: if hasMembership(tenantId); }
     }
   }
 }
