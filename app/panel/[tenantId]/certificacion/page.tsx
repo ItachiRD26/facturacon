@@ -7,6 +7,7 @@ import type { EmpresaConfig } from "@/types/tenant";
 import type { FilaSetPrueba, ItemAC, FacturaPrueba } from "@/lib/certificacion/tipos";
 import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder";
 import VideoPlaceholder from "@/components/marketing/video-placeholder";
+import PagoCertificacion from "@/components/panel/pago-certificacion";
 
 const sans  = "var(--font-sans)";
 const serif = "var(--font-serif)";
@@ -171,6 +172,7 @@ export default function CertificacionPage() {
 
   const [paso, setPaso] = useState<Paso>(0);
   const [cargando, setCargando] = useState(true);
+  const [pagoEstado, setPagoEstado] = useState<string>("pendiente");
 
   // Paso 0
   const [empresa, setEmpresa] = useState<EmpresaConfig | null>(null);
@@ -215,13 +217,14 @@ export default function CertificacionPage() {
 
   async function cargarTodo() {
     if (!tenantId) return;
-    const [eR, tR, sR, acR, pR, iR] = await Promise.all([
+    const [eR, tR, sR, acR, pR, iR, pagoR] = await Promise.all([
       fetch(`/api/certificacion/empresa?t=${tenantId}`).then((r) => r.json()).catch(() => null),
       fetch(`/api/certificacion/token?t=${tenantId}`).then((r) => r.json()).catch(() => null),
       fetch(`/api/certificacion/upload-set?t=${tenantId}`).then((r) => r.json()).catch(() => null),
       fetch(`/api/certificacion/upload-ac?t=${tenantId}`).then((r) => r.json()).catch(() => null),
       fetch(`/api/certificacion/crear-prueba?t=${tenantId}`).then((r) => r.json()).catch(() => null),
       fetch(`/api/certificacion/iniciar?t=${tenantId}`).then((r) => r.json()).catch(() => null),
+      fetch(`/api/payments/estado?t=${tenantId}`).then((r) => r.json()).catch(() => null),
     ]);
     if (eR?.empresa) {
       setEmpresa(eR.empresa);
@@ -232,6 +235,7 @@ export default function CertificacionPage() {
     if (acR?.items) setAcItems(acR.items);
     if (pR?.items) setPruebas(pR.items);
     if (iR?.ofvIniciada) setOfvIniciada(true);
+    if (pagoR?.estado) setPagoEstado(pagoR.estado);
     setCargando(false);
   }
 
@@ -449,6 +453,10 @@ export default function CertificacionPage() {
 
   if (cargando) {
     return <main style={{ padding: 60, textAlign: "center", fontFamily: sans, color: "var(--c-text-3)" }}>Cargando asistente…</main>;
+  }
+
+  if (pagoEstado !== "capturada") {
+    return <PagoCertificacion tenantId={tenantId} onPagado={() => setPagoEstado("capturada")} />;
   }
 
   const totalPaso2 = Object.keys(filas).length;

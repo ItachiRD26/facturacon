@@ -18,6 +18,10 @@ export async function POST(req: NextRequest) {
   if (!verif.ok) return verif.response;
 
   if (verif.tenant.estado === "pendiente_certificacion") {
+    const pago = await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("pago").get();
+    if (pago.data()?.estado !== "capturada") {
+      return NextResponse.json({ error: "Primero debes completar el pago de certificación." }, { status: 402 });
+    }
     await adminDb.collection("tenants").doc(tenantId).update({ estado: "certificando" });
   }
 
