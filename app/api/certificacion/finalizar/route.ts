@@ -28,6 +28,14 @@ export async function POST(req: NextRequest) {
 
   const slug = verif.tenant.slug ?? await generarSlugUnico();
 
+  // Asumimos que completar los 15 pasos = la DGII ya habilitó el ambiente de
+  // producción ("ecf") para este RNC — es lo que documenta el proceso
+  // oficial, pero no hay forma de confirmarlo por API. Si en la práctica la
+  // DGII tarda en habilitarlo después del paso 15, los primeros envíos
+  // reales fallarán y habrá que ajustar este punto.
+  await adminDb.collection("tenants").doc(tenantId).collection("config").doc("empresa")
+    .set({ ambiente: "ecf" }, { merge: true });
+
   await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("estado").set({
     completadoEn: new Date().toISOString(),
   }, { merge: true });

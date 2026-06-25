@@ -8,6 +8,7 @@ import {
 import { db } from "@/lib/firebase";
 import type { Abono, CuentaPorCobrar } from "@/types";
 import { calcPendiente } from "@/types";
+import { excluirMuestra } from "@/lib/tenant/excluir-muestra";
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -24,7 +25,7 @@ export function useCuentasPorCobrar(tenantId: string) {
     if (!tenantId) return;
     const q = query(collection(db, "tenants", tenantId, "cuentas_por_cobrar"), orderBy("fecha", "desc"));
     const unsub = onSnapshot(q,
-      (snap) => { setCuentas(snap.docs.map((d) => ({ id: d.id, ...d.data() } as CuentaPorCobrar))); setLoading(false); },
+      (snap) => { setCuentas(excluirMuestra(snap.docs.map((d) => ({ id: d.id, ...d.data() } as CuentaPorCobrar)))); setLoading(false); },
       (err) => { console.error("[useCuentasPorCobrar]", err); setError("Error cargando cuentas por cobrar"); setLoading(false); }
     );
     return () => unsub();

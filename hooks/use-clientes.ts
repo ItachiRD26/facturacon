@@ -8,6 +8,7 @@ import {
 import { db } from "@/lib/firebase";
 import type { Cliente } from "@/types";
 import { verificarLimite } from "@/lib/sandbox/verificar-limite";
+import { excluirMuestra } from "@/lib/tenant/excluir-muestra";
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -24,7 +25,7 @@ export function useClientes(tenantId: string) {
     if (!tenantId) return;
     const q = query(collection(db, "tenants", tenantId, "clientes"), orderBy("nombre", "asc"));
     const unsub = onSnapshot(q,
-      (snap) => { setClientes(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Cliente))); setLoading(false); },
+      (snap) => { setClientes(excluirMuestra(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Cliente)))); setLoading(false); },
       (err) => { console.error("[useClientes]", err); setError("Error cargando clientes"); setLoading(false); }
     );
     return () => unsub();

@@ -10,8 +10,8 @@ import { Boton } from "@/components/sandbox/ui";
 type Formato = "a4" | "termica";
 
 export default function PrintModal({
-  open, onClose, factura, cliente, empresa,
-}: { open: boolean; onClose: () => void; factura: Factura | null; cliente?: Cliente; empresa: EmpresaImpresion }) {
+  open, onClose, factura, cliente, empresa, esMuestra = true,
+}: { open: boolean; onClose: () => void; factura: Factura | null; cliente?: Cliente; empresa: EmpresaImpresion; esMuestra?: boolean }) {
   const [formato, setFormato] = useState<Formato>("a4");
   const contenidoRef = useRef<HTMLDivElement>(null);
 
@@ -68,8 +68,8 @@ export default function PrintModal({
         <div style={{ overflowY: "auto", padding: 20, display: "flex", justifyContent: "center" }}>
           <div ref={contenidoRef}>
             {formato === "a4"
-              ? <FacturaA4 factura={factura} cliente={cliente} empresa={empresa} />
-              : <FacturaTermica factura={factura} cliente={cliente} empresa={empresa} />}
+              ? <FacturaA4 factura={factura} cliente={cliente} empresa={empresa} esMuestra={esMuestra} />
+              : <FacturaTermica factura={factura} cliente={cliente} empresa={empresa} esMuestra={esMuestra} />}
           </div>
         </div>
       </div>

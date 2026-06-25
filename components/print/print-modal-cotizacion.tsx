@@ -8,8 +8,8 @@ import type { EmpresaImpresion } from "./factura-a4";
 import { Boton } from "@/components/sandbox/ui";
 
 export default function PrintModalCotizacion({
-  open, onClose, cotizacion, cliente, empresa,
-}: { open: boolean; onClose: () => void; cotizacion: Cotizacion | null; cliente?: Cliente; empresa: EmpresaImpresion }) {
+  open, onClose, cotizacion, cliente, empresa, esMuestra = true,
+}: { open: boolean; onClose: () => void; cotizacion: Cotizacion | null; cliente?: Cliente; empresa: EmpresaImpresion; esMuestra?: boolean }) {
   const contenidoRef = useRef<HTMLDivElement>(null);
 
   if (!open || !cotizacion || typeof document === "undefined") return null;
@@ -47,7 +47,7 @@ export default function PrintModalCotizacion({
 
         <div style={{ overflowY: "auto", padding: 20, display: "flex", justifyContent: "center" }}>
           <div ref={contenidoRef}>
-            <CotizacionA4 cotizacion={cotizacion} cliente={cliente} empresa={empresa} />
+            <CotizacionA4 cotizacion={cotizacion} cliente={cliente} empresa={empresa} esMuestra={esMuestra} />
           </div>
         </div>
       </div>

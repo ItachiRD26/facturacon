@@ -7,6 +7,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Cotizacion, EstadoCotizacion } from "@/types";
+import { excluirMuestra } from "@/lib/tenant/excluir-muestra";
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -23,7 +24,7 @@ export function useCotizaciones(tenantId: string) {
     if (!tenantId) return;
     const q = query(collection(db, "tenants", tenantId, "cotizaciones"), orderBy("fecha", "desc"));
     const unsub = onSnapshot(q,
-      (snap) => { setCotizaciones(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Cotizacion))); setLoading(false); },
+      (snap) => { setCotizaciones(excluirMuestra(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Cotizacion)))); setLoading(false); },
       (err) => { console.error("[useCotizaciones]", err); setError("Error cargando cotizaciones"); setLoading(false); }
     );
     return () => unsub();

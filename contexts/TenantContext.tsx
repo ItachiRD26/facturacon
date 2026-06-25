@@ -14,6 +14,7 @@ interface TenantContextValue {
   tenantId:      string;
   slug:          string;
   nombreNegocio: string;
+  rnc:           string;
   rol:           RolMembership;
   // Otras empresas que esta cuenta administra (cuentas "gestor"); cada una
   // vive en su propio subdominio, así que "cambiar" es navegar, no un

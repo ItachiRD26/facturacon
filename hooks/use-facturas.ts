@@ -7,6 +7,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Factura, EstadoFactura } from "@/types";
+import { excluirMuestra } from "@/lib/tenant/excluir-muestra";
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -23,7 +24,7 @@ export function useFacturas(tenantId: string) {
     if (!tenantId) return;
     const q = query(collection(db, "tenants", tenantId, "facturas"), orderBy("fecha", "desc"));
     const unsub = onSnapshot(q,
-      (snap) => { setFacturas(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Factura))); setLoading(false); },
+      (snap) => { setFacturas(excluirMuestra(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Factura)))); setLoading(false); },
       (err) => { console.error("[useFacturas]", err); setError("Error cargando facturas"); setLoading(false); }
     );
     return () => unsub();

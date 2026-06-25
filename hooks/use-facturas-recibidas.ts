@@ -8,6 +8,7 @@ import {
 import { db } from "@/lib/firebase";
 import type { FacturaRecibida } from "@/types";
 import { verificarLimite } from "@/lib/sandbox/verificar-limite";
+import { excluirMuestra } from "@/lib/tenant/excluir-muestra";
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -28,7 +29,7 @@ export function useFacturasRecibidas(tenantId: string) {
     if (!tenantId) return;
     const q = query(collection(db, "tenants", tenantId, "facturas_recibidas"), orderBy("fechaEmision", "desc"));
     const unsub = onSnapshot(q,
-      (snap) => { setRecibidas(snap.docs.map((d) => ({ id: d.id, ...d.data() } as FacturaRecibida))); setLoading(false); },
+      (snap) => { setRecibidas(excluirMuestra(snap.docs.map((d) => ({ id: d.id, ...d.data() } as FacturaRecibida)))); setLoading(false); },
       (err) => { console.error("[useFacturasRecibidas]", err); setError("Error cargando facturas recibidas"); setLoading(false); }
     );
     return () => unsub();

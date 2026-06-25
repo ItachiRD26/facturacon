@@ -8,6 +8,7 @@ import {
 import { db } from "@/lib/firebase";
 import type { Producto } from "@/types";
 import { verificarLimite } from "@/lib/sandbox/verificar-limite";
+import { excluirMuestra } from "@/lib/tenant/excluir-muestra";
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -24,7 +25,7 @@ export function useProductos(tenantId: string) {
     if (!tenantId) return;
     const q = query(collection(db, "tenants", tenantId, "productos"), orderBy("nombre", "asc"));
     const unsub = onSnapshot(q,
-      (snap) => { setProductos(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Producto))); setLoading(false); },
+      (snap) => { setProductos(excluirMuestra(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Producto)))); setLoading(false); },
       (err) => { console.error("[useProductos]", err); setError("Error cargando inventario"); setLoading(false); }
     );
     return () => unsub();

@@ -14,6 +14,10 @@ export interface Cliente {
   subtipo?:  SubtipoJuridica;
   email?:    string;
   creadoEn?: string;
+  // Marcado al activar el tenant sobre todo lo creado en el entorno de
+  // prueba (Fase 6) — los hooks de producción lo usan para no mezclar
+  // datos de prueba con datos reales en el mismo subdominio.
+  esMuestra?: boolean;
 }
 
 // ── e-CF ──────────────────────────────────────────────────────────
@@ -61,6 +65,7 @@ export interface Producto {
   activo:        boolean;
   creadoEn?:     string;
   actualizadoEn?: string;
+  esMuestra?:    boolean;
 }
 
 // ── Línea de Servicio ─────────────────────────────────────────────
@@ -143,6 +148,7 @@ export interface Factura {
   fechaConsultaDGII?:    string;
   mensajesDGII?:         string[];
   fechaAnulacion?:       string;
+  esMuestra?:            boolean;
 }
 
 // ── Factura Recibida (receptor DGII) ─────────────────────────────
@@ -167,6 +173,7 @@ export interface FacturaRecibida {
   xmlACECF?:             string;
   xmlRecibido?:          string;
   recibidoEn?:           string;
+  esMuestra?:            boolean;
 }
 
 // ── Cotización ────────────────────────────────────────────────────
@@ -184,6 +191,7 @@ export interface Cotizacion {
   notas?:       string;
   facturaRef?:  string;
   creadoEn?:    string;
+  esMuestra?:   boolean;
 }
 
 // ── Abono ─────────────────────────────────────────────────────────
@@ -214,6 +222,7 @@ export interface CuentaPorCobrar {
   abonos:           Abono[];
   creadoEn?:        string;
   actualizadoEn?:   string;
+  esMuestra?:       boolean;
 }
 
 // ── calcLinea ─────────────────────────────────────────────────────

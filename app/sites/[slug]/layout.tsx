@@ -3,6 +3,7 @@ import { getSessionUid } from "@/lib/auth/session";
 import { resolveTenantBySlug, getTenantById } from "@/lib/tenant/resolve-tenant";
 import { getMembership, listMembershipsForUser } from "@/lib/tenant/get-memberships";
 import { TenantProvider, type TenantSummary } from "@/contexts/TenantContext";
+import TenantShell from "@/components/tenant/tenant-shell";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
@@ -35,10 +36,11 @@ export default async function TenantLayout({
       tenantId: tenant.id,
       slug,
       nombreNegocio: tenant.nombreNegocio,
+      rnc: tenant.rnc,
       rol: membership.rol,
       otrasEmpresas,
     }}>
-      {children}
+      <TenantShell>{children}</TenantShell>
     </TenantProvider>
   );
 }

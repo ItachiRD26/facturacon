@@ -5,6 +5,7 @@ import type { Cliente, Factura, LineaServicio, Producto, TipoECF } from "@/types
 import { calcTotales, fmt, genECF, localDate, resolverECFConfig, today, PLAZOS_CREDITO, TIPOS_ECF } from "@/types";
 import { nextSecuencia } from "@/hooks/use-secuencias";
 import { construirFacturaSimulada } from "@/lib/sandbox/emitir-factura";
+import { construirFacturaReal } from "@/lib/produccion/emitir-factura";
 import Modal from "./modal";
 import TablaItems from "./tabla-items";
 import { Boton, Campo, Input, Select } from "@/components/sandbox/ui";
@@ -14,11 +15,15 @@ const METODOS = ["Efectivo", "Tarjeta", "Transferencia", "Cheque"];
 const LIMITE_IDENTIFICACION = 250_000;
 
 export default function ModalNuevaFactura({
-  open, onClose, onSave, tenantId, clientes, productos, nombreEmisor, rncEmisor, rootDomain,
+  open, onClose, onSave, tenantId, clientes, productos, nombreEmisor, rncEmisor, rootDomain, modo = "sandbox",
 }: {
   open: boolean; onClose: () => void; tenantId: string;
   onSave: (data: Omit<Factura, "id">) => Promise<void>;
-  clientes: Cliente[]; productos: Producto[]; nombreEmisor: string; rncEmisor: string; rootDomain: string;
+  clientes: Cliente[]; productos: Producto[];
+  // En modo "produccion" no hacen falta — el backend lee el emisor de
+  // tenants/{tenantId}/config/empresa antes de firmar.
+  nombreEmisor?: string; rncEmisor?: string; rootDomain?: string;
+  modo?: "sandbox" | "produccion";
 }) {
   const [esWalkIn, setEsWalkIn] = useState(true);
   const [clienteId, setClienteId] = useState("");
@@ -120,18 +125,21 @@ export default function ModalNuevaFactura({
         ? (() => { const d = new Date(); d.setDate(d.getDate() + parseInt(plazo, 10)); return localDate(d); })()
         : undefined;
 
-      const factura = await construirFacturaSimulada({
+      const datosComunes = {
         tipoECF, noFactura: String(seq), eCF, fecha, vencimientoECF,
         terminos, metodoPago: terminos === "Contado" ? metodoPago : undefined,
         clienteId: esWalkIn ? "walk-in" : clienteId, items: items.filter((i) => i.descripcion.trim()),
         esConsumidorFinal: esWalkIn, nombreConsumidor: esWalkIn ? nombreWalkIn : undefined,
         rncCompradorOcasional: necesitaIdentificacion && rncOcasional.trim() ? rncOcasional.trim() : undefined,
         esExtranjeroComprador: necesitaIdentificacion && esExtranjeroOcasional ? true : undefined,
-        modalidadPago: terminos === "Contado" ? "unico" : "plazo", fechaVencimientoPago,
+        modalidadPago: (terminos === "Contado" ? "unico" : "plazo") as "unico" | "plazo", fechaVencimientoPago,
         notas: notas.trim() || undefined,
         idTransaccion: metodoPago !== "Efectivo" ? referencia : undefined,
-        rncEmisor, nombreEmisor, rootDomain,
-      });
+      };
+
+      const factura = modo === "produccion"
+        ? await construirFacturaReal({ ...datosComunes, tenantId })
+        : await construirFacturaSimulada({ ...datosComunes, rncEmisor: rncEmisor ?? "", nombreEmisor: nombreEmisor ?? "", rootDomain: rootDomain ?? "" });
       await onSave(factura);
       onClose();
     } catch (err) {
@@ -277,8 +285,9 @@ export default function ModalNuevaFactura({
               Confirmar emisión — {tipoECF}
             </h3>
             <p style={{ fontSize: 13, color: "var(--c-text-3)", marginBottom: 16 }}>
-              Esto generará un comprobante de prueba con QR simulado. En el entorno de prueba no se
-              envía nada a la DGII real.
+              {modo === "produccion"
+                ? "Esto firma y envía el comprobante a la DGII de verdad. No se puede deshacer."
+                : "Esto generará un comprobante de prueba con QR simulado. En el entorno de prueba no se envía nada a la DGII real."}
             </p>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 16 }}>Total: RD$ {fmt(totales.total)}</div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
