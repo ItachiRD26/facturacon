@@ -1,5 +1,7 @@
-// Integración con Pagadito (servicio WSPG) para el pago único de
-// certificación que se cobra antes de iniciar el wizard de 15 pasos.
+// Integración con Pagadito (servicio WSPG) para el primer pago del plan
+// mensual elegido — ese primer cobro es lo que activa el wizard de
+// certificación de 15 pasos, no hay un cargo de activación por separado
+// (ver lib/payments/planes.ts).
 //
 // Reemplaza a PayPal (lib/payments/paypal.ts, eliminado) porque la cuenta de
 // PayPal del negocio fue suspendida sin apelación. Pagadito también procesa
@@ -38,8 +40,6 @@ const ENDPOINT = SANDBOX
 const NAMESPACE = SANDBOX
   ? "urn:https://sandbox.pagadito.com/comercios/wspg/charges"
   : "urn:https://comercios.pagadito.com/wspg/charges";
-
-export const MONTO_CERTIFICACION_USD = "250.00";
 
 type RespuestaPagadito = { code: string; message: string; value?: string; datetime?: string };
 
@@ -107,11 +107,11 @@ export interface TransaccionPagadito {
 // Registra la transacción y devuelve la URL de la página de pago segura de
 // Pagadito — el navegador del cliente debe ir a esa URL (redirect completo,
 // no hay botón embebido como con PayPal).
-export async function crearTransaccion(token: string, ern: string, descripcion: string): Promise<TransaccionPagadito> {
+export async function crearTransaccion(token: string, ern: string, descripcion: string, montoUSD: string): Promise<TransaccionPagadito> {
   const rs = await llamarWspg("exec_trans", {
     token, ern,
-    amount: MONTO_CERTIFICACION_USD,
-    details: serializarDetalle(descripcion, MONTO_CERTIFICACION_USD),
+    amount: montoUSD,
+    details: serializarDetalle(descripcion, montoUSD),
     format_return: "json",
     currency: "USD",
     custom_params: JSON.stringify({ ern }),

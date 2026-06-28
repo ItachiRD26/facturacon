@@ -16,7 +16,7 @@ const secciones = [
   },
   {
     t: "4. Pagos y suscripción",
-    p: "El acceso al proceso de certificación y al sistema de facturación en producción requiere un pago único de certificación y una suscripción mensual según el volumen de comprobantes emitidos, según las tarifas vigentes al momento del registro. Los pagos se procesan a través de Pagadito y se cobran en dólares estadounidenses (USD), independientemente de la moneda en que se muestren los precios de referencia.",
+    p: "El acceso al proceso de certificación y al sistema de facturación en producción requiere elegir un plan de suscripción mensual según el volumen de comprobantes emitidos; el primer pago de ese plan es lo que activa tu proceso de certificación, sin un cargo de activación aparte. Los pagos se procesan a través de Pagadito y se cobran en dólares estadounidenses (USD), independientemente de la moneda en que se muestren los precios de referencia.",
   },
   {
     t: "5. Custodia de credenciales",

@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { requireTenantEnCertificacion } from "@/lib/certificacion/auth";
-import { conectar, crearTransaccion, MONTO_CERTIFICACION_USD } from "@/lib/payments/pagadito";
+import { conectar, crearTransaccion } from "@/lib/payments/pagadito";
+import { buscarPlan } from "@/lib/payments/planes";
 
-// Crea la transacción de Pagadito del pago único de certificación e
-// inicia el redirect a su página de pago segura. Idempotente respecto a un
-// pago ya capturado: si ya está pagado no genera una nueva transacción.
+// Crea la transacción de Pagadito del primer pago del plan elegido e inicia
+// el redirect a su página de pago segura. Ese primer pago es lo que activa
+// el wizard de certificación — no hay un cargo de activación aparte.
+// Idempotente respecto a un pago ya capturado: si ya está pagado no genera
+// una nueva transacción.
 //
 // El ERN (identificador de Pagadito) se construye como `cert-${tenantId}`
 // para poder recuperar el tenant en /api/payments/retorno sin depender de
@@ -14,8 +17,12 @@ import { conectar, crearTransaccion, MONTO_CERTIFICACION_USD } from "@/lib/payme
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const tenantId = body?.tenantId ?? "";
+  const planId = body?.planId ?? "";
   const verif = await requireTenantEnCertificacion(tenantId);
   if (!verif.ok) return verif.response;
+
+  const plan = buscarPlan(planId);
+  if (!plan) return NextResponse.json({ error: "Selecciona un plan válido." }, { status: 400 });
 
   const ref = adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("pago");
   const actual = await ref.get();
@@ -26,10 +33,12 @@ export async function POST(req: NextRequest) {
   try {
     const token = await conectar();
     const ern = `cert-${tenantId}`;
-    const { tokenTrans, url } = await crearTransaccion(token, ern, "Certificación como emisor electrónico — Facturacon");
+    const descripcion = `Plan ${plan.facturas} facturas/mes — Facturacon`;
+    const { tokenTrans, url } = await crearTransaccion(token, ern, descripcion, plan.montoUSD);
 
     await ref.set({
-      estado: "creada", tokenTrans, ern, montoUSD: MONTO_CERTIFICACION_USD, creadoEn: new Date().toISOString(),
+      estado: "creada", tokenTrans, ern, planId: plan.id, facturasMes: plan.facturas,
+      montoUSD: plan.montoUSD, montoRD: plan.montoRD, creadoEn: new Date().toISOString(),
     }, { merge: true });
 
     return NextResponse.json({ url });

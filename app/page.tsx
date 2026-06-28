@@ -6,6 +6,7 @@ import NegociosSection from "@/components/marketing/negocios-section";
 import ProductMockup from "@/components/marketing/product-mockup";
 import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder";
 import PagaditoBadge from "@/components/marketing/pagadito-badge";
+import { PLANES } from "@/lib/payments/planes";
 
 const faqs = [
   {
@@ -26,7 +27,7 @@ const faqs = [
   },
   {
     q: "¿Cuánto cuesta?",
-    a: "Hay un pago único por el proceso de certificación, y una suscripción mensual según cuántos comprobantes electrónicos emitas. Escríbenos para los montos actuales.",
+    a: "Una sola suscripción mensual según cuántos comprobantes electrónicos emitas — sin cargo de activación aparte. El primer pago de tu plan es lo que activa tu proceso de certificación. Ve la sección de Precios arriba.",
   },
   {
     q: "¿Sirve para mi tipo de negocio?",
@@ -208,37 +209,30 @@ export default function LandingPage() {
             Precios
           </h2>
           <p style={{ color: "var(--c-text-2)", marginBottom: 36, maxWidth: 560, margin: "0 auto 36px" }}>
-            Un pago único por el proceso de certificación, y una suscripción mensual según cuántos
-            comprobantes electrónicos emitas.
+            Una sola suscripción mensual según cuántos comprobantes electrónicos emitas — el primer
+            pago de tu plan es justo lo que activa tu proceso de certificación. Sin cargo de
+            activación por separado.
           </p>
 
-          <div style={{
-            background: "var(--gradient-hero)", borderRadius: 14, padding: "28px 24px",
-            color: "#fff", marginBottom: 24, maxWidth: 360, margin: "0 auto 24px",
-          }}>
-            <div style={{ fontSize: 12, fontWeight: 600, opacity: 0.8, marginBottom: 6 }}>Activación / certificación</div>
-            <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "var(--font-serif)" }}>RD$ 15,000</div>
-            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>Pago único, una sola vez</div>
-          </div>
-
           <div style={{ border: "1px solid var(--c-border)", borderRadius: 12, overflow: "hidden", textAlign: "left" }}>
-            {[
-              { rango: "Hasta 50 comprobantes / mes",        precio: "RD$ 1,500 / mes" },
-              { rango: "51 a 200 comprobantes / mes",        precio: "RD$ 3,000 / mes" },
-              { rango: "201 a 500 comprobantes / mes",       precio: "RD$ 5,500 / mes" },
-              { rango: "501 a 1,500 comprobantes / mes",     precio: "RD$ 9,000 / mes" },
-              { rango: "Más de 1,500 comprobantes / mes",    precio: "Plan a medida — contáctanos" },
-            ].map((t, i) => (
-              <div key={t.rango} style={{
+            {PLANES.map((p, i) => (
+              <div key={p.id} style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
                 padding: "14px 18px", fontSize: 13,
                 borderTop: i > 0 ? "1px solid var(--c-border-lt)" : "none",
                 background: i % 2 === 0 ? "var(--c-surface)" : "var(--c-bg)",
               }}>
-                <span style={{ color: "var(--c-text-2)" }}>{t.rango}</span>
-                <span style={{ fontWeight: 700 }}>{t.precio}</span>
+                <span style={{ color: "var(--c-text-2)" }}>{p.facturas} comprobantes / mes</span>
+                <span style={{ fontWeight: 700 }}>RD$ {p.montoRD.toLocaleString("es-DO")} / mes</span>
               </div>
             ))}
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "14px 18px", fontSize: 13, borderTop: "1px solid var(--c-border-lt)", background: "var(--c-bg)",
+            }}>
+              <span style={{ color: "var(--c-text-2)" }}>Más de {PLANES[PLANES.length - 1].facturas} comprobantes / mes</span>
+              <span style={{ fontWeight: 700 }}>Plan a medida — contáctanos</span>
+            </div>
           </div>
 
           <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 20, marginBottom: 20 }}>
