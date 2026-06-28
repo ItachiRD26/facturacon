@@ -456,7 +456,7 @@ export default function CertificacionPage() {
   }
 
   if (pagoEstado !== "capturada") {
-    return <PagoCertificacion tenantId={tenantId} onPagado={() => setPagoEstado("capturada")} />;
+    return <PagoCertificacion tenantId={tenantId} />;
   }
 
   const totalPaso2 = Object.keys(filas).length;

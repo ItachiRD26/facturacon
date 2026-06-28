@@ -9,5 +9,5 @@ export async function GET(req: NextRequest) {
 
   const snap = await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("pago").get();
   const data = snap.data();
-  return NextResponse.json({ estado: data?.estado ?? "pendiente", orderId: data?.orderId ?? null });
+  return NextResponse.json({ estado: data?.estado ?? "pendiente", tokenTrans: data?.tokenTrans ?? null });
 }

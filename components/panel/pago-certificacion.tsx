@@ -1,63 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
-declare global {
-  interface Window {
-    paypal?: {
-      Buttons: (config: Record<string, unknown>) => { render: (selector: string) => void };
-    };
-  }
-}
-
-const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? "";
 const sans = "var(--font-sans)";
 const serif = "var(--font-serif)";
 
+const ERRORES: Record<string, string> = {
+  "pago-invalido": "El enlace de pago no es válido. Intenta de nuevo.",
+  "pago-no-coincide": "No pudimos confirmar este pago. Si ya pagaste, escríbenos a contacto@facturacon.cfd.",
+  "pago-verificacion": "No pudimos confirmar el estado del pago con Pagadito. Intenta de nuevo en unos minutos.",
+  "pago-canceled": "Cancelaste el pago en Pagadito. Puedes intentarlo de nuevo cuando quieras.",
+  "pago-expired": "El enlace de pago expiró (10 minutos). Genera uno nuevo.",
+  "pago-failed": "Pagadito no pudo procesar el pago. Verifica los datos de tu tarjeta e intenta de nuevo.",
+};
+
 // Pantalla que bloquea el acceso al asistente de certificación hasta que se
-// captura el pago único vía PayPal. PayPal no liquida en pesos dominicanos,
-// así que el cobro es en USD — equivalente provisional de los RD$ 15,000 de
-// referencia en la landing, no un precio cerrado todavía.
-export default function PagoCertificacion({ tenantId, onPagado }: { tenantId: string; onPagado: () => void }) {
-  const [cargandoSdk, setCargandoSdk] = useState(true);
-  const [error, setError] = useState("");
+// captura el pago único vía Pagadito. Pagadito también procesa siempre en
+// USD (igual que PayPal) — el negocio decidió que cobrar en USD no es un
+// problema, así que esto no bloquea el cambio de pasarela.
+//
+// A diferencia de PayPal (botón embebido vía SDK de JS), Pagadito funciona
+// con redirect completo: el cliente sale de Facturacon, paga en la página
+// segura de Pagadito, y Pagadito lo regresa a /api/payments/retorno, que
+// verifica el pago y rebota aquí mismo (con ?error=... si algo falló).
+export default function PagoCertificacion({ tenantId }: { tenantId: string }) {
+  const searchParams = useSearchParams();
+  const errorUrl = searchParams.get("error");
+  const [iniciando, setIniciando] = useState(false);
+  const [error, setError] = useState(errorUrl ? (ERRORES[errorUrl] ?? "Ocurrió un problema con el pago.") : "");
 
-  useEffect(() => {
-    if (window.paypal) { setCargandoSdk(false); return; }
-    const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD&intent=capture`;
-    script.onload = () => setCargandoSdk(false);
-    script.onerror = () => setError("No se pudo cargar PayPal. Recarga la página.");
-    document.body.appendChild(script);
-    return () => { document.body.removeChild(script); };
-  }, []);
-
-  useEffect(() => {
-    if (cargandoSdk || error || !window.paypal) return;
-    window.paypal.Buttons({
-      style: { layout: "vertical", color: "blue", label: "pay" },
-      createOrder: async () => {
-        setError("");
-        const res = await fetch("/api/payments/crear-orden", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tenantId }),
-        });
-        const data = await res.json();
-        if (!res.ok) { setError(data.error ?? "No se pudo crear la orden de pago."); throw new Error(data.error); }
-        return data.orderId;
-      },
-      onApprove: async (data: { orderID: string }) => {
-        const res = await fetch("/api/payments/capturar", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tenantId, orderId: data.orderID }),
-        });
-        const body = await res.json();
-        if (!res.ok) { setError(body.error ?? "No se pudo confirmar el pago."); return; }
-        onPagado();
-      },
-      onError: () => setError("Ocurrió un error con PayPal. Intenta de nuevo."),
-    }).render("#paypal-button-container");
-  }, [cargandoSdk, error, tenantId, onPagado]);
+  const pagar = async () => {
+    setIniciando(true); setError("");
+    try {
+      const res = await fetch("/api/payments/crear-orden", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "No se pudo iniciar el pago.");
+      window.location.href = data.url;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo iniciar el pago.");
+      setIniciando(false);
+    }
+  };
 
   return (
     <div style={{ maxWidth: 480, margin: "60px auto", padding: "0 24px", fontFamily: sans, textAlign: "center" }}>
@@ -75,8 +62,8 @@ export default function PagoCertificacion({ tenantId, onPagado }: { tenantId: st
         <div style={{ fontSize: 12, fontWeight: 600, opacity: 0.8, marginBottom: 6 }}>Certificación como emisor electrónico</div>
         <div style={{ fontSize: 30, fontWeight: 800, fontFamily: serif }}>US$ 250.00</div>
         <div style={{ fontSize: 11, opacity: 0.7, marginTop: 6 }}>
-          Equivalente provisional a los RD$ 15,000 de referencia — PayPal no acepta cobros en pesos
-          dominicanos, por eso el cobro se hace en dólares.
+          Equivalente provisional a los RD$ 15,000 de referencia — Pagadito, igual que la mayoría de
+          pasarelas internacionales, procesa el cobro en dólares.
         </div>
       </div>
 
@@ -86,14 +73,20 @@ export default function PagoCertificacion({ tenantId, onPagado }: { tenantId: st
         </div>
       )}
 
-      {cargandoSdk ? (
-        <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>Cargando PayPal…</div>
-      ) : (
-        <div id="paypal-button-container" />
-      )}
+      <button
+        onClick={pagar}
+        disabled={iniciando}
+        style={{
+          width: "100%", padding: "12px 20px", borderRadius: 8, border: "none", cursor: iniciando ? "not-allowed" : "pointer",
+          background: iniciando ? "#9ca3af" : "var(--c-brand)", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: sans,
+        }}
+      >
+        {iniciando ? "Redirigiendo a Pagadito…" : "Pagar con Pagadito →"}
+      </button>
 
       <p style={{ fontSize: 11, color: "var(--c-text-4)", marginTop: 20 }}>
-        Pago procesado por PayPal. No almacenamos los datos de tu tarjeta o cuenta.
+        Pago procesado por Pagadito. Saldrás de Facturacon hacia su página segura — no almacenamos
+        los datos de tu tarjeta.
       </p>
     </div>
   );

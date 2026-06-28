@@ -5,6 +5,7 @@ import VideoTutorial from "@/components/marketing/video-tutorial";
 import NegociosSection from "@/components/marketing/negocios-section";
 import ProductMockup from "@/components/marketing/product-mockup";
 import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder";
+import PagaditoBadge from "@/components/marketing/pagadito-badge";
 
 const faqs = [
   {
@@ -240,10 +241,12 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 20 }}>
+          <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 20, marginBottom: 20 }}>
             Cifras de referencia mientras confirmamos los montos finales — no son precios cerrados
             todavía. Te avisaremos antes de que se active cualquier cobro.
           </p>
+
+          <PagaditoBadge />
         </section>
 
         {/* FAQ */}
