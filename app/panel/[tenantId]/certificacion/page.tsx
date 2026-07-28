@@ -672,7 +672,7 @@ export default function CertificacionPage() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 420 }}>
             <input placeholder="Descripción" value={formPrueba.descripcion ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, descripcion: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
-            <input placeholder="Monto (sin ITBIS)" type="number" value={formPrueba.monto ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, monto: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
+            <input placeholder="Monto (sin ITBIS)" type="number" step="0.01" value={formPrueba.monto ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, monto: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
 
             {["E32", "E41", "E44", "E45"].includes(tipoPrueba) && (
               <select value={formPrueba.itbis ?? "0.18"} onChange={(e) => setFormPrueba((f) => ({ ...f, itbis: e.target.value }))} style={{ padding: 8, fontSize: 13 }}>

@@ -27,6 +27,11 @@ export async function convertirCotizacionEnFacturaReal(
     ? (() => { const d = new Date(); d.setDate(d.getDate() + parseInt(datos.plazo ?? "30", 10)); return localDate(d); })()
     : undefined;
 
+  // construirFacturaReal ya guardó el documento en Firestore (server-side,
+  // vía Admin SDK) dentro de /api/facturas/emitir — no se vuelve a llamar
+  // deps.agregarFactura() aquí, eso crearía un segundo documento duplicado
+  // y firestore.rules lo rechazaría de todas formas (campos fiscales en un
+  // create de cliente, con el tenant ya activo).
   const factura = await construirFacturaReal({
     tipoECF, noFactura: String(seq), eCF, fecha: today(), vencimientoECF,
     terminos: datos.terminos, metodoPago: datos.metodoPago, clienteId: cotizacion.clienteId,
@@ -35,7 +40,6 @@ export async function convertirCotizacionEnFacturaReal(
     tenantId: deps.tenantId,
   });
 
-  await deps.agregarFactura(factura);
   await deps.actualizarCotizacion(cotizacion.id, { estado: "convertida", facturaRef: eCF });
   await crearCxCSiCredito({ ...deps, rncEmisor: "", nombreEmisor: "", rootDomain: "" }, factura);
 }

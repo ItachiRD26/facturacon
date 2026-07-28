@@ -16,7 +16,7 @@ const secciones = [
   },
   {
     t: "4. Con quién compartimos datos",
-    p: "Con la DGII, en la medida necesaria para tu certificación y la emisión de tus comprobantes fiscales electrónicos una vez certificado; y con Pagadito, nuestro procesador de pagos, para gestionar el pago único de certificación y la suscripción mensual. No almacenamos los datos de tu tarjeta — esos quedan únicamente en la página segura de Pagadito. No vendemos tus datos a terceros.",
+    p: "Con la DGII, en la medida necesaria para tu certificación y la emisión de tus comprobantes fiscales electrónicos una vez certificado; y con Pagadito, nuestro procesador de pagos, para gestionar tu suscripción mensual (cuyo primer pago activa tu proceso de certificación). No almacenamos los datos de tu tarjeta — esos quedan únicamente en la página segura de Pagadito. No vendemos tus datos a terceros.",
   },
   {
     t: "5. Aislamiento entre contribuyentes",
@@ -24,7 +24,7 @@ const secciones = [
   },
   {
     t: "6. Tus derechos",
-    p: "Puedes solicitar la corrección o eliminación de tus datos de cuenta escribiéndonos a contacto@facturacon.cfd.",
+    p: "Puedes solicitar la corrección o eliminación de tus datos de cuenta escribiéndonos a contacto@facturacon.com.do.",
   },
 ];
 

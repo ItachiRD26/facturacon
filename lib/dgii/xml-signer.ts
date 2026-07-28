@@ -1,25 +1,41 @@
-// Firmado de e-CF — implementación manual con node-forge + xmldom
-// Sigue exactamente el ejemplo TypeScript oficial de DGII (Firmado_de_eCF.pdf)
-// Algoritmos: RSA-SHA256 + C14N 2001 + SHA256 digest + enveloped-signature
+// Firmado de e-CF — XMLDSig con node-forge (carga del .p12) + xml-crypto (firma)
+// Algoritmos exigidos por DGII: RSA-SHA256 + C14N 2001 + SHA256 digest + enveloped-signature
+// (ver documentacion dgii/Firmado de e-CF.pdf)
 //
-// A diferencia del código de referencia (single-tenant), el .p12 y su
-// contraseña NUNCA se leen de disco/env aquí — los recibe firmarXML() por
-// parámetro, ya descifrados de KMS por el caller (ver lib/kms/p12-vault.ts).
-// Esto evita que un solo certificado quede hardcodeado para todo el
-// deployment: cada llamada firma con las credenciales del tenant correcto.
+// Esta es la versión confirmada en producción real (no la canonicalización C14N
+// manual original, que pasó certificación pero falló en producción al firmar la
+// Semilla que la propia DGII envía con indentación — ver
+// documentacion-sistema-facturacion/LECCIONES-PRODUCCION-POST-CERTIFICACION.md,
+// lección 11). El digest se calcula con un paso adicional (DgiiDigest) porque el
+// validador de DGII espera la forma canonicalizada SIN nodos de texto de solo
+// whitespace y con los atributos xmlns ordenados alfabéticamente — la
+// canonicalización C14N estándar de xml-crypto no hace ninguna de las dos cosas,
+// lo cual descuadra el DigestValue. Enfoque confirmado contra una implementación
+// de terceros probada en producción (github.com/victors1681/dgii-ecf).
+//
+// A diferencia del código de referencia (single-tenant, certificado leído de
+// disco/env): el .p12 y su contraseña NUNCA se leen de disco/env aquí — los
+// recibe firmarXML() por parámetro, ya descifrados de KMS por el caller (ver
+// lib/kms/p12-vault.ts). Esto evita que un solo certificado quede hardcodeado
+// para todo el deployment: cada llamada firma con las credenciales del tenant
+// correcto.
 
-import * as forge from "node-forge";
-import { DOMParser } from "@xmldom/xmldom";
+import * as forge      from "node-forge";
+import * as crypto     from "crypto";
+import { SignedXml }   from "xml-crypto";
+import { DOMParser }   from "@xmldom/xmldom";
 
-// ── Carga del certificado P12 ─────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyNode = any;
+
+// ── Carga del certificado P12 → PEM ───────────────────────────────────────────
 export function loadCertAndKey(p12Buffer: Buffer, password: string): {
-  privateKey: forge.pki.rsa.PrivateKey; certBase64: string;
+  privateKeyPem: string; certPem: string;
 } {
   const derBytes = p12Buffer.toString("binary");
   const asn1     = forge.asn1.fromDer(derBytes);
   const p12      = forge.pkcs12.pkcs12FromAsn1(asn1, false, password);
 
-  // Extraer clave privada
   const keyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
   let   keyBag  = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0];
   if (!keyBag?.key) {
@@ -28,20 +44,14 @@ export function loadCertAndKey(p12Buffer: Buffer, password: string): {
   }
   if (!keyBag?.key) throw new Error("No se pudo extraer la clave privada del .p12");
 
-  const privateKey = keyBag.key as forge.pki.rsa.PrivateKey;
-
-  // Extraer certificado → base64 limpio (sin headers, sin saltos de línea)
   const certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
   const certBag  = certBags[forge.pki.oids.certBag]?.[0];
   if (!certBag?.cert) throw new Error("No se pudo extraer el certificado del .p12");
 
-  const certPem    = forge.pki.certificateToPem(certBag.cert);
-  const certBase64 = certPem
-    .replace("-----BEGIN CERTIFICATE-----", "")
-    .replace("-----END CERTIFICATE-----", "")
-    .replace(/[\r\n]/g, "");
+  const privateKeyPem = forge.pki.privateKeyToPem(keyBag.key as forge.pki.rsa.PrivateKey);
+  const certPem       = forge.pki.certificateToPem(certBag.cert);
 
-  return { privateKey, certBase64 };
+  return { privateKeyPem, certPem };
 }
 
 // Extrae el RNC/cédula del titular del certificado (Subject CN o serialNumber),
@@ -68,153 +78,75 @@ export function extraerRncDelCertificado(p12Buffer: Buffer, password: string): s
   return digits.length === 9 || digits.length === 11 ? digits : null;
 }
 
-// ── Canonicalización C14N 2001 (compatible con validador DGII) ─────────────────
-// C14N según el comportamiento REAL de DGII (verificado contra semilla firmada y ECF de Oscar):
-// - Los text nodes: elimina \r y \n, descarta el nodo si queda solo whitespace
-// - Esta es la C14N "compacta" que usa la App Firma Digital de DGII (no la W3C estándar)
-// - Resultado: XML compacto sin ningún espacio entre elementos
-function c14nNode(node: Node, inheritedNs: Record<string, string> = {}): string {
-  // Text / CDATA node: DGII elimina \r y \n, ignora nodos de solo whitespace
-  if (node.nodeType === 3 || node.nodeType === 4) {
-    const val = (node.nodeValue ?? "")
-      .replace(/\r/g, "")   // DGII elimina \r
-      .replace(/\n/g, "");  // DGII elimina \n
-    if (!val.trim()) return ""; // omitir nodos de solo whitespace (espacios)
-    return val
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-  }
-  // Comment → ignorar (C14N sin comentarios)
-  if (node.nodeType === 8) return "";
-  // Solo elementos
-  if (node.nodeType !== 1) return "";
-
-  const el    = node as Element;
-  const tag   = el.tagName;
-  const nsNow = { ...inheritedNs };
-
-  const nsDecls: Array<{ prefix: string; uri: string }> = [];
-  const attrs:   Array<{ name: string; value: string }> = [];
-
-  for (let i = 0; i < el.attributes.length; i++) {
-    const attr = el.attributes[i];
-    if (attr.name === "xmlns") {
-      if (nsNow[""] !== attr.value) {
-        nsDecls.push({ prefix: "", uri: attr.value });
-        nsNow[""] = attr.value;
-      }
-    } else if (attr.name.startsWith("xmlns:")) {
-      const prefix = attr.name.slice(6);
-      if (nsNow[prefix] !== attr.value) {
-        nsDecls.push({ prefix, uri: attr.value });
-        nsNow[prefix] = attr.value;
-      }
-    } else {
-      attrs.push({ name: attr.name, value: attr.value });
+// Elimina comentarios y nodos de texto de solo whitespace (recursivo). Los
+// documentos que arma nuestro propio xml-builder no tienen esos nodos, pero
+// la Semilla que la DGII envía sí los trae (XML indentado) — sin esta
+// limpieza, el DigestValue calculado no coincide con el que espera DGII.
+function cleanNodes(node: AnyNode): void {
+  for (let n = 0; n < node.childNodes.length; n++) {
+    const child = node.childNodes[n];
+    if (child.nodeType === 8 || (child.nodeType === 3 && !/\S/.test(child.nodeValue))) {
+      node.removeChild(child);
+      n--;
+    } else if (child.nodeType === 1) {
+      cleanNodes(child);
     }
   }
-
-  // Ordenar ns: default primero, luego por prefix
-  nsDecls.sort((a, b) => {
-    if (a.prefix === "" && b.prefix !== "") return -1;
-    if (a.prefix !== "" && b.prefix === "") return 1;
-    return a.prefix.localeCompare(b.prefix);
-  });
-  // Ordenar atributos lexicográficamente
-  attrs.sort((a, b) => a.name.localeCompare(b.name));
-
-  let out = "<" + tag;
-
-  for (const ns of nsDecls) {
-    out += ns.prefix === "" ? ` xmlns="${ns.uri}"` : ` xmlns:${ns.prefix}="${ns.uri}"`;
-  }
-  for (const a of attrs) {
-    const v = a.value
-      .replace(/&/g,  "&amp;")
-      .replace(/</g,  "&lt;")
-      .replace(/"/g,  "&quot;")
-      .replace(/\r/g, "&#xD;")
-      .replace(/\n/g, "&#xA;")
-      .replace(/\t/g, "&#x9;");
-    out += ` ${a.name}="${v}"`;
-  }
-  out += ">";
-
-  for (let i = 0; i < el.childNodes.length; i++) {
-    out += c14nNode(el.childNodes[i] as Node, nsNow);
-  }
-
-  out += "</" + tag + ">";
-  return out;
 }
 
-function canonicalize(xml: string): string {
-  const doc = new DOMParser().parseFromString(xml, "text/xml");
-  return c14nNode(doc.documentElement as unknown as Node);
+// Digest personalizado: re-parsea el XML ya canonicalizado/transformado por
+// xml-crypto, ordena alfabéticamente los atributos xmlns del elemento raíz
+// (DGII espera xsd antes de xsi, no el orden original del documento) y aplica
+// SHA-256 sobre la serialización resultante.
+class DgiiDigest {
+  getHash(xml: string): string {
+    const doc  = new DOMParser().parseFromString(xml, "text/xml") as AnyNode;
+    const root = doc.childNodes[0] as AnyNode;
+    const sorted = Array.from(root.attributes as ArrayLike<unknown>).sort((a, b) =>
+      (a as string) < (b as string) ? -1 : (a as string) > (b as string) ? 1 : 0,
+    );
+    Object.assign(root.attributes, sorted);
+    const shasum = crypto.createHash("sha256");
+    shasum.update(doc.toString(), "utf8");
+    return shasum.digest("base64");
+  }
+  getAlgorithmName(): string {
+    return "http://www.w3.org/2001/04/xmlenc#sha256";
+  }
 }
 
 // ── Firmado principal ─────────────────────────────────────────────────────────
 export async function firmarXML(xmlOriginal: string, p12Buffer: Buffer, password: string): Promise<string> {
-  const { privateKey, certBase64 } = loadCertAndKey(p12Buffer, password);
+  const { privateKeyPem, certPem } = loadCertAndKey(p12Buffer, password);
 
-  // Detectar tag raíz (ECF, RFCE, Semilla, ANECF…)
-  const rootMatch = xmlOriginal.match(/<([A-Za-z][A-Za-z0-9]*)/);
-  const rootName  = rootMatch?.[1] ?? "ECF";
+  const doc = new DOMParser().parseFromString(xmlOriginal, "text/xml") as AnyNode;
+  cleanNodes(doc);
+  const rootName = doc.documentElement.tagName as string;
 
-  // PASO 1: Canonicalizar el documento original → DigestValue
-  const canon1 = canonicalize(xmlOriginal);
-  const md1    = forge.md.sha256.create();
-  md1.update(canon1, "utf8");
-  const digestValue = forge.util.encode64(md1.digest().data);
+  const sig = new SignedXml({
+    privateKey: privateKeyPem,
+    publicCert: certPem,
+    signatureAlgorithm: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+    canonicalizationAlgorithm: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
+  });
 
-  // PASO 2: Construir <SignedInfo>
-  const signedInfoXml =
-    `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#">` +
-      `<CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>` +
-      `<SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>` +
-      `<Reference URI="">` +
-        `<Transforms>` +
-          `<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>` +
-        `</Transforms>` +
-        `<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>` +
-        `<DigestValue>${digestValue}</DigestValue>` +
-      `</Reference>` +
-    `</SignedInfo>`;
+  // Registrado bajo una URI propia para que xml-crypto invoque nuestro
+  // DgiiDigest en vez de su SHA-256 nativo — el <DigestMethod> resultante
+  // sigue declarando la URI estándar via getAlgorithmName().
+  sig.HashAlgorithms["http://dgii-digest"] = DgiiDigest;
 
-  // PASO 3: Canonicalizar <SignedInfo> STANDALONE y firmar con RSA-SHA256
-  // CRÍTICO: DGII verifica el SignedInfo de forma STANDALONE (no con contexto del padre Signature).
-  // Por eso debemos firmar el C14N con xmlns="..." explícito — igual que un documento independiente.
-  // Verificado: valid_no_xmlns = ✗, valid_with_xmlns = ✓ usando la clave pública del certificado.
-  const canon2       = c14nNode(
-    new DOMParser().parseFromString(signedInfoXml, "text/xml").documentElement as unknown as Node,
-    {}   // ← sin namespace heredado: el xmlns="..." se emite explícitamente en el output
-  );
-  const md2          = forge.md.sha256.create();
-  md2.update(canon2, "utf8");
-  const sigBytes     = privateKey.sign(md2);
-  const signatureVal = forge.util.encode64(sigBytes);
+  sig.addReference({
+    xpath: `//*[local-name(.)='${rootName}']`,
+    transforms: ["http://www.w3.org/2000/09/xmldsig#enveloped-signature"],
+    digestAlgorithm: "http://dgii-digest",
+    isEmptyUri: true,
+  });
 
-  // PASO 4: Ensamblar bloque <Signature>
-  const signatureBlock =
-    `<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">` +
-      signedInfoXml +
-      `<SignatureValue>${signatureVal}</SignatureValue>` +
-      `<KeyInfo>` +
-        `<X509Data>` +
-          `<X509Certificate>${certBase64}</X509Certificate>` +
-        `</X509Data>` +
-      `</KeyInfo>` +
-    `</Signature>`;
+  sig.computeSignature(doc.toString(), {
+    location: { reference: "/*", action: "append" },
+  });
 
-  // PASO 5: Insertar Signature en el XML CANONICALIZADO
-  // FechaHoraFirma ya viene incluida en el XML de entrada (buildXML la añade),
-  // por lo que ya está en canon1 y forma parte del DigestValue.
-  const closingTag = `</${rootName}>`;
-  const idx        = canon1.lastIndexOf(closingTag);
-  if (idx === -1) throw new Error(`Tag de cierre </${rootName}> no encontrado en XML canonicalizado`);
-
-  return canon1.substring(0, idx) + signatureBlock + canon1.substring(idx);
+  return sig.getSignedXml();
 }
 
 // Alias para firmar la semilla de autenticación

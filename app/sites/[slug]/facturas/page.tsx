@@ -54,7 +54,7 @@ export default function FacturasPage() {
   const totalPendiente = facturas.filter((f) => f.estado === "pendiente").reduce((s, f) => s + calcTotales(f.items).total, 0);
   const anuladas       = facturas.filter((f) => f.estado === "anulada").length;
 
-  const onSave = async (data: Omit<Factura, "id">) => {
+  const onSave = async (data: Factura | Omit<Factura, "id">) => {
     await guardarFactura({
       tenantId: tenant.tenantId, rncEmisor: tenant.rnc, nombreEmisor: tenant.nombreNegocio, rootDomain: "",
       agregarFactura, actualizarCotizacion: async () => {}, agregarCuenta,

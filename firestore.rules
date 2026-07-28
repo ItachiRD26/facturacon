@@ -17,6 +17,28 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/memberships/$(request.auth.uid + '_' + tenantId));
     }
 
+    // Un tenant "activo" ya está certificado y factura de verdad ante la
+    // DGII — a partir de ahí, los campos que certifican una respuesta real
+    // de la DGII nunca pueden originarse en una escritura del cliente.
+    function tenantActivo(tenantId) {
+      return get(/databases/$(database)/documents/tenants/$(tenantId)).data.estado == "activo";
+    }
+
+    // Solo el backend (Admin SDK, que ignora estas reglas) puede crear o
+    // modificar estos campos en una factura — son la prueba de que un e-CF
+    // fue realmente firmado y aceptado por la DGII. Sin esto, cualquier
+    // miembro del tenant podría fabricar un comprobante "Aceptado" desde la
+    // consola del navegador sin que pasara nunca por /api/facturas/emitir.
+    function noToca(campos) {
+      return resource == null
+        ? !request.resource.data.keys().hasAny(campos)
+        : !request.resource.data.diff(resource.data).affectedKeys().hasAny(campos);
+    }
+
+    function camposFiscalesFactura() {
+      return ['estadoDGII', 'trackIdDGII', 'xmlFirmado', 'urlQR', 'codigoSeguridad', 'signatureValue', 'fechaEnvioDGII'];
+    }
+
     // ── Perfil de usuario (global, no tenant-scoped) ──
     match /users/{uid} {
       allow read, write: if isSignedIn() && request.auth.uid == uid;
@@ -55,6 +77,15 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Suscripción de cobro recurrente (Pagadito Tokenización): visible
+      // para miembros (para mostrar el estado en el panel), pero
+      // payment_token/subscription_code solo los escribe el backend tras
+      // tokenizar la tarjeta — nunca el cliente directamente.
+      match /facturacion/{doc} {
+        allow read: if hasMembership(tenantId);
+        allow write: if false;
+      }
+
       // Datos operativos del negocio: cualquier miembro puede leer/escribir.
       // Permisos más finos por rol se añaden cuando haya UI que los necesite
       // (Fase 7). IMPORTANTE: Firestore evalúa el OR de todos los bloques
@@ -65,7 +96,18 @@ service cloud.firestore {
       match /clientes/{docId}           { allow read, write: if hasMembership(tenantId); }
       match /servicios/{docId}          { allow read, write: if hasMembership(tenantId); }
       match /productos/{docId}          { allow read, write: if hasMembership(tenantId); }
-      match /facturas/{docId}           { allow read, write: if hasMembership(tenantId); }
+      // Facturas: el cliente puede crear/editar libremente mientras el
+      // tenant está en sandbox (datos simulados), y siempre puede cambiar
+      // el estado de negocio de una factura real (pagada/anulada/notas) —
+      // pero una vez el tenant está activo, nunca puede tocar los campos
+      // que certifican una respuesta real de la DGII (los escribe
+      // /api/facturas/emitir con el Admin SDK, que ignora estas reglas).
+      match /facturas/{docId} {
+        allow read:   if hasMembership(tenantId);
+        allow create: if hasMembership(tenantId) && (!tenantActivo(tenantId) || noToca(camposFiscalesFactura()));
+        allow update: if hasMembership(tenantId) && (!tenantActivo(tenantId) || noToca(camposFiscalesFactura()));
+        allow delete: if hasMembership(tenantId) && !tenantActivo(tenantId);
+      }
       match /cotizaciones/{docId}       { allow read, write: if hasMembership(tenantId); }
       match /cuentas_por_cobrar/{docId} { allow read, write: if hasMembership(tenantId); }
       match /facturas_recibidas/{docId} { allow read, write: if hasMembership(tenantId); }

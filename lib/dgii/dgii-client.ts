@@ -1,7 +1,7 @@
-// Cliente DGII — URLs según Swagger oficial certecf
-// Recepción: /CerteCF/Recepcion/api/FacturasElectronicas
-// RFCE:      /certecf/recepcionfc/api/recepcion/ecf
-// Consulta:  /CerteCF/ConsultaResultado/api/Consultas/Estado
+// Cliente DGII — URLs según Swagger oficial, parametrizadas por ambiente
+// Recepción: /{ambiente}/Recepcion/api/FacturasElectronicas
+// RFCE:      /{ambiente}/recepcionfc/api/recepcion/ecf
+// Consulta:  /{ambiente}/ConsultaResultado/api/Consultas/Estado
 //
 // A diferencia del código de referencia (single-tenant): el RNC, el
 // ambiente, y el token cacheado en Firestore se resuelven por tenant en vez
@@ -27,9 +27,16 @@ function urls(ambiente: AmbienteDGII) {
   return {
     semilla:        `${ECF_HOST}/${ambiente}/autenticacion/api/Autenticacion/Semilla`,
     validarSemilla: `${ECF_HOST}/${ambiente}/autenticacion/api/Autenticacion/ValidarSemilla`,
-    recepcion:      `${ECF_HOST}/CerteCF/Recepcion/api/FacturasElectronicas`,
+    // CRÍTICO: antes tenía "CerteCF" fijo — un tenant en ambiente "ecf"
+    // (producción real) terminaba enviando su e-CF firmado y consultando su
+    // estado contra el ambiente de certificación, donde su RNC no tiene
+    // postulación/secuencias de producción aprobadas (rechazo engañoso: "no
+    // tiene una postulación activa"). La DGII no distingue mayúsculas/
+    // minúsculas en estos servicios (Informe Técnico DGII, sección 5), así
+    // que usar ${ambiente} en vez del literal es seguro para ecf/testecf/certecf.
+    recepcion:      `${ECF_HOST}/${ambiente}/Recepcion/api/FacturasElectronicas`,
     rfce:           `${FC_HOST}/${ambiente}/recepcionfc/api/recepcion/ecf`,
-    consulta:       `${ECF_HOST}/CerteCF/ConsultaResultado/api/Consultas/Estado`,
+    consulta:       `${ECF_HOST}/${ambiente}/ConsultaResultado/api/Consultas/Estado`,
     anulacion:      `${ECF_HOST}/${ambiente}/anulacion/api/Anulacion`,
     // Aprobación Comercial: certecf usa un patrón de Swagger distinto al de
     // los demás ambientes (sin el segmento "emisorreceptor/fe").
@@ -107,15 +114,21 @@ function authHeaders(token: string): Record<string, string> {
 export async function enviarECF(xmlFirmado: string, tenant: DgiiTenantConfig, token: string, encf?: string): Promise<string> {
   // DGII requiere filename = RNCEmisor + eNCF + ".xml" (longitud exacta)
   const filename = encf ? `${tenant.rnc}${encf}.xml` : "ecf.xml";
+  const url = urls(tenant.ambiente).recepcion;
   const form  = new FormData();
   form.append("xml", new Blob([xmlFirmado], { type: "text/xml" }), filename);
 
-  const res  = await fetch(urls(tenant.ambiente).recepcion, {
+  const res  = await fetch(url, {
     method: "POST",
     headers: authHeaders(token),
     body: form,
   });
   const text = await res.text();
+  // Log mínimo (sin el XML completo) para poder reconstruir qué se envió y
+  // qué respondió la DGII si hace falta escalar un caso a su soporte — sin
+  // esto es imposible distinguir "la DGII nunca recibió nada" de "lo
+  // recibió y algo de nuestro lado lo procesó mal" (ver lección 12/13).
+  console.log(`[DGII][${tenant.tenantId}] enviarECF ${filename} → ${url} → ${res.status} ${text.substring(0, 200)}`);
   if (!res.ok) throw new Error(`Envío eCF: ${res.status} — ${text}`);
 
   try {
@@ -132,15 +145,17 @@ export async function enviarECF(xmlFirmado: string, tenant: DgiiTenantConfig, to
 // ─── Enviar RFCE ──────────────────────────────────────────────────────────────
 export async function enviarRFCE(xmlFirmado: string, tenant: DgiiTenantConfig, token: string, encf?: string): Promise<{ trackId: string; estado: string }> {
   const filename = encf ? `${tenant.rnc}${encf}.xml` : "rfce.xml";
+  const url = urls(tenant.ambiente).rfce;
   const form  = new FormData();
   form.append("xml", new Blob([xmlFirmado], { type: "text/xml" }), filename);
 
-  const res  = await fetch(urls(tenant.ambiente).rfce, {
+  const res  = await fetch(url, {
     method: "POST",
     headers: authHeaders(token),
     body: form,
   });
   const text = await res.text();
+  console.log(`[DGII][${tenant.tenantId}] enviarRFCE ${filename} → ${url} → ${res.status} ${text.substring(0, 200)}`);
   if (!res.ok) throw new Error(`Envío RFCE: ${res.status} — ${text}`);
 
   try {

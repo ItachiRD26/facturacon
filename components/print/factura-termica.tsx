@@ -2,6 +2,7 @@ import { QRCodeSVG } from "qrcode.react";
 import type { Cliente, Factura } from "@/types";
 import { calcLinea, calcTotales, fmt, fmtDate } from "@/types";
 import type { EmpresaImpresion } from "./factura-a4";
+import { fmtRNCDisplay } from "@/lib/dgii/xml-builder";
 import SelloMuestra from "./sello-muestra";
 
 export default function FacturaTermica({ factura, cliente, empresa, esMuestra = true }: { factura: Factura; cliente?: Cliente; empresa: EmpresaImpresion; esMuestra?: boolean }) {
@@ -13,7 +14,7 @@ export default function FacturaTermica({ factura, cliente, empresa, esMuestra = 
       <div style={{ position: "relative", zIndex: 1 }}>
       <div style={{ textAlign: "center", marginBottom: 6 }}>
         <div style={{ fontWeight: 700 }}>{empresa.nombre}</div>
-        <div>RNC: {empresa.rnc}</div>
+        <div>RNC: {fmtRNCDisplay(empresa.rnc)}</div>
         {empresa.direccion && <div>{empresa.direccion}</div>}
         {empresa.telefono && <div>Tel: {empresa.telefono}</div>}
       </div>
@@ -30,7 +31,7 @@ export default function FacturaTermica({ factura, cliente, empresa, esMuestra = 
         ) : cliente ? (
           <>
             <div>{cliente.nombre}</div>
-            {cliente.rnc && <div>RNC: {cliente.rnc}</div>}
+            {cliente.rnc && <div>RNC: {fmtRNCDisplay(cliente.rnc)}</div>}
           </>
         ) : <div>—</div>}
       </div>

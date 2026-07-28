@@ -10,7 +10,7 @@ interface Mensaje {
   mostrarContacto?: boolean;
 }
 
-const CONTACTO_EMAIL = "contacto@facturacon.cfd";
+const CONTACTO_EMAIL = "contacto@facturacon.com.do";
 const SALUDO: Mensaje = {
   id: "saludo", de: "bot",
   texto: "Hola, soy el asistente de Facturacon. Puedo responder preguntas frecuentes sobre el sandbox, la certificación, costos y métodos de pago. ¿En qué te ayudo?",

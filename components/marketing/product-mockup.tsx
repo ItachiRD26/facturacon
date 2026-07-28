@@ -27,7 +27,7 @@ export default function ProductMockup() {
             marginLeft: 10, fontSize: 11, color: "var(--c-text-4)", fontFamily: "var(--font-mono)",
             background: "#fff", border: "1px solid var(--c-border)", borderRadius: 4, padding: "2px 10px",
           }}>
-            tuempresa.facturacon.cfd
+            tuempresa.facturacon.com.do
           </div>
         </div>
 

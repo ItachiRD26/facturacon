@@ -1,6 +1,7 @@
 import { QRCodeSVG } from "qrcode.react";
 import type { Cliente, Factura } from "@/types";
 import { calcLinea, calcTotales, fmt, fmtDate } from "@/types";
+import { fmtRNCDisplay } from "@/lib/dgii/xml-builder";
 import SelloMuestra from "./sello-muestra";
 
 export interface EmpresaImpresion { nombre: string; rnc: string; direccion?: string; telefono?: string }
@@ -23,7 +24,7 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
       <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "2px solid #111", paddingBottom: 12, marginBottom: 16 }}>
         <div>
           <div style={{ fontWeight: 700, fontSize: 16 }}>{empresa.nombre}</div>
-          <div>RNC: {empresa.rnc}</div>
+          <div>RNC: {fmtRNCDisplay(empresa.rnc)}</div>
           {empresa.direccion && <div>{empresa.direccion}</div>}
           {empresa.telefono && <div>Tel: {empresa.telefono}</div>}
           <div>Fecha emisión: {fmtDate(factura.fecha)}</div>
@@ -45,7 +46,7 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
           <div>{factura.nombreConsumidor || "Consumidor Final"}</div>
         ) : cliente ? (
           <>
-            <div>{cliente.nombre}{cliente.rnc ? ` — RNC: ${cliente.rnc}` : ""}</div>
+            <div>{cliente.nombre}{cliente.rnc ? ` — RNC: ${fmtRNCDisplay(cliente.rnc)}` : ""}</div>
             <div>{cliente.direccion} {cliente.ciudad}</div>
             {cliente.telefono && <div>Tel: {cliente.telefono}</div>}
           </>

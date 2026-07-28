@@ -29,6 +29,17 @@ export function fmtRNC(rnc: string): string {
   return d;
 }
 
+// Formato legible para representación impresa: 9 dígitos → XXX-XXXXX-X,
+// 11 dígitos (cédula) → XXX-XXXXXXX-X. Aplica fmtRNC primero — así la
+// impresión nunca muestra un RNC crudo/con typo que el XML fiscal ya
+// normalizó internamente.
+export function fmtRNCDisplay(rnc: string): string {
+  const d = fmtRNC(rnc);
+  if (d.length === 9)  return `${d.slice(0, 3)}-${d.slice(3, 8)}-${d.slice(8)}`;
+  if (d.length === 11) return `${d.slice(0, 3)}-${d.slice(3, 10)}-${d.slice(10)}`;
+  return d;
+}
+
 // YYYY-MM-DD → DD-MM-YYYY (formato DGII)
 function fmtFecha(fecha: string): string {
   if (!fecha) return "";
@@ -38,11 +49,20 @@ function fmtFecha(fecha: string): string {
   return fecha;
 }
 
-// Genera FechaHoraFirma en formato dd-MM-YYYY HH:mm:ss
+// Genera FechaHoraFirma en formato dd-MM-YYYY HH:mm:ss, en hora de Rep.
+// Dominicana. Usa America/Santo_Domingo explícitamente — si el servidor
+// corre en UTC (común en hosting cloud), new Date().getHours() desfasaría
+// la hora de firma 4 horas respecto a la hora real del comprobante.
 function nowFechaHoraFirma(): string {
-  const n   = new Date();
-  const pad = (x: number) => String(x).padStart(2, "0");
-  return `${pad(n.getDate())}-${pad(n.getMonth()+1)}-${n.getFullYear()} ${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Santo_Domingo",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hourCycle: "h23",
+  });
+  const parts = fmt.formatToParts(new Date());
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? "00";
+  return `${get("day")}-${get("month")}-${get("year")} ${get("hour")}:${get("minute")}:${get("second")}`;
 }
 
 function escapeXml(str: string): string {

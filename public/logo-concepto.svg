@@ -1,0 +1,24 @@
+<svg width="760" height="200" viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .word { font-family: Georgia, 'Libre Bodoni', 'Times New Roman', serif; font-weight: 600; }
+    </style>
+  </defs>
+
+  <!-- ── Marca: esquina-finder de QR (referencia directa al código QR que -->
+  <!-- lleva todo e-CF) dentro de un sello redondeado — único en la categoría, -->
+  <!-- a diferencia del típico ícono de "factura con líneas". ── -->
+  <g transform="translate(8,8)">
+    <rect x="0" y="0" width="184" height="184" rx="40" fill="#0e7490"/>
+    <!-- patrón "finder" de QR simplificado a 3 cuadrados + 1 hueco -->
+    <rect x="38"  y="38"  width="48" height="48" rx="8" fill="#ffffff"/>
+    <rect x="98"  y="38"  width="48" height="48" rx="8" fill="#ffffff" opacity="0.45"/>
+    <rect x="38"  y="98"  width="48" height="48" rx="8" fill="#ffffff" opacity="0.45"/>
+    <rect x="98"  y="98"  width="48" height="48" rx="8" fill="#ffffff"/>
+    <rect x="54"  y="54"  width="16" height="16" rx="3" fill="#0e7490"/>
+    <rect x="114" y="114" width="16" height="16" rx="3" fill="#0e7490"/>
+  </g>
+
+  <!-- ── Wordmark: Libre Bodoni / Georgia, igual que el resto del sitio ── -->
+  <text x="222" y="124" class="word" font-size="92" fill="#111439">Facturacon</text>
+</svg>

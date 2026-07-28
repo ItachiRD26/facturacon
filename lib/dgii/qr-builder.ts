@@ -84,6 +84,23 @@ export function formatFechaQR(dateStr: string): string {
   return `${d}-${m}-${y}`;
 }
 
+// Extrae el FechaHoraFirma EXACTO que quedó embebido en el XML firmado
+// (dd-MM-yyyy HH:mm:ss) y lo devuelve como string tipo-ISO para pasarlo a
+// formatFechaHoraQR(). El QR/consultatimbre debe usar el mismo FechaFirma
+// que la DGII recibió dentro del XML firmado — usar un new Date() distinto
+// (calculado después del POST de envío) causa "no encontrada" en
+// consultatimbre porque no coincide con lo que la DGII tiene almacenado.
+export function extraerFechaHoraFirmaISO(xmlFirmado: string): string {
+  const m = xmlFirmado.match(/<FechaHoraFirma>([\s\S]*?)<\/FechaHoraFirma>/);
+  if (!m) return "";
+  const raw = m[1].trim(); // "dd-MM-yyyy HH:mm:ss"
+  const [dmy, time] = raw.split(" ");
+  if (!dmy || !time) return "";
+  const [d, mo, y] = dmy.split("-");
+  if (!d || !mo || !y) return "";
+  return `${y}-${mo}-${d}T${time}`;
+}
+
 export function formatFechaHoraQR(isoString: string): string {
   // Input: ISO string
   // Output: "27-05-2026 01:06:39" (dd-MM-yyyy HH:mm:ss)

@@ -40,8 +40,8 @@ export default function SiteFooter() {
         <div>
           <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>Contacto</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
-            <a href="mailto:contacto@facturacon.cfd" style={{ color: "inherit", textDecoration: "none" }}>
-              contacto@facturacon.cfd
+            <a href="mailto:contacto@facturacon.com.do" style={{ color: "inherit", textDecoration: "none" }}>
+              contacto@facturacon.com.do
             </a>
           </div>
         </div>

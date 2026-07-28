@@ -172,7 +172,7 @@ export default function OnboardingPage() {
             <div style={{ padding: 14, background: "var(--c-yellow-bg)", border: "1px solid var(--c-yellow-border)", borderRadius: 6, fontSize: 13, marginBottom: 20 }}>
               El módulo para <strong>{tipoInfo.label}</strong> todavía no está disponible (necesita gestión de
               reservas y no aplica al sistema genérico). {" "}
-              <a href="mailto:contacto@facturacon.cfd" style={{ color: "var(--c-brand)", fontWeight: 600 }}>
+              <a href="mailto:contacto@facturacon.com.do" style={{ color: "var(--c-brand)", fontWeight: 600 }}>
                 Contáctanos para una solución personalizada
               </a>.
             </div>

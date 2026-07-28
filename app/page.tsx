@@ -6,6 +6,9 @@ import NegociosSection from "@/components/marketing/negocios-section";
 import ProductMockup from "@/components/marketing/product-mockup";
 import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder";
 import PagaditoBadge from "@/components/marketing/pagadito-badge";
+import BeneficiosStrip from "@/components/marketing/beneficios-strip";
+import TrustStrip from "@/components/marketing/trust-strip";
+import FaqAccordion from "@/components/marketing/faq-accordion";
 import { PLANES } from "@/lib/payments/planes";
 
 const faqs = [
@@ -102,6 +105,8 @@ export default function LandingPage() {
           <ProductMockup />
         </div>
 
+        <BeneficiosStrip />
+
         <VideoTutorial />
 
         {/* Qué resolvemos — el primer punto lleva más peso visual a propósito,
@@ -176,6 +181,8 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <TrustStrip />
+
         <NegociosSection />
 
         {/* Cómo funciona — fondo navy para romper la alternancia blanco/blanco
@@ -204,7 +211,7 @@ export default function LandingPage() {
         </section>
 
         {/* Precios — cifras de referencia, no son aun definitivas (ver nota abajo) */}
-        <section id="precios" style={{ padding: "64px 24px", maxWidth: 860, margin: "0 auto", textAlign: "center" }}>
+        <section id="precios" style={{ padding: "64px 24px", maxWidth: 1040, margin: "0 auto", textAlign: "center" }}>
           <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", marginBottom: 12 }}>
             Precios
           </h2>
@@ -214,28 +221,55 @@ export default function LandingPage() {
             activación por separado.
           </p>
 
-          <div style={{ border: "1px solid var(--c-border)", borderRadius: 12, overflow: "hidden", textAlign: "left" }}>
-            {PLANES.map((p, i) => (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 16, textAlign: "left" }}>
+            {PLANES.map((p) => (
               <div key={p.id} style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "14px 18px", fontSize: 13,
-                borderTop: i > 0 ? "1px solid var(--c-border-lt)" : "none",
-                background: i % 2 === 0 ? "var(--c-surface)" : "var(--c-bg)",
+                display: "flex", flexDirection: "column", gap: 14, padding: "22px 18px",
+                background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12,
               }}>
-                <span style={{ color: "var(--c-text-2)" }}>{p.facturas} comprobantes / mes</span>
-                <span style={{ fontWeight: 700 }}>RD$ {p.montoRD.toLocaleString("es-DO")} / mes</span>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--c-text-3)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Plan {p.facturas}
+                </div>
+                <div>
+                  <span style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", fontWeight: 700 }}>
+                    RD$ {p.montoRD.toLocaleString("es-DO")}
+                  </span>
+                  <div style={{ fontSize: 11.5, color: "var(--c-text-4)" }}>al mes</div>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>{p.facturas} comprobantes / mes</div>
+                <Link href="/registro" style={{
+                  marginTop: "auto", padding: "9px 14px", borderRadius: 6, textAlign: "center",
+                  background: "var(--c-brand)", color: "#fff", fontWeight: 700, fontSize: 12.5, textDecoration: "none",
+                }}>
+                  Elegir plan
+                </Link>
               </div>
             ))}
+
             <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "14px 18px", fontSize: 13, borderTop: "1px solid var(--c-border-lt)", background: "var(--c-bg)",
+              display: "flex", flexDirection: "column", gap: 14, padding: "22px 18px",
+              background: "var(--c-bg)", border: "1px dashed var(--c-border)", borderRadius: 12,
             }}>
-              <span style={{ color: "var(--c-text-2)" }}>Más de {PLANES[PLANES.length - 1].facturas} comprobantes / mes</span>
-              <span style={{ fontWeight: 700 }}>Plan a medida — contáctanos</span>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--c-text-3)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                A medida
+              </div>
+              <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.2rem", fontWeight: 700 }}>
+                Contáctanos
+              </div>
+              <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>
+                Más de {PLANES[PLANES.length - 1].facturas} comprobantes / mes
+              </div>
+              <a href="mailto:contacto@facturacon.com.do" style={{
+                marginTop: "auto", padding: "9px 14px", borderRadius: 6, textAlign: "center",
+                background: "transparent", color: "var(--c-brand)", border: "1px solid var(--c-brand-border)",
+                fontWeight: 700, fontSize: 12.5, textDecoration: "none",
+              }}>
+                Escríbenos
+              </a>
             </div>
           </div>
 
-          <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 20, marginBottom: 20 }}>
+          <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 28, marginBottom: 20 }}>
             Cifras de referencia mientras confirmamos los montos finales — no son precios cerrados
             todavía. Te avisaremos antes de que se active cualquier cobro.
           </p>
@@ -249,14 +283,7 @@ export default function LandingPage() {
             <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", textAlign: "center", marginBottom: 32 }}>
               Preguntas frecuentes
             </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {faqs.map((f) => (
-                <div key={f.q} style={{ borderBottom: "1px solid var(--c-border-lt)", paddingBottom: 16 }}>
-                  <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 14 }}>{f.q}</div>
-                  <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>{f.a}</div>
-                </div>
-              ))}
-            </div>
+            <FaqAccordion faqs={faqs} />
           </div>
         </section>
 

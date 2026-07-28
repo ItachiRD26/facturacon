@@ -14,5 +14,5 @@ export const LIMITES_SANDBOX = {
 export type ColeccionLimitada = keyof Omit<typeof LIMITES_SANDBOX, "secuencias">;
 
 export function mensajeLimite(coleccion: string, tope: number): string {
-  return `Llegaste al máximo de ${tope} registros de prueba para "${coleccion}". Esto es para evitar abuso del entorno de prueba — si necesitas más espacio para evaluar el sistema, escríbenos a contacto@facturacon.cfd.`;
+  return `Llegaste al máximo de ${tope} registros de prueba para "${coleccion}". Esto es para evitar abuso del entorno de prueba — si necesitas más espacio para evaluar el sistema, escríbenos a contacto@facturacon.com.do.`;
 }

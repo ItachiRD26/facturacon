@@ -18,7 +18,9 @@ export default function ModalNuevaFactura({
   open, onClose, onSave, tenantId, clientes, productos, nombreEmisor, rncEmisor, rootDomain, modo = "sandbox",
 }: {
   open: boolean; onClose: () => void; tenantId: string;
-  onSave: (data: Omit<Factura, "id">) => Promise<void>;
+  // En modo "produccion" llega un Factura completa (con id, ya persistida
+  // server-side); en modo "sandbox" llega sin id (la crea onSave).
+  onSave: (data: Factura | Omit<Factura, "id">) => Promise<void>;
   clientes: Cliente[]; productos: Producto[];
   // En modo "produccion" no hacen falta — el backend lee el emisor de
   // tenants/{tenantId}/config/empresa antes de firmar.

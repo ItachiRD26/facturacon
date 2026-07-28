@@ -1,7 +1,7 @@
 import FaqAcordeon from "@/components/panel/faq-acordeon";
 import SoporteChat from "@/components/panel/soporte-chat";
 
-const CONTACTO_EMAIL = "contacto@facturacon.cfd";
+const CONTACTO_EMAIL = "contacto@facturacon.com.do";
 
 export default function SoportePage() {
   return (

@@ -9,7 +9,7 @@ const serif = "var(--font-serif)";
 
 const ERRORES: Record<string, string> = {
   "pago-invalido": "El enlace de pago no es válido. Intenta de nuevo.",
-  "pago-no-coincide": "No pudimos confirmar este pago. Si ya pagaste, escríbenos a contacto@facturacon.cfd.",
+  "pago-no-coincide": "No pudimos confirmar este pago. Si ya pagaste, escríbenos a contacto@facturacon.com.do.",
   "pago-verificacion": "No pudimos confirmar el estado del pago con Pagadito. Intenta de nuevo en unos minutos.",
   "pago-canceled": "Cancelaste el pago en Pagadito. Puedes intentarlo de nuevo cuando quieras.",
   "pago-expired": "El enlace de pago expiró (10 minutos). Genera uno nuevo.",

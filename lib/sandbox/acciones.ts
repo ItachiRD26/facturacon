@@ -25,8 +25,14 @@ export async function crearCxCSiCredito(deps: Deps, factura: Omit<Factura, "id">
   await deps.agregarCuenta(cuenta);
 }
 
-export async function guardarFactura(deps: Deps, data: Omit<Factura, "id">) {
-  await deps.agregarFactura(data);
+// `data` ya viene con `id` cuando se emitió en modo producción: en ese caso
+// /api/facturas/emitir ya guardó el documento en Firestore con el Admin SDK,
+// así que NO se vuelve a llamar agregarFactura() — eso crearía un duplicado
+// y, con el tenant activo, firestore.rules lo rechazaría de todas formas
+// (un create de cliente no puede traer campos fiscales como estadoDGII).
+export async function guardarFactura(deps: Deps, data: Factura | Omit<Factura, "id">) {
+  const yaPersistida = "id" in data && !!data.id;
+  if (!yaPersistida) await deps.agregarFactura(data);
   await crearCxCSiCredito(deps, data);
 }
 
