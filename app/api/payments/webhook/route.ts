@@ -4,10 +4,11 @@ import type { EventoWebhookPagadito } from "@/lib/payments/pagadito-webhook";
 import { tenantIdDesdeErnSuscripcion, marcarPagoRecurrenteExitoso, marcarPagoRecurrenteFallido } from "@/lib/payments/suscripcion";
 
 // Receptor de webhooks de Pagadito — configurar esta URL en su panel
-// (Configuración Técnica -> Webhooks) una vez haya cuenta real. Hoy solo
-// procesa eventos de suscripciones recurrentes (ern con prefijo "sub-"); los
-// del primer pago de certificación ("cert-...") se ignoran porque ese flujo
-// todavía se confirma por consulta activa en /api/payments/retorno.
+// (Configuración Técnica -> Webhooks) una vez haya cuenta real. La
+// certificación es gratis (no hay pago que confirmar ahí) — el único cobro
+// que existe es la suscripción recurrente, así que solo se procesan eventos
+// con ern de prefijo "sub-" (ver ernSuscripcion() en lib/payments/
+// suscripcion.ts); cualquier otro ern se ignora sin error.
 //
 // SIN PROBAR CONTRA UN EVENTO REAL — ver advertencia en pagadito-webhook.ts
 // sobre el header PAGADITO-AUTH-ALGO.
@@ -52,8 +53,8 @@ export async function POST(req: NextRequest) {
 
   const tenantId = tenantIdDesdeErnSuscripcion(evento.resource.ern);
   if (!tenantId) {
-    // No es un ciclo de cobro de una suscripción nuestra (ej. "cert-..." del
-    // pago único, o de otro merchant account) — se ignora sin error.
+    // No es un ciclo de cobro de una suscripción nuestra (ern de otro
+    // merchant account, o de una prueba) — se ignora sin error.
     return NextResponse.json({ ok: true });
   }
 

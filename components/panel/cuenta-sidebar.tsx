@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Icon from "@/components/ui/icon";
+import Logo from "@/components/ui/logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebarCtx } from "@/contexts/SidebarUIContext";
 import type { Tenant } from "@/types/tenant";
@@ -45,16 +46,7 @@ export default function CuentaSidebar({
       >
         <div style={{ padding: "20px 18px 16px", borderBottom: "1px solid #e5e7eb" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: "50%", background: "#0e7490",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-              <svg width={16} height={16} viewBox="0 0 24 24" fill="none"
-                stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                <path d="M14 2v6h6" />
-              </svg>
-            </div>
+            <Logo variant="icon" size={32} />
             <div style={{ minWidth: 0 }}>
               <div style={{
                 fontFamily: serif, fontSize: 13, fontWeight: 700, color: "#111", lineHeight: 1.2,

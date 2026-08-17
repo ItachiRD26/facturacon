@@ -97,6 +97,33 @@ body {
   body { background: #fff; }
 }
 
+/* Slider de la calculadora de precios — el track nativo queda invisible
+   porque el track/relleno visible ya se dibuja con divs posicionados encima
+   (para poder colorear solo la porción recorrida); solo el thumb es nativo. */
+.price-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+}
+.price-slider::-webkit-slider-runnable-track { background: transparent; height: 4px; }
+.price-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--c-brand); border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  margin-top: -7px; cursor: pointer;
+}
+.price-slider::-moz-range-track { background: transparent; height: 4px; }
+.price-slider::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--c-brand); border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+
 .hamburger-btn { display: none !important; }
 @media (max-width: 1023px) {
   .hamburger-btn { display: flex !important; }
@@ -121,6 +148,7 @@ body {
     grid-template-rows: none !important;
   }
   .resolvemos-grid > div { grid-column: auto !important; grid-row: auto !important; }
+  .personalizacion-grid { grid-template-columns: 1fr !important; }
 }
 
 .sidebar-responsive {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "@/components/ui/logo";
 
 export default function SiteFooter() {
   return (
@@ -11,8 +12,8 @@ export default function SiteFooter() {
         gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 28, marginBottom: 28,
       }}>
         <div>
-          <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.1rem", fontWeight: 700, marginBottom: 8, color: "#fff" }}>
-            Facturacon
+          <div style={{ marginBottom: 10 }}>
+            <Logo tone="white" size={24} />
           </div>
           <p style={{ fontSize: 12, lineHeight: 1.5 }}>
             Certificación de emisor electrónico y sistema de facturación para contribuyentes

@@ -7,6 +7,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import { loadCertAndKey, extraerRncDelCertificado } from "@/lib/dgii/xml-signer";
 import { guardarCertificado } from "@/lib/kms/p12-vault";
 import { consultarRncODGII } from "@/lib/dgii/validar-rnc-cedula";
+import { generarSlugUnico } from "@/lib/tenant/slug";
 
 // Verifica el certificado de firma digital (.p12) y la cédula del
 // representante ANTES de dejar avanzar al tenant a "pendiente_certificacion".
@@ -76,7 +77,14 @@ export async function POST(req: NextRequest) {
     completadoEn: new Date().toISOString(),
   });
 
-  await adminDb.collection("tenants").doc(tenantId).update({ estado: "pendiente_certificacion" });
+  // El slug se asigna aquí (no al finalizar la certificación) porque el
+  // usuario lo necesita antes: la postulación de DGII como Emisor
+  // Electrónico pide declarar URLs de software propias, y esas URLs deben
+  // ser estables desde el inicio del proceso. `finalizar` reutiliza este
+  // mismo slug si ya existe, así que no se reasigna dos veces.
+  const slug = tenant.slug ?? await generarSlugUnico();
+
+  await adminDb.collection("tenants").doc(tenantId).update({ estado: "pendiente_certificacion", slug });
 
   return NextResponse.json({ ok: true });
 }

@@ -10,6 +10,24 @@ import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder
 const sans = "var(--font-sans)";
 const serif = "var(--font-serif)";
 
+const GUIA_DIGIFIRMA = [
+  {
+    src: "/digifirma/paso-1-digifirma-click-en-facturacion-electronica.webp",
+    t: "Entra al formulario y haz clic en \"Facturación Electrónica\"",
+    d: "Es la tercera opción, junto a Persona Física e Institucional — es la que corresponde para certificarte con Facturacon.",
+  },
+  {
+    src: "/digifirma/paso-2-digifirma-click-en-solicitar.webp",
+    t: "Revisa los requisitos y haz clic en \"Solicitar\"",
+    d: "Es el certificado a nombre del representante, no de la empresa — revisa el costo y la validez (1 o 2 años) antes de continuar.",
+  },
+  {
+    src: "/digifirma/paso-3-llenado-formulario.png",
+    t: "Llena el formulario con los datos del titular",
+    d: "Usa los datos de la misma persona que registraste como representante en la Oficina Virtual de la DGII — si no coinciden, la DGII rechazará la certificación más adelante.",
+  },
+];
+
 const REQUISITOS = [
   {
     t: "Estar registrado como representante en la Oficina Virtual (OFV)",
@@ -150,8 +168,63 @@ function RequisitosShell() {
           ))}
         </div>
 
-        <div style={{ marginTop: 16, padding: "10px 14px", background: "var(--c-bg)", border: "1px dashed var(--c-border)", borderRadius: 8, fontSize: 12, color: "var(--c-text-3)" }}>
-          Enlace a la entidad certificadora — próximamente.
+        <a
+          href="https://www.camarasantodomingo.do/solicitudes/FormularioWeb/?AspxAutoDetectCookieSupport=1"
+          target="_blank" rel="noopener noreferrer"
+          style={{
+            marginTop: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+            padding: "12px 14px", background: "var(--c-brand-bg)", border: "1px solid var(--c-brand-border)",
+            borderRadius: 8, fontSize: 12, textDecoration: "none",
+          }}
+        >
+          <span>
+            <div style={{ fontWeight: 700, color: "var(--c-text-1)", marginBottom: 2 }}>
+              Solicita tu certificado con DigiFirma (Cámara de Comercio de Santo Domingo)
+            </div>
+            <div style={{ color: "var(--c-text-3)" }}>
+              camarasantodomingo.do — formulario oficial de solicitud
+            </div>
+          </span>
+          <span style={{ color: "var(--c-brand)", fontWeight: 700, flexShrink: 0 }}>Abrir →</span>
+        </a>
+
+        <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
+          {GUIA_DIGIFIRMA.map((s, i) => (
+            <div key={s.src} style={{ display: "flex", gap: 14 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: "50%", background: "var(--c-brand)", color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13,
+                flexShrink: 0,
+              }}>
+                {i + 1}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>{s.t}</div>
+                <div style={{ fontSize: 12, color: "var(--c-text-3)", lineHeight: 1.5, marginBottom: 12 }}>{s.d}</div>
+                {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+                <img src={s.src} alt={s.t} style={{ width: "100%", borderRadius: 10, border: "1px solid var(--c-border)", boxShadow: "0 12px 30px rgba(17,20,57,0.10)" }} />
+              </div>
+            </div>
+          ))}
+
+          <div style={{ display: "flex", gap: 14 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: "50%", background: "var(--c-border)", color: "var(--c-text-3)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13,
+              flexShrink: 0,
+            }}>
+              {GUIA_DIGIFIRMA.length + 1}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Confirma y envía tu solicitud</div>
+              <div style={{ fontSize: 12, color: "var(--c-text-3)", lineHeight: 1.5, marginBottom: 12 }}>
+                DigiFirma te pedirá confirmar los datos de la factura, revisar todo y completar la
+                prueba de vida que te llega por correo. Publicaremos las capturas de estos pasos
+                aquí en cuanto estén disponibles.
+              </div>
+              <ScreenshotPlaceholder titulo="Confirmación y envío" descripcion="Últimos pasos del formulario de DigiFirma — próximamente." />
+            </div>
+          </div>
         </div>
       </div>
 

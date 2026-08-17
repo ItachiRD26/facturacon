@@ -13,6 +13,10 @@ export default function FacturaTermica({ factura, cliente, empresa, esMuestra = 
       {esMuestra && <SelloMuestra compacto />}
       <div style={{ position: "relative", zIndex: 1 }}>
       <div style={{ textAlign: "center", marginBottom: 6 }}>
+        {empresa.logoTermicoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- imagen del tenant en Storage, no un asset propio del sitio
+          <img src={empresa.logoTermicoUrl} alt={empresa.nombre} style={{ maxWidth: 140, maxHeight: 60, objectFit: "contain", margin: "0 auto 6px" }} />
+        )}
         <div style={{ fontWeight: 700 }}>{empresa.nombre}</div>
         <div>RNC: {fmtRNCDisplay(empresa.rnc)}</div>
         {empresa.direccion && <div>{empresa.direccion}</div>}
@@ -42,7 +46,7 @@ export default function FacturaTermica({ factura, cliente, empresa, esMuestra = 
           <div key={i} style={{ marginBottom: 4, borderTop: "1px dashed #ccc", paddingTop: 4 }}>
             <div style={{ fontWeight: 700 }}>{item.descripcion}</div>
             <div>{item.cant} × RD$ {fmt(item.precio)} = RD$ {fmt(c.bruto)}</div>
-            {c.descAmt > 0 && <div style={{ color: "#b91c1c" }}>Desc: -RD$ {fmt(c.descAmt)}</div>}
+            {c.descAmt > 0 && <div style={{ color: "var(--c-red)" }}>Desc: -RD$ {fmt(c.descAmt)}</div>}
             {item.itbis > 0 ? <div style={{ color: "#555" }}>ITBIS: RD$ {fmt(c.itbisAmt)}</div> : <div style={{ color: "#555" }}>(Exento de ITBIS)</div>}
           </div>
         );

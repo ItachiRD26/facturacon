@@ -17,6 +17,26 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/memberships/$(request.auth.uid + '_' + tenantId));
     }
 
+    // Rol del usuario actual en este tenant — asume que ya se comprobó
+    // hasMembership(tenantId) antes de llamar esto (si no hay membership,
+    // el get() falla la evaluación, así que siempre se usa junto a
+    // hasMembership() con &&, nunca solo).
+    function rolDe(tenantId) {
+      return get(/databases/$(database)/documents/memberships/$(request.auth.uid + '_' + tenantId)).data.rol;
+    }
+
+    // v1: roles predefinidos de permisos fijos por módulo (ver
+    // lib/tenant/roles.ts, MODULOS_POR_ROL — debe mantenerse igual a esto).
+    // No son personalizables por persona todavía, así que esta lista vive
+    // hardcodeada aquí en vez de leerse de alguna configuración.
+    function puedeVender(tenantId)   { return rolDe(tenantId) in ['owner', 'admin', 'vendedor']; }
+    function puedeCobranza(tenantId) { return rolDe(tenantId) in ['owner', 'admin', 'contador']; }
+    function esOwnerOAdmin(tenantId) { return rolDe(tenantId) in ['owner', 'admin']; }
+    // Un cajero (vendedor) no debe poder sumar el total facturado del
+    // negocio leyendo todas las facturas — solo dueño/admin/contador ven
+    // el libro completo; el cajero solo lee las que él mismo emitió.
+    function puedeVerTodasFacturas(tenantId) { return rolDe(tenantId) in ['owner', 'admin', 'contador']; }
+
     // Un tenant "activo" ya está certificado y factura de verdad ante la
     // DGII — a partir de ahí, los campos que certifican una respuesta real
     // de la DGII nunca pueden originarse en una escritura del cliente.
@@ -70,6 +90,14 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Logo de la factura impresa: lo escribe el backend después de
+      // procesar la imagen subida (redimensionar/convertir) — el cliente
+      // nunca escribe la URL directamente.
+      match /config/personalizacion {
+        allow read: if hasMembership(tenantId);
+        allow write: if false;
+      }
+
       // Estado del wizard de certificación: visible para miembros, lo
       // actualiza el backend.
       match /certificacion/{paso} {
@@ -86,35 +114,60 @@ service cloud.firestore {
         allow write: if false;
       }
 
-      // Datos operativos del negocio: cualquier miembro puede leer/escribir.
-      // Permisos más finos por rol se añaden cuando haya UI que los necesite
-      // (Fase 7). IMPORTANTE: Firestore evalúa el OR de todos los bloques
-      // match que coincidan con una ruta — un wildcard genérico aquí
-      // (/{collection}/{docId}) volvería a exponer config/certificado pese
-      // a la regla "if false" de arriba. Por eso se enumeran las colecciones
+      // Datos operativos del negocio: la lectura queda abierta a cualquier
+      // miembro (un cajero necesita poder LEER productos para facturarlos,
+      // aunque no pueda editarlos) — la escritura sí se restringe por rol.
+      // IMPORTANTE: Firestore evalúa el OR de todos los bloques match que
+      // coincidan con una ruta — un wildcard genérico aquí (/{collection}/
+      // {docId}) volvería a exponer config/certificado pese a la regla
+      // "if false" de arriba. Por eso se enumeran las colecciones
       // operativas en vez de usar un wildcard.
-      match /clientes/{docId}           { allow read, write: if hasMembership(tenantId); }
-      match /servicios/{docId}          { allow read, write: if hasMembership(tenantId); }
-      match /productos/{docId}          { allow read, write: if hasMembership(tenantId); }
+      match /clientes/{docId} {
+        allow read:  if hasMembership(tenantId);
+        allow write: if hasMembership(tenantId) && (puedeVender(tenantId) || puedeCobranza(tenantId));
+      }
+      // Servicios/productos (inventario): solo owner/admin — un cajero
+      // puede vender lo que ya existe en el catálogo, pero no crear
+      // productos ni tocar precios/stock.
+      match /servicios/{docId} { allow read: if hasMembership(tenantId); allow write: if hasMembership(tenantId) && esOwnerOAdmin(tenantId); }
+      match /productos/{docId} { allow read: if hasMembership(tenantId); allow write: if hasMembership(tenantId) && esOwnerOAdmin(tenantId); }
       // Facturas: el cliente puede crear/editar libremente mientras el
       // tenant está en sandbox (datos simulados), y siempre puede cambiar
       // el estado de negocio de una factura real (pagada/anulada/notas) —
       // pero una vez el tenant está activo, nunca puede tocar los campos
       // que certifican una respuesta real de la DGII (los escribe
       // /api/facturas/emitir con el Admin SDK, que ignora estas reglas).
+      // Solo owner/admin/vendedor pueden facturar; un contador o viewer no.
       match /facturas/{docId} {
-        allow read:   if hasMembership(tenantId);
-        allow create: if hasMembership(tenantId) && (!tenantActivo(tenantId) || noToca(camposFiscalesFactura()));
-        allow update: if hasMembership(tenantId) && (!tenantActivo(tenantId) || noToca(camposFiscalesFactura()));
-        allow delete: if hasMembership(tenantId) && !tenantActivo(tenantId);
+        // Un vendedor solo puede leer las facturas que él mismo creó
+        // (resource.data.creadoPor == su uid) — el cliente tiene que
+        // consultar con un where("creadoPor", "==", uid) para que Firestore
+        // no rechace el list() completo; ver hooks/use-facturas.ts.
+        allow read:   if hasMembership(tenantId) && (puedeVerTodasFacturas(tenantId) || resource.data.creadoPor == request.auth.uid);
+        allow create: if hasMembership(tenantId) && puedeVender(tenantId) && (!tenantActivo(tenantId) || noToca(camposFiscalesFactura()));
+        allow update: if hasMembership(tenantId) && puedeVender(tenantId) && (!tenantActivo(tenantId) || noToca(camposFiscalesFactura()));
+        allow delete: if hasMembership(tenantId) && esOwnerOAdmin(tenantId) && !tenantActivo(tenantId);
       }
-      match /cotizaciones/{docId}       { allow read, write: if hasMembership(tenantId); }
-      match /cuentas_por_cobrar/{docId} { allow read, write: if hasMembership(tenantId); }
-      match /facturas_recibidas/{docId} { allow read, write: if hasMembership(tenantId); }
+      match /cotizaciones/{docId} {
+        allow read:  if hasMembership(tenantId);
+        allow write: if hasMembership(tenantId) && puedeVender(tenantId);
+      }
+      match /cuentas_por_cobrar/{docId} {
+        allow read:  if hasMembership(tenantId);
+        allow write: if hasMembership(tenantId) && puedeCobranza(tenantId);
+      }
+      match /facturas_recibidas/{docId} {
+        allow read:  if hasMembership(tenantId);
+        allow write: if hasMembership(tenantId) && puedeCobranza(tenantId);
+      }
       // Métodos de pago: solo datos de visualización (marca, últimos 4
       // dígitos, vencimiento) — nunca el número completo de tarjeta ni CVV,
       // así que no requiere el mismo aislamiento que /config/certificado.
-      match /metodos_pago/{docId}       { allow read, write: if hasMembership(tenantId); }
+      // Es un tema de facturación de la cuenta, no operativo — solo owner/admin.
+      match /metodos_pago/{docId} {
+        allow read:  if hasMembership(tenantId);
+        allow write: if hasMembership(tenantId) && esOwnerOAdmin(tenantId);
+      }
     }
   }
 }

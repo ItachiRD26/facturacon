@@ -179,6 +179,16 @@ export interface FacturaRecibida {
 // ── Cotización ────────────────────────────────────────────────────
 export type EstadoCotizacion = "vigente" | "vencida" | "convertida" | "anulada";
 
+// Constancia de quién modificó una cotización y cuándo — para que el dueño
+// pueda ver si un cajero cambió algo después de creada, no solo quién la
+// creó originalmente.
+export interface HistorialEdicion {
+  uid:     string;
+  nombre:  string;
+  accion:  string;
+  fecha:   string;
+}
+
 export interface Cotizacion {
   id:           string;
   noCotizacion: string;
@@ -192,6 +202,7 @@ export interface Cotizacion {
   facturaRef?:  string;
   creadoEn?:    string;
   esMuestra?:   boolean;
+  historial?:   HistorialEdicion[];
 }
 
 // ── Abono ─────────────────────────────────────────────────────────

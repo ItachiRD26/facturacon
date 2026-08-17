@@ -16,7 +16,7 @@ export default function VideoPlaceholder({ titulo, descripcion, url }: {
   return (
     <div style={{
       borderRadius: 10, overflow: "hidden", border: "1px solid var(--c-border)",
-      background: "#0f172a", position: "relative", aspectRatio: "16 / 9", marginTop: 10,
+      background: "var(--c-navy)", position: "relative", aspectRatio: "16 / 9", marginTop: 10,
     }}>
       {videoId ? (
         <iframe
@@ -30,7 +30,7 @@ export default function VideoPlaceholder({ titulo, descripcion, url }: {
         <div style={{
           position: "absolute", inset: 0, display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center", gap: 8, color: "#fff", textAlign: "center", padding: 16,
-          background: "linear-gradient(135deg, #1e293b, #0f172a)",
+          background: "var(--gradient-hero)",
         }}>
           <div style={{
             width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.15)",

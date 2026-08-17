@@ -10,12 +10,15 @@ const negocios = [
 ];
 
 // Placeholder de imágenes con iniciales — listo para reemplazar por fotos
-// reales de clientes/equipo cuando estén disponibles.
+// reales de clientes/equipo cuando estén disponibles. Paleta de la propia
+// marca (navy/teal) en vez de colores primarios sueltos, para que se vea
+// como parte del mismo sistema visual que el logo, no como avatares de
+// stock genéricos.
 const personas = [
-  { iniciales: "MR", color: "#2563eb" },
-  { iniciales: "JP", color: "#16a34a" },
-  { iniciales: "LD", color: "#db2777" },
-  { iniciales: "CA", color: "#d97706" },
+  { iniciales: "MR", color: "#111439" },
+  { iniciales: "JP", color: "#0e7490" },
+  { iniciales: "LD", color: "#1c2563" },
+  { iniciales: "CA", color: "#0891b2" },
 ];
 
 export default function NegociosSection() {

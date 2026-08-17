@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useTenant } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useClientes } from "@/hooks/use-clientes";
 import { useProductos } from "@/hooks/use-productos";
 import { useFacturas } from "@/hooks/use-facturas";
 import { useCuentasPorCobrar } from "@/hooks/use-cuentas-por-cobrar";
+import { usePersonalizacion } from "@/hooks/use-personalizacion";
 import type { EstadoFactura, Factura } from "@/types";
 import { calcTotales, fmt, fmtDate } from "@/types";
 import Badge from "@/components/ui/badge";
@@ -30,10 +32,15 @@ function KPICard({ label, valor, sub, accent }: { label: string; valor: string |
 
 export default function FacturasPage() {
   const tenant = useTenant();
+  const { firebaseUser } = useAuth();
   const { clientes } = useClientes(tenant.tenantId);
   const { productos } = useProductos(tenant.tenantId);
-  const { facturas, loading, agregar: agregarFactura, cambiarEstado } = useFacturas(tenant.tenantId);
+  // Un cajero (vendedor) solo puede leer sus propias facturas — ver
+  // firestore.rules y hooks/use-facturas.ts. Los demás roles ven todas.
+  const filtroCreadoPor = tenant.rol === "vendedor" ? (firebaseUser?.uid ?? null) : undefined;
+  const { facturas, loading, agregar: agregarFactura, cambiarEstado } = useFacturas(tenant.tenantId, filtroCreadoPor);
   const { agregar: agregarCuenta } = useCuentasPorCobrar(tenant.tenantId);
+  const { personalizacion } = usePersonalizacion(tenant.tenantId);
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [imprimiendo,  setImprimiendo]  = useState<Factura | null>(null);
@@ -66,7 +73,9 @@ export default function FacturasPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 style={{ fontFamily: serif, fontSize: 24, fontWeight: 600, color: "var(--c-text-1)", marginBottom: 2 }}>Facturas</h1>
-          <div style={{ fontSize: 13, color: "var(--c-text-3)", fontFamily: sans }}>Comprobantes fiscales electrónicos</div>
+          <div style={{ fontSize: 13, color: "var(--c-text-3)", fontFamily: sans }}>
+            {tenant.rol === "vendedor" ? "Tus comprobantes emitidos — para reimprimir o revisar" : "Comprobantes fiscales electrónicos"}
+          </div>
         </div>
         <button onClick={() => setModalAbierto(true)} disabled={productos.length === 0}
           style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: productos.length === 0 ? "#9ca3af" : "var(--c-brand)", color: "#fff", border: "none", borderRadius: 6, cursor: productos.length === 0 ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: sans }}>
@@ -162,7 +171,10 @@ export default function FacturasPage() {
       <PrintModal
         open={!!imprimiendo} onClose={() => setImprimiendo(null)} factura={imprimiendo}
         cliente={imprimiendo ? clientePor(imprimiendo.clienteId) : undefined}
-        empresa={{ nombre: tenant.nombreNegocio, rnc: tenant.rnc }}
+        empresa={{
+          nombre: tenant.nombreNegocio, rnc: tenant.rnc,
+          logoA4Url: personalizacion?.logoA4Url, logoTermicoUrl: personalizacion?.logoTermicoUrl,
+        }}
         esMuestra={false}
       />
     </div>

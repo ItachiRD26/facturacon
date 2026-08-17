@@ -9,12 +9,16 @@ import TablaItems from "./tabla-items";
 import { Boton, Campo, Select } from "@/components/sandbox/ui";
 
 export default function ModalNuevaCotizacion({
-  open, onClose, onSave, tenantId, clientes, productos,
+  open, onClose, onSave, tenantId, clientes, productos, cotizacionEditar,
 }: {
   open: boolean; onClose: () => void; tenantId: string;
   onSave: (data: Omit<Cotizacion, "id">) => Promise<string | void>;
   clientes: Cliente[]; productos: Producto[];
+  // Si viene, el modal edita esta cotización en vez de crear una nueva —
+  // no cambia el número/fecha original, solo cliente/vigencia/líneas/notas.
+  cotizacionEditar?: Cotizacion | null;
 }) {
+  const editando = !!cotizacionEditar;
   const [clienteId, setClienteId] = useState("");
   const [validezDias, setValidezDias] = useState(15);
   const [items, setItems] = useState<LineaServicio[]>([]);
@@ -24,8 +28,16 @@ export default function ModalNuevaCotizacion({
 
   useEffect(() => {
     if (!open) return;
-    setClienteId(clientes[0]?.id ?? ""); setValidezDias(15); setItems([]); setNotas(""); setError("");
-  }, [open, clientes]);
+    if (cotizacionEditar) {
+      setClienteId(cotizacionEditar.clienteId);
+      setItems(cotizacionEditar.items);
+      setNotas(cotizacionEditar.notas ?? "");
+      setValidezDias(15);
+    } else {
+      setClienteId(clientes[0]?.id ?? ""); setValidezDias(15); setItems([]); setNotas("");
+    }
+    setError("");
+  }, [open, clientes, cotizacionEditar]);
 
   const totales = calcTotales(items);
 
@@ -33,35 +45,44 @@ export default function ModalNuevaCotizacion({
     if (!clienteId || items.length === 0) return;
     setGuardando(true); setError("");
     try {
-      const seq = await nextSecuencia(tenantId, "COT");
-      const venc = new Date();
-      venc.setDate(venc.getDate() + validezDias);
-      await onSave({
-        noCotizacion: genCOT(seq), fecha: today(), vencimiento: localDate(venc),
-        validez: `${validezDias} días`, clienteId, estado: "vigente",
-        items: items.filter((i) => i.descripcion.trim()), notas: notas.trim() || undefined,
-      });
+      const itemsLimpios = items.filter((i) => i.descripcion.trim());
+      if (editando && cotizacionEditar) {
+        const { id: _id, ...resto } = cotizacionEditar;
+        void _id;
+        await onSave({ ...resto, clienteId, items: itemsLimpios, notas: notas.trim() || undefined });
+      } else {
+        const seq = await nextSecuencia(tenantId, "COT");
+        const venc = new Date();
+        venc.setDate(venc.getDate() + validezDias);
+        await onSave({
+          noCotizacion: genCOT(seq), fecha: today(), vencimiento: localDate(venc),
+          validez: `${validezDias} días`, clienteId, estado: "vigente",
+          items: itemsLimpios, notas: notas.trim() || undefined,
+        });
+      }
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo crear la cotización. Intenta de nuevo.");
+      setError(err instanceof Error ? err.message : "No se pudo guardar la cotización. Intenta de nuevo.");
     } finally { setGuardando(false); }
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Nueva cotización" maxWidth={720}>
+    <Modal open={open} onClose={onClose} title={editando ? `Editar cotización ${cotizacionEditar?.noCotizacion}` : "Nueva cotización"} maxWidth={720}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: editando ? "1fr" : "2fr 1fr", gap: 10 }}>
           <Campo label="Cliente">
             <Select value={clienteId} onChange={(e) => setClienteId(e.target.value)}>
               <option value="">Selecciona un cliente</option>
               {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
             </Select>
           </Campo>
-          <Campo label="Validez">
-            <Select value={validezDias} onChange={(e) => setValidezDias(parseInt(e.target.value, 10))}>
-              {[7, 15, 30, 45].map((d) => <option key={d} value={d}>{d} días</option>)}
-            </Select>
-          </Campo>
+          {!editando && (
+            <Campo label="Validez">
+              <Select value={validezDias} onChange={(e) => setValidezDias(parseInt(e.target.value, 10))}>
+                {[7, 15, 30, 45].map((d) => <option key={d} value={d}>{d} días</option>)}
+              </Select>
+            </Campo>
+          )}
         </div>
 
         <Campo label="Líneas de la cotización">
@@ -84,7 +105,7 @@ export default function ModalNuevaCotizacion({
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <Boton variant="secondary" onClick={onClose}>Cancelar</Boton>
           <Boton onClick={submit} disabled={guardando || !clienteId || items.length === 0}>
-            {guardando ? "Creando..." : "Crear cotización"}
+            {guardando ? "Guardando..." : editando ? "Guardar cambios" : "Crear cotización"}
           </Boton>
         </div>
       </div>

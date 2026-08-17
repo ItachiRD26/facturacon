@@ -7,7 +7,7 @@ import { calcularCodigoSeguridad, generarURLQR, formatFechaQR, formatFechaHoraQR
 import { getToken, enviarECF, enviarRFCE } from "@/lib/dgii/dgii-client";
 import { obtenerCertificado } from "@/lib/kms/p12-vault";
 import { contarComprobantesEsteMes } from "@/lib/tenant/estadisticas";
-import { buscarPlan } from "@/lib/payments/planes";
+import { obtenerSuscripcion } from "@/lib/payments/suscripcion";
 import { calcTotales } from "@/types";
 import type { Cliente, Factura, LineaServicio, TipoECF } from "@/types";
 import type { EmpresaConfig } from "@/types/tenant";
@@ -57,18 +57,22 @@ export async function POST(req: NextRequest) {
   if (!verif.ok) return verif.response;
   const { tenantId } = body;
 
-  // Límite de comprobantes del plan contratado — sin esto, cualquier tenant
-  // podía emitir comprobantes ilimitados sin importar el plan que pagó.
-  const pagoSnap = await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("pago").get();
-  const planId = pagoSnap.data()?.planId as string | undefined;
-  const plan = planId ? buscarPlan(planId) : undefined;
-  if (plan) {
-    const emitidasEsteMes = await contarComprobantesEsteMes(tenantId);
-    if (emitidasEsteMes >= plan.facturas) {
-      return NextResponse.json({
-        error: `Alcanzaste el límite de ${plan.facturas} comprobantes/mes de tu plan. Actualiza tu plan para seguir emitiendo.`,
-      }, { status: 403 });
-    }
+  // La certificación es gratis — el cobro (y por lo tanto el permiso de
+  // emitir comprobantes reales) empieza cuando el tenant activa su
+  // suscripción recurrente. Sin una suscripción activa, no se firma ni se
+  // envía nada a la DGII, sin importar que el tenant ya esté "activo".
+  const suscripcion = await obtenerSuscripcion(tenantId);
+  if (suscripcion?.estado !== "activa") {
+    return NextResponse.json({
+      error: "Tu cuenta todavía no tiene un cobro recurrente activo. Actívalo en Métodos de pago para poder emitir comprobantes reales.",
+    }, { status: 402 });
+  }
+
+  const emitidasEsteMes = await contarComprobantesEsteMes(tenantId);
+  if (emitidasEsteMes >= suscripcion.facturasMes) {
+    return NextResponse.json({
+      error: `Alcanzaste el límite de ${suscripcion.facturasMes} comprobantes/mes de tu plan. Actualiza tu plan para seguir emitiendo.`,
+    }, { status: 403 });
   }
 
   const empresaSnap = await adminDb.collection("tenants").doc(tenantId).collection("config").doc("empresa").get();
@@ -94,6 +98,10 @@ export async function POST(req: NextRequest) {
     estado: body.terminos === "Contado" ? "pagada" : "pendiente",
     items: body.items, notas: body.notas,
     modalidadPago: body.modalidadPago, fechaVencimientoPago: body.fechaVencimientoPago,
+    // Quién emitió el comprobante — permite que un cajero solo vea sus
+    // propias facturas (ver firestore.rules) sin poder calcular el total
+    // facturado por todo el negocio a partir de la lista completa.
+    creadoPor: verif.uid,
   };
 
   const tenant = { tenantId, rnc: empresa.rnc, ambiente: empresa.ambiente };

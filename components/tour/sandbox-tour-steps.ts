@@ -60,7 +60,12 @@ export const SANDBOX_TOUR_STEPS: TourStep[] = [
     body: "Aquí verás (en producción, automáticamente) las facturas que te emiten tus proveedores.",
   },
   {
-    id: "btn-comenzar-certificacion", route: `${BASE}/recibidas`, placement: "bottom",
+    id: "nav-personalizacion", route: `${BASE}/recibidas`, placement: "right",
+    title: "Personalización",
+    body: "Sube el logo de tu negocio aquí — se ajusta automáticamente para verse bien tanto en facturas A4 como en impresoras térmicas, y lo puedes ver en una vista previa antes de imprimir.",
+  },
+  {
+    id: "btn-comenzar-certificacion", route: `${BASE}/personalizacion`, placement: "bottom",
     title: "¿Ya probaste todo?",
     body: "Cuando estés listo, pulsa aquí para comenzar el proceso real de certificación de tu negocio ante la DGII.",
   },

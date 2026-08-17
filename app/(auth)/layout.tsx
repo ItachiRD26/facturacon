@@ -1,3 +1,5 @@
+import Logo from "@/components/ui/logo";
+
 const VALORES = [
   "Certificación de emisor electrónico guiada paso a paso",
   "Prueba el sistema completo antes de pagar nada",
@@ -17,8 +19,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           position: "absolute", inset: 0, opacity: 0.5, pointerEvents: "none",
           background: "radial-gradient(circle at 15% 85%, rgba(255,255,255,0.10), transparent 40%)",
         }} />
-        <div style={{ position: "relative", fontFamily: "var(--font-serif)", fontSize: "1.4rem", fontWeight: 600, color: "#fff" }}>
-          Facturacon
+        <div style={{ position: "relative" }}>
+          <Logo tone="white" size={28} />
         </div>
         <div style={{ position: "relative" }}>
           <div style={{

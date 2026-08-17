@@ -41,9 +41,9 @@ export async function obtenerSuscripcion(tenantId: string): Promise<Suscripcion 
 
 // Tokeniza la tarjeta del cliente y crea la suscripción recurrente de su plan
 // en el mismo paso. Solo debe llamarse para un tenant ya "activo" (con
-// certificación completa) — el primer pago que activó la certificación sigue
-// yendo por el flujo de redirect WSPG existente (lib/payments/pagadito.ts),
-// esto es exclusivamente para los cobros mensuales siguientes.
+// certificación completa y gratuita) — este es el ÚNICO cobro que existe en
+// todo el producto: sin esta suscripción activa, /api/facturas/emitir
+// rechaza cualquier intento de emitir un comprobante real.
 export async function activarCobroRecurrente(params: {
   tenantId: string; planId: string;
   card: TarjetaPagadito; browserInfo: BrowserInfoPagadito;

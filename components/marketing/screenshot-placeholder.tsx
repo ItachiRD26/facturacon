@@ -8,7 +8,7 @@ export default function ScreenshotPlaceholder({ titulo, descripcion }: { titulo:
       borderRadius: 14, overflow: "hidden", border: "1px solid var(--c-border)",
       position: "relative", aspectRatio: "16 / 10", width: "100%",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14,
-      background: "linear-gradient(135deg, #1e293b, #0f172a)", color: "#fff", padding: 28, textAlign: "center",
+      background: "var(--gradient-hero)", color: "#fff", padding: 28, textAlign: "center",
       boxShadow: "0 20px 50px rgba(17,20,57,0.14)",
     }}>
       <div style={{

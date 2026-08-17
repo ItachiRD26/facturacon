@@ -7,10 +7,10 @@ import type { EmpresaConfig } from "@/types/tenant";
 import type { FilaSetPrueba, ItemAC, FacturaPrueba } from "@/lib/certificacion/tipos";
 import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder";
 import VideoPlaceholder from "@/components/marketing/video-placeholder";
-import PagoCertificacion from "@/components/panel/pago-certificacion";
 
 const sans  = "var(--font-sans)";
 const serif = "var(--font-serif)";
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -55,8 +55,8 @@ function Boton({ onClick, disabled, children, variante = "primario" }: {
 
 // Botón de subida de archivo con ícono visible — un <input type="file">
 // pelado se confunde con texto normal, esto deja claro que ahí se hace clic.
-function SubidaArchivo({ onFile, cargando, etiqueta, nombreArchivo }: {
-  onFile: (f: File) => void; cargando: boolean; etiqueta: string; nombreArchivo?: string;
+function SubidaArchivo({ onFile, cargando, etiqueta, nombreArchivo, accept = ".xlsx,.xls" }: {
+  onFile: (f: File) => void; cargando: boolean; etiqueta: string; nombreArchivo?: string; accept?: string;
 }) {
   return (
     <label style={{
@@ -66,7 +66,7 @@ function SubidaArchivo({ onFile, cargando, etiqueta, nombreArchivo }: {
     }}>
       <span style={{ fontSize: 18 }}>📄</span>
       {cargando ? "Subiendo…" : nombreArchivo ? `✓ ${nombreArchivo} — cambiar archivo` : etiqueta}
-      <input type="file" accept=".xlsx,.xls" disabled={cargando} onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} style={{ display: "none" }} />
+      <input type="file" accept={accept} disabled={cargando} onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} style={{ display: "none" }} />
     </label>
   );
 }
@@ -172,7 +172,6 @@ export default function CertificacionPage() {
 
   const [paso, setPaso] = useState<Paso>(0);
   const [cargando, setCargando] = useState(true);
-  const [pagoEstado, setPagoEstado] = useState<string>("pendiente");
 
   // Paso 0
   const [empresa, setEmpresa] = useState<EmpresaConfig | null>(null);
@@ -181,6 +180,10 @@ export default function CertificacionPage() {
   const [actividad, setActividad] = useState("");
   const [guardandoEmpresa, setGuardandoEmpresa] = useState(false);
   const [ofvIniciada, setOfvIniciada] = useState(false);
+  const [slug, setSlug] = useState<string | null>(null);
+  const [firmandoPostulacion, setFirmandoPostulacion] = useState(false);
+  const [nombreArchivoPostulacion, setNombreArchivoPostulacion] = useState("");
+  const [errorPostulacion, setErrorPostulacion] = useState("");
 
   // Paso 1
   const [tokenValido, setTokenValido] = useState<boolean | null>(null);
@@ -217,25 +220,24 @@ export default function CertificacionPage() {
 
   async function cargarTodo() {
     if (!tenantId) return;
-    const [eR, tR, sR, acR, pR, iR, pagoR] = await Promise.all([
+    const [eR, tR, sR, acR, pR, iR] = await Promise.all([
       fetch(`/api/certificacion/empresa?t=${tenantId}`).then((r) => r.json()).catch(() => null),
       fetch(`/api/certificacion/token?t=${tenantId}`).then((r) => r.json()).catch(() => null),
       fetch(`/api/certificacion/upload-set?t=${tenantId}`).then((r) => r.json()).catch(() => null),
       fetch(`/api/certificacion/upload-ac?t=${tenantId}`).then((r) => r.json()).catch(() => null),
       fetch(`/api/certificacion/crear-prueba?t=${tenantId}`).then((r) => r.json()).catch(() => null),
       fetch(`/api/certificacion/iniciar?t=${tenantId}`).then((r) => r.json()).catch(() => null),
-      fetch(`/api/payments/estado?t=${tenantId}`).then((r) => r.json()).catch(() => null),
     ]);
     if (eR?.empresa) {
       setEmpresa(eR.empresa);
       setDireccion(eR.empresa.direccion); setTelefono(eR.empresa.telefono); setActividad(eR.empresa.actividadEconomica);
     }
+    if (eR?.slug) setSlug(eR.slug);
     if (tR) { setTokenValido(tR.valido ?? null); setTokenExpira(tR.expira ?? null); }
     if (sR?.filas) setFilas(sR.filas);
     if (acR?.items) setAcItems(acR.items);
     if (pR?.items) setPruebas(pR.items);
     if (iR?.ofvIniciada) setOfvIniciada(true);
-    if (pagoR?.estado) setPagoEstado(pagoR.estado);
     setCargando(false);
   }
 
@@ -261,6 +263,30 @@ export default function CertificacionPage() {
       alert(e instanceof Error ? e.message : "Error guardando datos de empresa");
     } finally {
       setGuardandoEmpresa(false);
+    }
+  }
+
+  async function firmarPostulacion(file: File) {
+    setFirmandoPostulacion(true); setErrorPostulacion("");
+    try {
+      const form = new FormData();
+      form.set("tenantId", tenantId); form.set("xml", file);
+      const res = await fetch("/api/certificacion/firmar-postulacion", { method: "POST", body: form });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? "No se pudo firmar el XML");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `postulacion-firmada-${tenantId}.xml`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      setNombreArchivoPostulacion(file.name);
+    } catch (e) {
+      setErrorPostulacion(e instanceof Error ? e.message : "No se pudo firmar el XML");
+    } finally {
+      setFirmandoPostulacion(false);
     }
   }
 
@@ -455,10 +481,6 @@ export default function CertificacionPage() {
     return <main style={{ padding: 60, textAlign: "center", fontFamily: sans, color: "var(--c-text-3)" }}>Cargando asistente…</main>;
   }
 
-  if (pagoEstado !== "capturada") {
-    return <PagoCertificacion tenantId={tenantId} />;
-  }
-
   const totalPaso2 = Object.keys(filas).length;
   const enviadosPaso2 = Object.values(filas).filter((f) => f.estadoEnvio === "enviado" || f.estadoEnvio === "aceptado").length;
   const candidatosRFCE = Object.values(filas).filter((f) => f.tipoECF === "E32" && f.montoTotal < 250000 && (f.estadoEnvio === "enviado" || f.estadoEnvio === "aceptado"));
@@ -535,6 +557,58 @@ export default function CertificacionPage() {
             </Boton>
             {!ofvIniciada && <p style={{ fontSize: 12, color: "#991b1b", marginTop: 8 }}>Confirma primero que iniciaste la solicitud en la OFV.</p>}
           </div>
+        </Card>
+      )}
+
+      {paso === 0 && (
+        <Card>
+          <h2 style={{ fontFamily: serif, fontSize: "1.05rem", marginBottom: 4 }}>
+            Formulario de postulación de la OFV: URLs del software y firma del XML
+          </h2>
+          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
+            Dentro de la OFV, al declarar tu software como &quot;Propio&quot;, te van a pedir 3 URLs
+            y un archivo de postulación firmado. Esto es lo que va en cada campo.
+          </p>
+
+          {slug ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+              {[
+                { label: "URL de recepción", ruta: "/fe/recepcion/api/ecf" },
+                { label: "URL de aprobación comercial", ruta: "/fe/aprobacioncomercial/api/ecf" },
+                { label: "URL de autenticación", ruta: "/fe/autenticacion/api/[semilla|validacioncertificado]" },
+              ].map((u) => {
+                const valor = `https://${slug}.${ROOT_DOMAIN}${u.ruta}`;
+                return (
+                  <div key={u.label}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--c-text-3)", textTransform: "uppercase", marginBottom: 3 }}>{u.label}</div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input readOnly value={valor} onFocus={(e) => e.target.select()}
+                        style={{ flex: 1, padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 12, fontFamily: "var(--font-mono)", background: "var(--c-bg)" }} />
+                      <Boton variante="secundario" onClick={() => navigator.clipboard.writeText(valor)}>Copiar</Boton>
+                    </div>
+                  </div>
+                );
+              })}
+              <p style={{ fontSize: 11, color: "var(--c-text-4)", marginTop: 2 }}>
+                Es una URL fija y opaca, propia de tu empresa — no incluye tu RNC ni tu nombre comercial.
+              </p>
+            </div>
+          ) : (
+            <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>Cargando tu URL…</p>
+          )}
+
+          <div style={{ height: 1, background: "var(--c-border)", margin: "16px 0" }} />
+
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Firmar el archivo de postulación</div>
+          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 12 }}>
+            Descarga el XML de postulación desde la OFV, súbelo aquí para firmarlo con tu certificado
+            ya guardado, y luego sube el archivo firmado que te devolvemos de vuelta a la OFV.
+          </p>
+          <SubidaArchivo
+            onFile={firmarPostulacion} cargando={firmandoPostulacion} accept=".xml"
+            etiqueta="Subir XML de postulación para firmar" nombreArchivo={nombreArchivoPostulacion}
+          />
+          {errorPostulacion && <p style={{ fontSize: 12, color: "#991b1b", marginTop: 8 }}>{errorPostulacion}</p>}
         </Card>
       )}
 

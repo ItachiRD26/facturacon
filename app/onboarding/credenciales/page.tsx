@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Tenant } from "@/types/tenant";
+import Icon from "@/components/ui/icon";
 
 const sans = "var(--font-sans)";
 const serif = "var(--font-serif)";
@@ -47,8 +48,11 @@ function CredencialesShell() {
   const [cedulaError, setCedulaError] = useState("");
 
   const [p12File, setP12File] = useState<File | null>(null);
+  const p12InputRef = useRef<HTMLInputElement>(null);
   const [password, setPassword] = useState("");
   const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [verificandoP12, setVerificandoP12] = useState(false);
+  const [p12Resultado, setP12Resultado] = useState<{ valid: boolean; error?: string } | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [etapa, setEtapa] = useState(0);
   const [completado, setCompletado] = useState(false);
@@ -81,8 +85,24 @@ function CredencialesShell() {
   const passwordTieneEspacios = password !== passwordTrimmed && password.length > 0;
   const cedulaLista = !!cedulaResultado?.valid && !!cedulaResultado?.activo;
   const p12Listo = !!p12File;
-  const passwordLista = passwordTrimmed.length > 0;
-  const listoParaEnviar = cedulaLista && p12Listo && passwordLista;
+  const passwordVerificada = !!p12Resultado?.valid;
+  const listoParaEnviar = cedulaLista && p12Listo && passwordVerificada;
+
+  const verificarP12 = async () => {
+    if (!p12File || !passwordTrimmed) return;
+    setVerificandoP12(true); setP12Resultado(null);
+    try {
+      const form = new FormData();
+      form.set("tenantId", tenantId);
+      form.set("password", passwordTrimmed);
+      form.set("p12", p12File);
+      const res = await fetch("/api/onboarding/verificar-p12", { method: "POST", body: form });
+      const data = await res.json();
+      setP12Resultado({ valid: !!data.valid, error: data.error });
+    } catch {
+      setP12Resultado({ valid: false, error: "No se pudo verificar el certificado ahora. Intenta de nuevo." });
+    } finally { setVerificandoP12(false); }
+  };
 
   const enviar = async () => {
     if (!p12File || !tenant) return;
@@ -175,7 +195,7 @@ function CredencialesShell() {
       <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", background: "var(--c-bg)", border: "1px solid var(--c-border)", borderRadius: 8, marginBottom: 24 }}>
         <ChecklistItem ok={cedulaLista}>Cédula validada y Activa ante la DGII</ChecklistItem>
         <ChecklistItem ok={p12Listo}>Certificado (.p12) seleccionado</ChecklistItem>
-        <ChecklistItem ok={passwordLista}>Contraseña ingresada</ChecklistItem>
+        <ChecklistItem ok={passwordVerificada}>Contraseña del certificado verificada</ChecklistItem>
       </div>
 
       <div style={{ marginBottom: 22 }}>
@@ -206,8 +226,34 @@ function CredencialesShell() {
         <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#374151", textTransform: "uppercase", marginBottom: 6 }}>
           Certificado de firma digital (.p12)
         </label>
-        <input type="file" accept=".p12,.pfx" onChange={(e) => setP12File(e.target.files?.[0] ?? null)}
-          style={{ width: "100%", padding: "9px 4px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13 }} />
+        <input
+          ref={p12InputRef} type="file" accept=".p12,.pfx" style={{ display: "none" }}
+          onChange={(e) => { setP12File(e.target.files?.[0] ?? null); setP12Resultado(null); }}
+        />
+        <button
+          type="button" onClick={() => p12InputRef.current?.click()}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
+            border: `1px dashed ${p12File ? "var(--c-brand)" : "#d1d5db"}`, borderRadius: 6, cursor: "pointer",
+            background: p12File ? "var(--c-brand-bg)" : "var(--c-bg)", textAlign: "left",
+          }}
+        >
+          <span style={{
+            width: 32, height: 32, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+            background: p12File ? "var(--c-brand)" : "var(--c-surface)", color: p12File ? "#fff" : "var(--c-text-3)",
+            border: p12File ? "none" : "1px solid #d1d5db",
+          }}>
+            <Icon name="upload" size={15} />
+          </span>
+          <span>
+            <div style={{ fontSize: 13, fontWeight: 600, color: p12File ? "var(--c-brand)" : "var(--c-text-2)" }}>
+              {p12File ? p12File.name : "Haz clic para subir tu certificado"}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--c-text-4)", marginTop: 1 }}>
+              {p12File ? "Haz clic para cambiar el archivo" : "Archivo .p12 o .pfx"}
+            </div>
+          </span>
+        </button>
       </div>
 
       <div style={{ marginBottom: 10 }}>
@@ -217,7 +263,7 @@ function CredencialesShell() {
         <div style={{ display: "flex", gap: 8 }}>
           <input
             type={mostrarPassword ? "text" : "password"}
-            value={password} onChange={(e) => setPassword(e.target.value)}
+            value={password} onChange={(e) => { setPassword(e.target.value); setP12Resultado(null); }}
             style={{ flex: 1, padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13, fontFamily: "var(--font-mono)" }}
           />
           <button type="button" onClick={() => setMostrarPassword((v) => !v)} style={{
@@ -232,6 +278,33 @@ function CredencialesShell() {
             ⚠ Tu contraseña tiene espacios al inicio o al final — es un error común al copiarla.
             Los vamos a quitar automáticamente, pero verifica que el resto esté exactamente igual a
             como te la entregaron.
+          </div>
+        )}
+
+        <button
+          type="button" onClick={verificarP12} disabled={!p12File || !passwordTrimmed || verificandoP12}
+          style={{
+            marginTop: 8, width: "100%", padding: "10px 14px", borderRadius: 6, fontSize: 13, fontWeight: 700,
+            cursor: (!p12File || !passwordTrimmed || verificandoP12) ? "not-allowed" : "pointer",
+            background: passwordVerificada ? "#166534" : (!p12File || !passwordTrimmed) ? "#e5e7eb" : "var(--c-brand)",
+            color: passwordVerificada || (p12File && passwordTrimmed) ? "#fff" : "var(--c-text-4)",
+            border: "none",
+          }}
+        >
+          {verificandoP12 ? "Verificando contraseña..." : passwordVerificada ? "✓ Contraseña verificada" : "Verificar contraseña del certificado"}
+        </button>
+        <div style={{ marginTop: 6, fontSize: 11, color: "var(--c-text-4)" }}>
+          Es fundamental que la contraseña sea exactamente la de este certificado — si no verificas
+          aquí, no podrás avanzar y solo lo descubrirás al intentar firmar comprobantes más adelante.
+        </div>
+        {p12Resultado && !p12Resultado.valid && (
+          <div style={{ marginTop: 8, padding: "10px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, fontSize: 12, color: "#991b1b" }}>
+            ✗ {p12Resultado.error ?? "No se pudo verificar la contraseña. Verifícala e intenta de nuevo."}
+          </div>
+        )}
+        {p12Resultado?.valid && (
+          <div style={{ marginTop: 8, padding: "10px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, fontSize: 12, color: "#166534" }}>
+            ✓ La contraseña es correcta para este certificado.
           </div>
         )}
         <div style={{ marginTop: 6, fontSize: 11, color: "var(--c-text-4)" }}>

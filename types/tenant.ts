@@ -49,6 +49,15 @@ export interface EmpresaConfig {
   ambiente:          "ecf" | "certecf" | "testecf";
 }
 
+// Personalización de la factura impresa (logo del negocio) — vive en
+// tenants/{tenantId}/config/personalizacion, solo la escribe el backend
+// (después de procesar la imagen subida), el cliente solo lee.
+export interface Personalizacion {
+  logoA4Url?:      string;
+  logoTermicoUrl?: string;
+  actualizadoEn?:  string;
+}
+
 export type RolMembership = "owner" | "admin" | "vendedor" | "contador" | "viewer";
 
 export interface Membership {
@@ -65,6 +74,7 @@ export interface UserPerfil {
   uid:        string;
   email:      string;
   nombre:     string;
+  telefono?:  string;
   tipoCuenta: TipoCuenta;
   creadoEn:   string;
 }

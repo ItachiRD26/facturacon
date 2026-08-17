@@ -40,3 +40,22 @@ export async function requireTenantActivo(
 
   return { ok: true, uid, tenant, rol: membership.rol };
 }
+
+// Para gestión de equipo/roles — a diferencia de requireTenantActivo, no
+// exige que el tenant esté certificado (se puede armar el equipo desde el
+// sandbox), solo que quien llama sea owner o admin.
+export async function requireOwnerOAdmin(tenantId: string): Promise<VerificacionOk | VerificacionError> {
+  const uid = await getSessionUid();
+  if (!uid) {
+    return { ok: false, response: NextResponse.json({ error: "Sesión requerida" }, { status: 401 }) };
+  }
+  const membership = await getMembership(uid, tenantId);
+  if (!membership || (membership.rol !== "owner" && membership.rol !== "admin")) {
+    return { ok: false, response: NextResponse.json({ error: "No tienes permiso para esta acción" }, { status: 403 }) };
+  }
+  const tenant = await getTenantById(tenantId);
+  if (!tenant) {
+    return { ok: false, response: NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 }) };
+  }
+  return { ok: true, uid, tenant, rol: membership.rol };
+}

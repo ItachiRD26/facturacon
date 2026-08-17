@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useSandbox } from "@/contexts/SandboxContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useClientes } from "@/hooks/use-clientes";
 import { useProductos } from "@/hooks/use-productos";
 import { useCotizaciones } from "@/hooks/use-cotizaciones";
 import { useFacturas } from "@/hooks/use-facturas";
 import { useCuentasPorCobrar } from "@/hooks/use-cuentas-por-cobrar";
+import { usePersonalizacion } from "@/hooks/use-personalizacion";
 import type { Cotizacion, EstadoCotizacion } from "@/types";
 import { calcTotales, fmt, fmtDate } from "@/types";
 import Badge from "@/components/ui/badge";
@@ -24,19 +26,31 @@ const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
 export default function SandboxCotizacionesPage() {
   const { tenantId, tenant } = useSandbox();
+  const { firebaseUser, perfil } = useAuth();
   const { clientes } = useClientes(tenantId);
   const { productos } = useProductos(tenantId);
   const { cotizaciones, loading, agregar, actualizar, cambiarEstado } = useCotizaciones(tenantId);
   const { agregar: agregarFactura } = useFacturas(tenantId);
   const { agregar: agregarCuenta } = useCuentasPorCobrar(tenantId);
+  const { personalizacion } = usePersonalizacion(tenantId);
 
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [editando,     setEditando]     = useState<Cotizacion | null>(null);
   const [convirtiendo, setConvirtiendo] = useState<Cotizacion | null>(null);
   const [imprimiendo,  setImprimiendo]  = useState<Cotizacion | null>(null);
   const [busqueda,     setBusqueda]     = useState("");
   const [filtroEstado, setFiltroEstado] = useState<EstadoCotizacion | "todos">("todos");
 
   const clientePor = (id: string) => clientes.find((c) => c.id === id);
+
+  const autor = firebaseUser ? { uid: firebaseUser.uid, nombre: perfil?.nombre || perfil?.email || "Usuario" } : undefined;
+  const abrirEdicion = (c: Cotizacion) => { setEditando(c); setModalAbierto(true); };
+  const cerrarModal = () => { setModalAbierto(false); setEditando(null); };
+  const guardarModal = async (data: Omit<Cotizacion, "id">) => {
+    if (editando) await actualizar(editando.id, data, autor);
+    else await agregar(data);
+  };
+  const anular = (c: Cotizacion) => cambiarEstado(c.id, "anulada", autor);
 
   const filtradas = cotizaciones.filter((c) => {
     const nombre = clientePor(c.clienteId)?.nombre ?? "";
@@ -122,7 +136,17 @@ export default function SandboxCotizacionesPage() {
                 <tr key={c.id} style={{ borderBottom: "1px solid #f3f4f6" }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "")}>
-                  <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 12, fontWeight: 700, color: "#111" }}>{c.noCotizacion}</td>
+                  <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 12, fontWeight: 700, color: "#111" }}>
+                    {c.noCotizacion}
+                    {!!c.historial?.length && (
+                      <span
+                        title={c.historial.map((h) => `${h.accion} — ${h.nombre} (${new Date(h.fecha).toLocaleString("es-DO")})`).join("\n")}
+                        style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: "#9ca3af", fontFamily: sans, cursor: "help" }}
+                      >
+                        ✎ {c.historial.length}
+                      </span>
+                    )}
+                  </td>
                   <td style={{ padding: "11px 14px", fontSize: 13, color: "#374151", fontFamily: sans }}>{clientePor(c.clienteId)?.nombre ?? "—"}</td>
                   <td style={{ padding: "11px 14px", fontSize: 12, color: "#6b7280", fontFamily: sans }}>{fmtDate(c.fecha)}</td>
                   <td style={{ padding: "11px 14px", fontSize: 12, color: "#6b7280", fontFamily: sans }}>{fmtDate(c.vencimiento)}</td>
@@ -135,10 +159,13 @@ export default function SandboxCotizacionesPage() {
                       </button>
                       {c.estado === "vigente" && (
                         <>
+                          <button onClick={() => abrirEdicion(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer", color: "#374151", fontSize: 12, fontFamily: sans }}>
+                            <Icon name="edit" size={12} /> Editar
+                          </button>
                           <button onClick={() => setConvirtiendo(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "#fff", border: "1px solid #a5f3fc", borderRadius: 4, cursor: "pointer", color: "#0e7490", fontSize: 12, fontFamily: sans }}>
                             <Icon name="convert" size={12} /> Convertir
                           </button>
-                          <button onClick={() => cambiarEstado(c.id, "anulada")} style={{ padding: "5px 10px", background: "#fff", border: "1px solid #fecaca", borderRadius: 4, cursor: "pointer", color: "#dc2626", fontSize: 12, fontFamily: sans }}>
+                          <button onClick={() => anular(c)} style={{ padding: "5px 10px", background: "#fff", border: "1px solid #fecaca", borderRadius: 4, cursor: "pointer", color: "#dc2626", fontSize: 12, fontFamily: sans }}>
                             Anular
                           </button>
                         </>
@@ -153,8 +180,8 @@ export default function SandboxCotizacionesPage() {
       )}
 
       <ModalNuevaCotizacion
-        open={modalAbierto} onClose={() => setModalAbierto(false)} tenantId={tenantId}
-        clientes={clientes} productos={productos} onSave={agregar}
+        open={modalAbierto} onClose={cerrarModal} tenantId={tenantId}
+        clientes={clientes} productos={productos} onSave={guardarModal} cotizacionEditar={editando}
       />
 
       <ModalConvertirCotizacion
@@ -166,7 +193,10 @@ export default function SandboxCotizacionesPage() {
       <PrintModalCotizacion
         open={!!imprimiendo} onClose={() => setImprimiendo(null)} cotizacion={imprimiendo}
         cliente={imprimiendo ? clientePor(imprimiendo.clienteId) : undefined}
-        empresa={{ nombre: tenant.nombreNegocio, rnc: tenant.rnc }}
+        empresa={{
+          nombre: tenant.nombreNegocio, rnc: tenant.rnc,
+          logoA4Url: personalizacion?.logoA4Url, logoTermicoUrl: personalizacion?.logoTermicoUrl,
+        }}
       />
     </div>
   );

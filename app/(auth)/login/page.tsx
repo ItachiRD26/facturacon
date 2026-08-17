@@ -4,10 +4,11 @@ import { Suspense, useEffect, useState } from "react";
 import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter, useSearchParams } from "next/navigation";
+import Logo from "@/components/ui/logo";
+import GoogleIcon from "@/components/ui/google-icon";
 
 const sans  = "var(--font-sans)";
 const mono  = "var(--font-mono)";
-const serif = "var(--font-serif)";
 
 export default function LoginPage() {
   return (
@@ -30,11 +31,11 @@ function LoginForm() {
   // viene precargado — solo falta la contraseña.
   useEffect(() => { if (emailDesdeQuery) setEmail(emailDesdeQuery); }, [emailDesdeQuery]);
 
-  const crearSesionYRedirigir = async (idToken: string) => {
+  const crearSesionYRedirigir = async (idToken: string, nombre?: string) => {
     const res = await fetch("/api/auth/session", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ idToken }),
+      body:    JSON.stringify({ idToken, nombre }),
     });
     if (!res.ok) {
       const data = await res.json();
@@ -68,7 +69,7 @@ function LoginForm() {
     try {
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
       const idToken    = await credential.user.getIdToken();
-      await crearSesionYRedirigir(idToken);
+      await crearSesionYRedirigir(idToken, credential.user.displayName ?? credential.user.email ?? undefined);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("popup-closed-by-user")) {
@@ -86,10 +87,10 @@ function LoginForm() {
       boxShadow: "0 4px 24px rgba(0,0,0,0.05)", fontFamily: sans,
     }}>
       <div style={{ textAlign: "center", marginBottom: 32 }}>
-        <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 600, color: "var(--c-navy)", lineHeight: 1.2 }}>
-          Facturacon
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <Logo size={30} />
         </div>
-        <div style={{ fontSize: 11, color: "var(--c-text-4)", marginTop: 4, fontFamily: mono }}>
+        <div style={{ fontSize: 11, color: "var(--c-text-4)", marginTop: 8, fontFamily: mono }}>
           Facturación Electrónica como Servicio
         </div>
       </div>
@@ -101,10 +102,12 @@ function LoginForm() {
       )}
 
       <button onClick={handleGoogle} disabled={loading} type="button" style={{
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
         width: "100%", padding: "10px", marginBottom: 16, background: "#fff",
         border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, fontWeight: 600,
         color: "#111", cursor: loading ? "not-allowed" : "pointer", fontFamily: sans,
       }}>
+        <GoogleIcon />
         Continuar con Google
       </button>
 

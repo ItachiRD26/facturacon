@@ -39,9 +39,24 @@ export async function POST(request: NextRequest) {
 
     const sessionCookie = await adminAuth.createSessionCookie(body.idToken, { expiresIn: SESSION_MS });
 
-    adminDb.collection("users").doc(decoded.uid)
-      .set({ ultimoAcceso: new Date().toISOString() }, { merge: true })
-      .catch(console.error);
+    // `nombre` llega en cada registro (correo o Google, para mantener el
+    // nombre de Google sincronizado) — pero `uid`/`email`/`creadoEn` deben
+    // fijarse UNA sola vez, cuando el doc todavía no existe, o un login por
+    // Google reescribiría `creadoEn` cada vez. Best-effort: si esto falla,
+    // no debe impedir que la sesión se cree igual.
+    const userRef = adminDb.collection("users").doc(decoded.uid);
+    userRef.get().then(async (existente) => {
+      const perfilUpdate: Record<string, unknown> = { ultimoAcceso: new Date().toISOString() };
+      if (!existente.exists) {
+        perfilUpdate.uid = decoded.uid;
+        perfilUpdate.email = user.email ?? "";
+        perfilUpdate.creadoEn = new Date().toISOString();
+      }
+      if (typeof body.nombre === "string" && body.nombre.trim()) perfilUpdate.nombre = body.nombre.trim();
+      if (typeof body.telefono === "string" && body.telefono.trim()) perfilUpdate.telefono = body.telefono.trim();
+      if (body.tipoCuenta === "individual" || body.tipoCuenta === "gestor") perfilUpdate.tipoCuenta = body.tipoCuenta;
+      await userRef.set(perfilUpdate, { merge: true });
+    }).catch(console.error);
 
     const response = NextResponse.json({ success: true });
     response.cookies.set(SESSION_COOKIE, sessionCookie, {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   collection, onSnapshot, addDoc, updateDoc,
-  doc, query, orderBy, serverTimestamp,
+  doc, query, orderBy, where, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Factura, EstadoFactura } from "@/types";
@@ -15,20 +15,30 @@ function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   return result;
 }
 
-export function useFacturas(tenantId: string) {
+// `creadoPorUid`: pásalo cuando quien consulta es un cajero (rol vendedor) —
+// firestore.rules solo le permite leer sus propias facturas, y Firestore
+// rechaza un list() completo si el query no trae el mismo where() que exige
+// la regla (no filtra "en silencio", falla con permission-denied).
+// `undefined` = sin filtro (dueño/admin/contador). `null` = el filtro aplica
+// pero el uid todavía no está listo (auth cargando) — no consultar todavía,
+// para no disparar un list() sin where() que Firestore rechazaría igual.
+export function useFacturas(tenantId: string, creadoPorUid?: string | null) {
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!tenantId) return;
-    const q = query(collection(db, "tenants", tenantId, "facturas"), orderBy("fecha", "desc"));
+    if (!tenantId || creadoPorUid === null) return;
+    const base = collection(db, "tenants", tenantId, "facturas");
+    const q = creadoPorUid
+      ? query(base, where("creadoPor", "==", creadoPorUid), orderBy("fecha", "desc"))
+      : query(base, orderBy("fecha", "desc"));
     const unsub = onSnapshot(q,
       (snap) => { setFacturas(excluirMuestra(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Factura)))); setLoading(false); },
       (err) => { console.error("[useFacturas]", err); setError("Error cargando facturas"); setLoading(false); }
     );
     return () => unsub();
-  }, [tenantId]);
+  }, [tenantId, creadoPorUid]);
 
   const agregar = async (data: Omit<Factura, "id">) => {
     const ref = await addDoc(collection(db, "tenants", tenantId, "facturas"), cleanData({ ...data, creadoEn: serverTimestamp() }));

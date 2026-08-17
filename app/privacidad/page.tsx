@@ -16,7 +16,7 @@ const secciones = [
   },
   {
     t: "4. Con quién compartimos datos",
-    p: "Con la DGII, en la medida necesaria para tu certificación y la emisión de tus comprobantes fiscales electrónicos una vez certificado; y con Pagadito, nuestro procesador de pagos, para gestionar tu suscripción mensual (cuyo primer pago activa tu proceso de certificación). No almacenamos los datos de tu tarjeta — esos quedan únicamente en la página segura de Pagadito. No vendemos tus datos a terceros.",
+    p: "Con la DGII, en la medida necesaria para tu certificación (que es gratuita) y la emisión de tus comprobantes fiscales electrónicos una vez certificado; y con Pagadito, nuestro procesador de pagos, para gestionar el cobro recurrente de tu suscripción mensual, que se activa una vez ya estés certificado y facturando. Los datos de tu tarjeta se transmiten de forma cifrada directamente a Pagadito para procesar el cobro — no los almacenamos nosotros. No vendemos tus datos a terceros.",
   },
   {
     t: "5. Aislamiento entre contribuyentes",

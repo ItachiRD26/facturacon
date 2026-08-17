@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "@/components/ui/logo";
 
 export default function SiteHeader() {
   return (
@@ -10,11 +11,8 @@ export default function SiteHeader() {
         maxWidth: 1080, margin: "0 auto", padding: "14px 24px",
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
       }}>
-        <Link href="/" style={{
-          fontFamily: "var(--font-serif)", fontSize: "1.15rem", fontWeight: 700,
-          color: "var(--c-navy)", textDecoration: "none",
-        }}>
-          Facturacon
+        <Link href="/" style={{ textDecoration: "none", display: "flex" }}>
+          <Logo size={26} />
         </Link>
 
         <nav style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 13, flexWrap: "wrap" }}>

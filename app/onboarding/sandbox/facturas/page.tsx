@@ -6,6 +6,7 @@ import { useClientes } from "@/hooks/use-clientes";
 import { useProductos } from "@/hooks/use-productos";
 import { useFacturas } from "@/hooks/use-facturas";
 import { useCuentasPorCobrar } from "@/hooks/use-cuentas-por-cobrar";
+import { usePersonalizacion } from "@/hooks/use-personalizacion";
 import type { EstadoFactura, Factura } from "@/types";
 import { calcTotales, fmt, fmtDate } from "@/types";
 import Badge from "@/components/ui/badge";
@@ -36,6 +37,7 @@ export default function SandboxFacturasPage() {
   const { productos } = useProductos(tenantId);
   const { facturas, loading, agregar: agregarFactura, cambiarEstado } = useFacturas(tenantId);
   const { agregar: agregarCuenta } = useCuentasPorCobrar(tenantId);
+  const { personalizacion } = usePersonalizacion(tenantId);
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [imprimiendo,  setImprimiendo]  = useState<Factura | null>(null);
@@ -164,7 +166,10 @@ export default function SandboxFacturasPage() {
       <PrintModal
         open={!!imprimiendo} onClose={() => setImprimiendo(null)} factura={imprimiendo}
         cliente={imprimiendo ? clientePor(imprimiendo.clienteId) : undefined}
-        empresa={{ nombre: tenant.nombreNegocio, rnc: tenant.rnc }}
+        empresa={{
+          nombre: tenant.nombreNegocio, rnc: tenant.rnc,
+          logoA4Url: personalizacion?.logoA4Url, logoTermicoUrl: personalizacion?.logoTermicoUrl,
+        }}
       />
     </div>
   );

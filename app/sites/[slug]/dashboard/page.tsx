@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTenant } from "@/contexts/TenantContext";
+import { useModuloGuard } from "@/hooks/use-modulo-guard";
 import { useFacturas } from "@/hooks/use-facturas";
 import { useCotizaciones } from "@/hooks/use-cotizaciones";
 import { useClientes } from "@/hooks/use-clientes";
@@ -30,6 +31,7 @@ function KPICard({ label, valor, sub, accent, icon }: { label: string; valor: st
 
 export default function TenantDashboardPage() {
   const tenant = useTenant();
+  useModuloGuard(tenant.rol, "dashboard");
   const { facturas,     loading: lf  } = useFacturas(tenant.tenantId);
   const { cotizaciones, loading: lc  } = useCotizaciones(tenant.tenantId);
   const { clientes,     loading: lcl } = useClientes(tenant.tenantId);

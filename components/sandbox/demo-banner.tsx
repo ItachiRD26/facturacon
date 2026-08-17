@@ -9,7 +9,7 @@ export default function DemoBanner() {
 
   return (
     <div style={{
-      flexShrink: 0, background: "#111827", color: "#fff",
+      flexShrink: 0, background: "var(--c-navy)", color: "#fff",
       padding: "8px 20px", display: "flex", justifyContent: "space-between",
       alignItems: "center", gap: 12, flexWrap: "wrap", fontFamily: "var(--font-sans)",
     }}>

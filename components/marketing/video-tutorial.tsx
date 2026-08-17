@@ -11,7 +11,7 @@ export default function VideoTutorial() {
     <section style={{ padding: "0 24px 56px", maxWidth: 880, margin: "0 auto" }}>
       <div style={{
         borderRadius: 12, overflow: "hidden", border: "1px solid var(--c-border)",
-        background: "#0f172a", position: "relative", aspectRatio: "16 / 9",
+        background: "var(--c-navy)", position: "relative", aspectRatio: "16 / 9",
       }}>
         {videoId ? (
           <iframe
@@ -30,7 +30,7 @@ export default function VideoTutorial() {
               position: "absolute", inset: 0, display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center", gap: 12, color: "#fff",
               textDecoration: "none", cursor: url ? "pointer" : "default",
-              background: "linear-gradient(135deg, #1e293b, #0f172a)",
+              background: "var(--gradient-hero)",
             }}
           >
             <div style={{

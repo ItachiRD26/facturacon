@@ -6,6 +6,10 @@ import { requireTenantEnCertificacion } from "@/lib/certificacion/auth";
 // vez que entra al wizard de los 15 pasos (después de guardar los datos de
 // empresa del Paso 0). Es idempotente: si ya está en "certificando" no falla.
 //
+// La certificación es gratis (no hay pago que verificar aquí) — el cobro
+// empieza recién cuando el tenant llega a "activo" y activa su suscripción
+// recurrente (ver lib/payments/suscripcion.ts), no antes.
+//
 // También guarda la confirmación de que la empresa ya inició la solicitud de
 // certificación dentro de su Oficina Virtual (OFV) — sin eso, el ambiente
 // certecf de la DGII no reconoce al RNC y los pasos técnicos (semilla, envío
@@ -18,10 +22,6 @@ export async function POST(req: NextRequest) {
   if (!verif.ok) return verif.response;
 
   if (verif.tenant.estado === "pendiente_certificacion") {
-    const pago = await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("pago").get();
-    if (pago.data()?.estado !== "capturada") {
-      return NextResponse.json({ error: "Primero debes completar el pago de certificación." }, { status: 402 });
-    }
     await adminDb.collection("tenants").doc(tenantId).update({ estado: "certificando" });
   }
 

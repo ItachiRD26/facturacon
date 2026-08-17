@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Icon from "@/components/ui/icon";
+import Logo from "@/components/ui/logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSandbox } from "@/contexts/SandboxContext";
 import { useSidebarCtx } from "@/contexts/SidebarUIContext";
+import { ROL_LABEL, ROLES_INVITABLES, tieneAcceso, type Modulo } from "@/lib/tenant/roles";
+import type { RolMembership } from "@/types/tenant";
 
-const NAV = [
+const NAV: { seg: Modulo; label: string; icon: string }[] = [
   { seg: "dashboard",            label: "Dashboard",          icon: "dashboard" },
   { seg: "facturas",             label: "Facturas",           icon: "invoice"   },
   { seg: "cotizaciones",         label: "Cotizaciones",       icon: "quotes"    },
@@ -16,6 +19,7 @@ const NAV = [
   { seg: "clientes",             label: "Clientes",           icon: "clients"   },
   { seg: "inventario",           label: "Inventario",         icon: "products"  },
   { seg: "recibidas",            label: "Facturas Recibidas", icon: "invoice"   },
+  { seg: "personalizacion",      label: "Personalización",    icon: "settings"  },
 ];
 
 const serif = "var(--font-serif)";
@@ -28,10 +32,17 @@ export default function SandboxSidebar() {
   const { tenant, tenantId } = useSandbox();
   const { open, setOpen }  = useSidebarCtx();
 
+  // Quien explora el sandbox es siempre el dueño (todavía no hay cajeros
+  // invitados en esta etapa) — este selector es solo para que se adelante a
+  // ver cómo quedaría el sistema para un cajero antes de certificarse.
+  const [rolPreview, setRolPreview] = useState<RolMembership | null>(null);
+  const rolEfectivo = rolPreview ?? "owner";
+
   useEffect(() => { setOpen(false); }, [pathname, setOpen]);
 
   const hrefDe = (seg: string) => `/onboarding/sandbox/${seg}?t=${tenantId}`;
   const active = (seg: string) => pathname.endsWith(`/sandbox/${seg}`);
+  const navVisible = NAV.filter((item) => tieneAcceso(rolEfectivo, item.seg));
 
   return (
     <>
@@ -46,16 +57,7 @@ export default function SandboxSidebar() {
         {/* Marca */}
         <div style={{ padding: "20px 18px 16px", borderBottom: "1px solid #e5e7eb" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: "50%", background: "#0e7490",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-              <svg width={16} height={16} viewBox="0 0 24 24" fill="none"
-                stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                <path d="M14 2v6h6" />
-              </svg>
-            </div>
+            <Logo variant="icon" size={32} />
             <div style={{ minWidth: 0 }}>
               <div style={{
                 fontFamily: serif, fontSize: 13, fontWeight: 700, color: "#111", lineHeight: 1.2,
@@ -78,9 +80,25 @@ export default function SandboxSidebar() {
           </div>
         </div>
 
+        <div style={{ padding: "10px 14px 0" }}>
+          <select
+            value={rolPreview ?? ""} onChange={(e) => setRolPreview((e.target.value || null) as RolMembership | null)}
+            title="Solo para previsualizar — no afecta datos reales"
+            style={{
+              width: "100%", fontSize: 11, padding: "5px 6px", borderRadius: 4,
+              border: "1px solid #e5e7eb", color: "#6b7280", fontFamily: sans, background: "#fff",
+            }}
+          >
+            <option value="">Ver como: dueño</option>
+            {ROLES_INVITABLES.map((r) => (
+              <option key={r} value={r}>Ver como: {ROL_LABEL[r]}</option>
+            ))}
+          </select>
+        </div>
+
         {/* Nav */}
         <nav style={{ flex: 1, padding: 10, display: "flex", flexDirection: "column", gap: 1, overflowY: "auto" }}>
-          {NAV.map(({ seg, label, icon }) => {
+          {navVisible.map(({ seg, label, icon }) => {
             const isActive = active(seg);
             return (
               <Link key={seg} href={hrefDe(seg)} data-tour={`nav-${seg}`} style={{

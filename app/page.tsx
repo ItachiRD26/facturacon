@@ -9,6 +9,7 @@ import PagaditoBadge from "@/components/marketing/pagadito-badge";
 import BeneficiosStrip from "@/components/marketing/beneficios-strip";
 import TrustStrip from "@/components/marketing/trust-strip";
 import FaqAccordion from "@/components/marketing/faq-accordion";
+import PricingCalculator from "@/components/marketing/pricing-calculator";
 import { PLANES } from "@/lib/payments/planes";
 
 const faqs = [
@@ -30,7 +31,7 @@ const faqs = [
   },
   {
     q: "¿Cuánto cuesta?",
-    a: "Una sola suscripción mensual según cuántos comprobantes electrónicos emitas — sin cargo de activación aparte. El primer pago de tu plan es lo que activa tu proceso de certificación. Ve la sección de Precios arriba.",
+    a: "La certificación como emisor electrónico es completamente gratis. Solo pagas una suscripción mensual, según cuántos comprobantes electrónicos emitas, y únicamente a partir de que ya estés certificado y facturando de verdad — no antes. Ve la sección de Precios arriba.",
   },
   {
     q: "¿Sirve para mi tipo de negocio?",
@@ -50,50 +51,49 @@ export default function LandingPage() {
     <>
       <SiteHeader />
       <main style={{ fontFamily: "var(--font-sans)", color: "var(--c-text-1)" }}>
-        {/* Hero — ocupa toda la primera vista (debajo del header sticky) */}
+        {/* Hero — minimalismo editorial: sin degradé de blobs ni grano, la
+            tipografía serif enorme carga todo el peso. Navy plano, como una
+            portada de revista financiera — confianza silenciosa en vez de
+            "vendedor gritando" con efectos. */}
         <section style={{
-          minHeight: "calc(100vh - 64px)", padding: "48px 24px", textAlign: "center",
-          background: "var(--gradient-hero)", position: "relative", overflow: "hidden",
+          minHeight: "calc(100vh - 64px)", padding: "64px 24px", textAlign: "center",
+          background: "var(--c-navy)", position: "relative",
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         }}>
-          <div style={{
-            position: "absolute", inset: 0, opacity: 0.5, pointerEvents: "none",
-            background: "radial-gradient(circle at 18% 22%, rgba(255,255,255,0.12), transparent 38%), radial-gradient(circle at 82% 78%, rgba(255,255,255,0.10), transparent 42%)",
-          }} />
-          <div className="grain-overlay" />
-          <div style={{ position: "relative" }}>
+          <div style={{ position: "relative", maxWidth: 900 }}>
             <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 24, padding: "5px 14px",
-              background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)",
-              borderRadius: 20, fontSize: 12, fontWeight: 600, color: "#fff",
-              letterSpacing: "0.08em", textTransform: "uppercase",
+              display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 40,
+              fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
+              letterSpacing: "0.16em", textTransform: "uppercase",
             }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#5eead4", flexShrink: 0 }} />
+              <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#5eead4", flexShrink: 0 }} />
               Facturación Electrónica · República Dominicana
             </div>
             <h1 style={{
-              fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: "clamp(2.4rem, 5vw, 3.4rem)", lineHeight: 1.1,
-              maxWidth: 760, margin: "0 auto 20px", color: "#fff", letterSpacing: "-0.01em",
+              fontFamily: "var(--font-serif)", fontWeight: 600,
+              fontSize: "clamp(2.2rem, 6vw, 4.6rem)", lineHeight: 1.08,
+              textTransform: "uppercase", letterSpacing: "0.004em",
+              margin: "0 auto 28px", color: "#fff",
             }}>
-              Certifícate ante la DGII y factura electrónicamente desde el primer día
+              Certifícate ante la DGII<br />y factura electrónicamente<br />desde el primer día
             </h1>
-            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.78)", maxWidth: 560, margin: "0 auto 32px" }}>
+            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.62)", maxWidth: 480, margin: "0 auto 44px", lineHeight: 1.65 }}>
               Te guiamos por todo el proceso de certificación de emisor electrónico y te entregamos
               un sistema de facturación listo para usar — sin contratar un desarrollador, sin montar
               servidores propios.
             </p>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
               <Link href="/registro" style={{
-                padding: "13px 28px", background: "#fff", color: "var(--c-navy)",
-                borderRadius: 6, fontWeight: 700, fontSize: 14, textDecoration: "none",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+                padding: "14px 30px", background: "#fff", color: "var(--c-navy)",
+                borderRadius: "var(--radius)", fontWeight: 700, fontSize: 12.5, textDecoration: "none",
+                letterSpacing: "0.05em", textTransform: "uppercase",
               }}>
                 Empezar gratis
               </Link>
               <a href="#como-funciona" style={{
-                padding: "13px 28px", background: "transparent", color: "#fff",
-                border: "1px solid rgba(255,255,255,0.4)", borderRadius: 6, fontWeight: 600, fontSize: 14,
-                textDecoration: "none",
+                padding: "14px 30px", background: "transparent", color: "#fff",
+                border: "1px solid rgba(255,255,255,0.3)", borderRadius: "var(--radius)", fontWeight: 600, fontSize: 12.5,
+                textDecoration: "none", letterSpacing: "0.05em", textTransform: "uppercase",
               }}>
                 Ver cómo funciona
               </a>
@@ -210,71 +210,24 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Precios — cifras de referencia, no son aun definitivas (ver nota abajo) */}
+        {/* Precios — calculadora en vez de una fila de tarjetas: ancla el
+            precio más bajo arriba y deja que el usuario vea exactamente su
+            plan según su propio volumen. */}
         <section id="precios" style={{ padding: "64px 24px", maxWidth: 1040, margin: "0 auto", textAlign: "center" }}>
-          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", marginBottom: 12 }}>
-            Precios
+          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", marginBottom: 8 }}>
+            Desde RD$ {PLANES[0].montoRD.toLocaleString("es-DO")}/mes
           </h2>
-          <p style={{ color: "var(--c-text-2)", marginBottom: 36, maxWidth: 560, margin: "0 auto 36px" }}>
-            Una sola suscripción mensual según cuántos comprobantes electrónicos emitas — el primer
-            pago de tu plan es justo lo que activa tu proceso de certificación. Sin cargo de
-            activación por separado.
+          <p style={{ color: "var(--c-text-2)", marginBottom: 40, maxWidth: 560, margin: "0 auto 40px" }}>
+            La certificación como emisor electrónico es gratis. Pagas una sola suscripción
+            mensual según cuántos comprobantes electrónicos emitas — y solo empieza a cobrarse
+            una vez ya estés certificado y facturando de verdad.
           </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 16, textAlign: "left" }}>
-            {PLANES.map((p) => (
-              <div key={p.id} style={{
-                display: "flex", flexDirection: "column", gap: 14, padding: "22px 18px",
-                background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12,
-              }}>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--c-text-3)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                  Plan {p.facturas}
-                </div>
-                <div>
-                  <span style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", fontWeight: 700 }}>
-                    RD$ {p.montoRD.toLocaleString("es-DO")}
-                  </span>
-                  <div style={{ fontSize: 11.5, color: "var(--c-text-4)" }}>al mes</div>
-                </div>
-                <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>{p.facturas} comprobantes / mes</div>
-                <Link href="/registro" style={{
-                  marginTop: "auto", padding: "9px 14px", borderRadius: 6, textAlign: "center",
-                  background: "var(--c-brand)", color: "#fff", fontWeight: 700, fontSize: 12.5, textDecoration: "none",
-                }}>
-                  Elegir plan
-                </Link>
-              </div>
-            ))}
+          <PricingCalculator />
 
-            <div style={{
-              display: "flex", flexDirection: "column", gap: 14, padding: "22px 18px",
-              background: "var(--c-bg)", border: "1px dashed var(--c-border)", borderRadius: 12,
-            }}>
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--c-text-3)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                A medida
-              </div>
-              <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.2rem", fontWeight: 700 }}>
-                Contáctanos
-              </div>
-              <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>
-                Más de {PLANES[PLANES.length - 1].facturas} comprobantes / mes
-              </div>
-              <a href="mailto:contacto@facturacon.com.do" style={{
-                marginTop: "auto", padding: "9px 14px", borderRadius: 6, textAlign: "center",
-                background: "transparent", color: "var(--c-brand)", border: "1px solid var(--c-brand-border)",
-                fontWeight: 700, fontSize: 12.5, textDecoration: "none",
-              }}>
-                Escríbenos
-              </a>
-            </div>
+          <div style={{ marginTop: 28 }}>
+            <PagaditoBadge />
           </div>
-
-          <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 28, marginBottom: 20 }}>
-            Cifras de referencia mientras confirmamos los montos finales — no son precios cerrados
-            todavía. Te avisaremos antes de que se active cualquier cobro.
-          </p>
-
-          <PagaditoBadge />
         </section>
 
         {/* FAQ */}

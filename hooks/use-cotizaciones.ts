@@ -3,11 +3,17 @@
 import { useEffect, useState } from "react";
 import {
   collection, onSnapshot, addDoc, updateDoc, deleteDoc,
-  doc, query, orderBy, serverTimestamp,
+  doc, query, orderBy, serverTimestamp, arrayUnion,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Cotizacion, EstadoCotizacion } from "@/types";
 import { excluirMuestra } from "@/lib/tenant/excluir-muestra";
+
+// Quién hace la acción — se guarda en el historial de la cotización. No
+// hay sentinel de servidor (serverTimestamp) dentro de un arrayUnion, así
+// que la fecha va con el reloj del cliente (suficiente para una bitácora,
+// a diferencia de las fechas fiscales de un e-CF que sí exigen precisión).
+export interface Autor { uid: string; nombre: string }
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -34,11 +40,22 @@ export function useCotizaciones(tenantId: string) {
     const ref = await addDoc(collection(db, "tenants", tenantId, "cotizaciones"), cleanData({ ...data, creadoEn: serverTimestamp() }));
     return ref.id;
   };
-  const actualizar = async (id: string, data: Partial<Cotizacion>) => {
-    await updateDoc(doc(db, "tenants", tenantId, "cotizaciones", id), cleanData({ ...data, actualizadoEn: serverTimestamp() }));
+  const actualizar = async (id: string, data: Partial<Cotizacion>, autor?: Autor) => {
+    const cambios: Record<string, unknown> = { ...data, actualizadoEn: serverTimestamp() };
+    if (autor) {
+      cambios.historial = arrayUnion({
+        uid: autor.uid, nombre: autor.nombre, accion: "Editó la cotización", fecha: new Date().toISOString(),
+      });
+    }
+    await updateDoc(doc(db, "tenants", tenantId, "cotizaciones", id), cleanData(cambios));
   };
-  const cambiarEstado = async (id: string, estado: EstadoCotizacion) => {
-    await updateDoc(doc(db, "tenants", tenantId, "cotizaciones", id), { estado, actualizadoEn: serverTimestamp() });
+  const cambiarEstado = async (id: string, estado: EstadoCotizacion, autor?: Autor) => {
+    const cambios: Record<string, unknown> = { estado, actualizadoEn: serverTimestamp() };
+    if (autor) {
+      const accion = estado === "anulada" ? "Anuló la cotización" : `Cambió el estado a "${estado}"`;
+      cambios.historial = arrayUnion({ uid: autor.uid, nombre: autor.nombre, accion, fecha: new Date().toISOString() });
+    }
+    await updateDoc(doc(db, "tenants", tenantId, "cotizaciones", id), cambios);
   };
   const eliminar = async (id: string) => {
     await deleteDoc(doc(db, "tenants", tenantId, "cotizaciones", id));

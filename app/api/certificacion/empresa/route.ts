@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (!verif.ok) return verif.response;
 
   const snap = await adminDb.collection("tenants").doc(tenantId).collection("config").doc("empresa").get();
-  return NextResponse.json({ empresa: snap.exists ? (snap.data() as EmpresaConfig) : null });
+  return NextResponse.json({ empresa: snap.exists ? (snap.data() as EmpresaConfig) : null, slug: verif.tenant.slug ?? null });
 }
 
 export async function POST(req: NextRequest) {
