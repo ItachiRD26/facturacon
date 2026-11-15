@@ -1,11 +1,11 @@
 "use client";
 
-import { Calculator, Crown, Receipt, Check, Lock } from "@phosphor-icons/react/dist/ssr";
+import { Calculator, Crown, Receipt, Check, Lock, Package } from "@phosphor-icons/react/dist/ssr";
 import { useSandbox } from "@/contexts/SandboxContext";
 import { MODULO_ETIQUETA, ROLES_PRUEBA, ROL_PRUEBA_RESUMEN, ROL_PRUEBA_TITULO, modulosDeRol } from "@/lib/sandbox/roles-prueba";
 import type { RolMembership } from "@/types/tenant";
 
-const ICONOS: Record<string, typeof Receipt> = { vendedor: Receipt, contador: Calculator, owner: Crown };
+const ICONOS: Record<string, typeof Receipt> = { vendedor: Receipt, almacen: Package, contador: Calculator, owner: Crown };
 
 // Panel visible del entorno de prueba: elige con qué rol de tu equipo quieres ver el
 // sistema. Antes era un desplegable "Ver como…" escondido en la barra lateral, que no

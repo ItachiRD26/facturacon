@@ -4,6 +4,7 @@ import { requireOwnerOAdmin } from "@/lib/tenant/auth";
 import { createMembership } from "@/lib/tenant/get-memberships";
 import { generarCodigoEmpleado, generarTokenLinkEmpleado, hashCodigo } from "@/lib/tenant/codigo-empleado";
 import { ROLES_INVITABLES } from "@/lib/tenant/roles";
+import { apagarFacturacionDuenoPorEquipo } from "@/lib/tenant/permisos-facturacion";
 import { cupoUsuarios, mensajeUsuarioAdicional, MENSAJE_SOLO_UN_USUARIO } from "@/lib/tenant/limite-usuarios";
 import type { Empleado } from "@/types/tenant";
 
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
     uid, email: "", nombre, tipoCuenta: "individual", creadoEn: new Date().toISOString(),
   });
   await createMembership(uid, tenantId, rol);
+  if (rol === "vendedor") await apagarFacturacionDuenoPorEquipo(tenantId);
 
   const empleado: Record<string, unknown> = {
     uid, nombre, rol, codigoHash, codigoUltimos4: codigo.slice(-4),

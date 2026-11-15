@@ -37,9 +37,9 @@ export function textoUsuarios(n: number): string {
 
 export const PLANES: Plan[] = [
   // Emprendedor: la mitad del precio del plan de 250 (RD$690 contra RD$1,380), 100 comprobantes y un solo
-  // usuario. El comprobante extra (RD$5) queda por encima del costo de subir al plan de 250
-  // (690 / 150 = RD$4.60 por comprobante), para que subir de plan convenga antes que pagar extras.
-  { id: "100",  facturas: 100,  montoRD: 690,   montoUSD: "11.50",  usuarios: 1, extraRD: 5, nombre: "Emprendedor", soloUnUsuario: true },
+  // usuario. Comprobante extra a RD$3 (decisión de Peter): con el tope de seguridad de 3 veces el plan
+  // (300 comprobantes) el máximo mensual es 690 + 200 × 3 = RD$1,290, todavía por debajo del plan de 250.
+  { id: "100",  facturas: 100,  montoRD: 690,   montoUSD: "11.50",  usuarios: 1, extraRD: 3, nombre: "Emprendedor", soloUnUsuario: true },
   { id: "250",  facturas: 250,  montoRD: 1380,  montoUSD: "23.00",  usuarios: 2, extraRD: 4.5 },
   { id: "500",  facturas: 500,  montoRD: 2320,  montoUSD: "38.67",  usuarios: 3, extraRD: 3.75 },
   { id: "1000", facturas: 1000, montoRD: 3890,  montoUSD: "64.83",  usuarios: 5, extraRD: 3 },

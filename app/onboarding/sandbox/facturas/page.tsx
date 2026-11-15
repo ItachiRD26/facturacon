@@ -35,7 +35,10 @@ function KPICard({ label, valor, sub, accent }: { label: string; valor: string |
 }
 
 export default function SandboxFacturasPage() {
-  const { tenantId, tenant } = useSandbox();
+  const { tenantId, tenant, rol } = useSandbox();
+  // En el entorno de prueba se enseña cómo funciona un equipo: factura el cajero; el dueño, el contador y
+  // el encargado de almacén no (el dueño puede activar «Yo también facturo» en el sistema real).
+  const puedeFacturar = rol === "vendedor";
   const { clientes, loading: cargandoClientes } = useClientes(tenantId);
   const { productos, loading: cargandoProductos } = useProductos(tenantId);
   const { facturas, loading, agregar: agregarFactura, cambiarEstado } = useFacturas(tenantId);
@@ -76,6 +79,7 @@ export default function SandboxFacturasPage() {
           <h1 style={{ fontFamily: serif, fontSize: 24, fontWeight: 600, color: "var(--c-text-1)", marginBottom: 2 }}>Facturas</h1>
           <div style={{ fontSize: 13, color: "var(--c-text-3)", fontFamily: sans }}>Comprobantes fiscales electrónicos de prueba</div>
         </div>
+        {puedeFacturar ? (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button onClick={() => setCajaAbierta(true)} disabled={productos.length === 0} data-tour="btn-nueva-factura"
             style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", background: productos.length === 0 ? "var(--c-text-4)" : "var(--c-brand)", color: "#fff", border: "none", borderRadius: 10, cursor: productos.length === 0 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 700, fontFamily: sans }}>
@@ -86,6 +90,11 @@ export default function SandboxFacturasPage() {
             Factura con datos (crédito fiscal, otros…)
           </button>
         </div>
+        ) : (
+          <div role="note" style={{ maxWidth: 380, padding: "10px 14px", background: "var(--c-bg)", border: "1px solid var(--c-border)", borderRadius: 10, fontSize: 13, lineHeight: 1.5, color: "var(--c-text-2)", fontFamily: sans }}>
+            Este rol no emite facturas: las revisa. La factura la hace la caja. Cambia a «Cajero» arriba para ver cómo se factura.
+          </div>
+        )}
       </div>
 
       {!cargandoClientes && !cargandoProductos && productos.length === 0 && clientes.length === 0 && (

@@ -32,7 +32,20 @@ export async function crearCxCSiCredito(deps: Deps, factura: Omit<Factura, "id">
 // (un create de cliente no puede traer campos fiscales como estadoDGII).
 export async function guardarFactura(deps: Deps, data: Factura | Omit<Factura, "id">) {
   const yaPersistida = "id" in data && !!data.id;
-  if (!yaPersistida) await deps.agregarFactura(data);
+  if (!yaPersistida) {
+    await deps.agregarFactura(data);
+    // Descuenta el inventario en el servidor (el cajero no puede escribir productos desde el navegador).
+    // Si falla no se corta la venta: la factura ya quedó guardada.
+    try {
+      await fetch("/api/sandbox/descontar-stock", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantId: deps.tenantId, eCF: data.eCF,
+          items: data.items.map((i) => ({ servicioId: i.servicioId, cant: i.cant, codigo: i.codigo, descripcion: i.descripcion })),
+        }),
+      });
+    } catch { /* sin conexión con el servidor: el stock se ajusta a mano */ }
+  }
   await crearCxCSiCredito(deps, data);
 }
 

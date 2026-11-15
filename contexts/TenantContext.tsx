@@ -26,6 +26,9 @@ interface TenantContextValue {
   // Estado del cobro recurrente: sin plan activo no se pueden emitir comprobantes
   // reales. `motivoSinPlan` distingue "nunca activó", "pago fallido" y "cancelado".
   puedeEmitir:   boolean;
+  // El ROL de esta persona puede emitir facturas (cajero; dueño/admin solo si lo activaron). Distinto
+  // de `puedeEmitir`, que es si el plan de pago está activo.
+  rolPuedeFacturar: boolean;
   motivoSinPlan: "sin_plan" | "pago_fallido" | "cancelado" | null;
 }
 

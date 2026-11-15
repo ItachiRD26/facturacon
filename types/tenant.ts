@@ -39,6 +39,13 @@ export interface Tenant {
   razonSocial?:     string;
   nombreComercial?: string;
   facturadorElectronicoDGII?: boolean | null;
+  // Quién puede EMITIR facturas además de los cajeros (ver puedeEmitir en lib/tenant/roles.ts).
+  // El dueño y el administrador, por defecto, no facturan cuando hay un equipo: lo activan en
+  // Equipo > Permisos con «Yo también facturo». `duenoFactura` queda en false solo al crear el
+  // primer cajero (si el dueño no lo había decidido antes); `duenoFacturaManual` marca que lo decidió él.
+  duenoFactura?: boolean;
+  duenoFacturaManual?: boolean;
+  adminFactura?: boolean;
   rnc:           string;
   tipoNegocio:   TipoNegocio;
   estado:        EstadoTenant;
@@ -73,7 +80,7 @@ export interface Personalizacion {
   actualizadoEn?:  string;
 }
 
-export type RolMembership = "owner" | "admin" | "vendedor" | "contador" | "viewer";
+export type RolMembership = "owner" | "admin" | "vendedor" | "almacen" | "contador" | "viewer";
 
 export interface Membership {
   uid:       string;

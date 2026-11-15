@@ -5,6 +5,8 @@ import { getMembership, listMembershipsForUser } from "@/lib/tenant/get-membersh
 import { TenantProvider, type TenantSummary } from "@/contexts/TenantContext";
 import TenantShell from "@/components/tenant/tenant-shell";
 import { obtenerSuscripcion } from "@/lib/payments/suscripcion";
+import { buscarPlan } from "@/lib/payments/planes";
+import { puedeEmitir as rolPuedeEmitir } from "@/lib/tenant/roles";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
@@ -49,6 +51,7 @@ export default async function TenantLayout({
       rol: membership.rol,
       otrasEmpresas,
       puedeEmitir,
+      rolPuedeFacturar: rolPuedeEmitir(membership.rol, tenant, buscarPlan(suscripcion?.planId ?? "")?.soloUnUsuario),
       motivoSinPlan,
     }}>
       <TenantShell>{children}</TenantShell>

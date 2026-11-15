@@ -3,6 +3,7 @@ import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { requireOwnerOAdmin } from "@/lib/tenant/auth";
 import { listMembershipsForTenant, createMembership } from "@/lib/tenant/get-memberships";
 import { ROLES_INVITABLES } from "@/lib/tenant/roles";
+import { apagarFacturacionDuenoPorEquipo } from "@/lib/tenant/permisos-facturacion";
 import { cupoUsuarios, mensajeUsuarioAdicional, MENSAJE_SOLO_UN_USUARIO } from "@/lib/tenant/limite-usuarios";
 import type { RolMembership, UserPerfil } from "@/types/tenant";
 
@@ -72,5 +73,6 @@ export async function POST(req: NextRequest) {
   }
 
   await createMembership(usuario.uid, body.tenantId, body.rol);
+  if (body.rol === "vendedor") await apagarFacturacionDuenoPorEquipo(body.tenantId);
   return NextResponse.json({ ok: true });
 }

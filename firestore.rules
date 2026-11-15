@@ -32,6 +32,8 @@ service cloud.firestore {
     function puedeVender(tenantId)   { return rolDe(tenantId) in ['owner', 'admin', 'vendedor']; }
     function puedeCobranza(tenantId) { return rolDe(tenantId) in ['owner', 'admin', 'contador']; }
     function esOwnerOAdmin(tenantId) { return rolDe(tenantId) in ['owner', 'admin']; }
+    // Encargado de almacén: maneja la mercancía (productos y compras), no vende.
+    function manejaInventario(tenantId) { return rolDe(tenantId) in ['owner', 'admin', 'almacen']; }
     // Un cajero (vendedor) no debe poder sumar el total facturado del
     // negocio leyendo todas las facturas — solo dueño/admin/contador ven
     // el libro completo; el cajero solo lee las que él mismo emitió.
@@ -137,8 +139,14 @@ service cloud.firestore {
       // Servicios/productos (inventario): solo owner/admin — un cajero
       // puede vender lo que ya existe en el catálogo, pero no crear
       // productos ni tocar precios/stock.
-      match /servicios/{docId} { allow read: if hasMembership(tenantId); allow write: if hasMembership(tenantId) && esOwnerOAdmin(tenantId); }
-      match /productos/{docId} { allow read: if hasMembership(tenantId); allow write: if hasMembership(tenantId) && esOwnerOAdmin(tenantId); }
+      match /servicios/{docId} { allow read: if hasMembership(tenantId); allow write: if hasMembership(tenantId) && manejaInventario(tenantId); }
+      match /productos/{docId} { allow read: if hasMembership(tenantId); allow write: if hasMembership(tenantId) && manejaInventario(tenantId); }
+      // Historial de movimientos del inventario (ventas, entradas, ajustes): lo escribe solo el
+      // backend; lo leen quienes manejan el inventario o revisan los números.
+      match /movimientos_inventario/{docId} {
+        allow read: if hasMembership(tenantId) && rolDe(tenantId) in ['owner', 'admin', 'almacen', 'contador'];
+        allow write: if false;
+      }
       // Facturas: el cliente puede crear/editar libremente mientras el
       // tenant está en sandbox (datos simulados), y siempre puede cambiar
       // el estado de negocio de una factura real (pagada/anulada/notas) —
@@ -166,7 +174,7 @@ service cloud.firestore {
       }
       match /facturas_recibidas/{docId} {
         allow read:  if hasMembership(tenantId);
-        allow write: if hasMembership(tenantId) && puedeCobranza(tenantId);
+        allow write: if hasMembership(tenantId) && (puedeCobranza(tenantId) || rolDe(tenantId) == 'almacen');
       }
     }
   }

@@ -25,6 +25,9 @@ export const MODULOS_POR_ROL: Record<RolMembership, Modulo[]> = {
   // facturarlos (ver firestore.rules — la lectura de /productos no se
   // restringe por rol).
   vendedor: ["facturas", "cotizaciones", "clientes"],
+  // Encargado de almacén: maneja la mercancía (productos, precios, stock, compras) pero no
+  // vende ni ve cuánto factura el negocio. Las facturas recibidas son sus compras a proveedores.
+  almacen:  ["inventario", "recibidas"],
   contador: ["dashboard", "facturas", "cuentas-por-cobrar", "recibidas", "clientes"],
   viewer:   ["dashboard"],
 };
@@ -33,13 +36,32 @@ export const ROL_LABEL: Record<RolMembership, string> = {
   owner:    "Dueño",
   admin:    "Administrador",
   vendedor: "Cajero / Vendedor",
+  almacen:  "Encargado de almacén",
   contador: "Contador",
   viewer:   "Solo lectura",
 };
 
 // Roles que un owner puede asignar al invitar — no se puede invitar a
 // alguien como "owner" (solo hay uno, el que creó el tenant).
-export const ROLES_INVITABLES: RolMembership[] = ["admin", "vendedor", "contador", "viewer"];
+export const ROLES_INVITABLES: RolMembership[] = ["admin", "vendedor", "almacen", "contador", "viewer"];
+
+// Quién puede EMITIR facturas (ver y emitir son cosas distintas: el dueño y el administrador
+// ven todas las facturas del negocio, pero la factura la hace el cajero):
+//  - cajero: siempre;
+//  - dueño: si el plan es de una sola persona (Emprendedor) o si no lo apagó (por defecto sí
+//    hasta que se crea el primer cajero; luego queda en «Yo también facturo» apagado);
+//  - administrador: solo si el dueño lo activó;
+//  - el resto, nunca.
+export function puedeEmitir(
+  rol: RolMembership,
+  tenant: { duenoFactura?: boolean; adminFactura?: boolean },
+  soloUnUsuario = false,
+): boolean {
+  if (rol === "vendedor") return true;
+  if (rol === "owner") return soloUnUsuario || tenant.duenoFactura !== false;
+  if (rol === "admin") return tenant.adminFactura === true;
+  return false;
+}
 
 export function tieneAcceso(rol: RolMembership, modulo: Modulo): boolean {
   return MODULOS_POR_ROL[rol].includes(modulo);

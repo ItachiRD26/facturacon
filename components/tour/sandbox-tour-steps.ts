@@ -19,13 +19,15 @@ const BASE = "/onboarding/sandbox";
 // Cuentas por cobrar, que no vería en el sistema real.
 interface Paso {
   id: string; modulo?: Modulo; tipo: "pagina" | "nav" | "global";
+  // Solo para quien emite facturas (en la prueba, el cajero).
+  soloEmisor?: boolean;
   title: string; body: string; placement?: TourStep["placement"];
 }
 
 const PASOS: Paso[] = [
   { id: "nav-facturas", modulo: "facturas", tipo: "nav", placement: "right", title: "Facturas",
     body: "Desde aquí emites comprobantes fiscales electrónicos." },
-  { id: "btn-nueva-factura", modulo: "facturas", tipo: "pagina", placement: "bottom", title: "Factura en segundos desde la Caja",
+  { id: "btn-nueva-factura", modulo: "facturas", tipo: "pagina", soloEmisor: true, placement: "bottom", title: "Factura en segundos desde la Caja",
     body: "Pulsa «Caja», escanea un producto o búscalo por nombre o código, cobra en efectivo (te dice la devuelta) o con tarjeta, e imprime. Siempre sale una factura de consumo (E32) a consumidor final; para crédito fiscal u otros tipos usa «Factura con datos». Nada se envía a la DGII real." },
   { id: "nav-cotizaciones", modulo: "cotizaciones", tipo: "nav", placement: "right", title: "Cotizaciones",
     body: "Crea una cotización y conviértela en factura cuando el cliente la acepte." },
@@ -71,6 +73,7 @@ export function pasosTour(rol: RolMembership): TourStep[] {
   const resto: TourStep[] = [];
   for (const p of PASOS) {
     if (p.modulo && !accesibles.includes(p.modulo)) continue;
+    if (p.soloEmisor && rol !== "vendedor") continue;
     // Los pasos de página llevan a su pantalla; los de navegación y globales se
     // quedan en la pantalla donde ya estamos.
     if (p.tipo === "pagina" && p.modulo) ruta = `${BASE}/${p.modulo}`;

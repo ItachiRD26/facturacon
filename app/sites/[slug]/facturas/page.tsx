@@ -17,7 +17,6 @@ import PrintModal from "@/components/print/print-modal";
 import { guardarFactura } from "@/lib/sandbox/acciones";
 
 import { nombresImpresion } from "@/lib/tenant/nombres";
-import CajaRapida from "@/components/caja/caja-rapida";
 const sans  = "var(--font-sans)";
 const mono  = "var(--font-mono)";
 const serif = "var(--font-serif)";
@@ -45,7 +44,6 @@ export default function FacturasPage() {
   const { personalizacion } = usePersonalizacion(tenant.tenantId);
 
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [cajaAbierta, setCajaAbierta] = useState(false);
   const [imprimiendo,  setImprimiendo]  = useState<Factura | null>(null);
   const [busqueda,     setBusqueda]     = useState("");
   const [reintentando, setReintentando] = useState<string | null>(null);
@@ -98,16 +96,10 @@ export default function FacturasPage() {
             {tenant.rol === "vendedor" ? "Tus comprobantes emitidos — para reimprimir o revisar" : "Comprobantes fiscales electrónicos"}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button onClick={() => setCajaAbierta(true)} disabled={productos.length === 0}
-            style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", background: productos.length === 0 ? "var(--c-text-4)" : "var(--c-brand)", color: "#fff", border: "none", borderRadius: 10, cursor: productos.length === 0 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 700, fontFamily: sans }}>
-            <Icon name="plus" size={14} /> Caja · Nueva venta
-          </button>
-          <button onClick={() => setModalAbierto(true)} disabled={productos.length === 0}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", background: "var(--c-surface)", color: "var(--c-text-1)", border: "1px solid var(--c-border)", borderRadius: 10, cursor: productos.length === 0 ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: sans }}>
-            Factura con datos (crédito fiscal, otros…)
-          </button>
-        </div>
+        <button onClick={() => setModalAbierto(true)} disabled={productos.length === 0}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: productos.length === 0 ? "var(--c-text-4)" : "var(--c-brand)", color: "#fff", border: "none", borderRadius: 10, cursor: productos.length === 0 ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: sans }}>
+          <Icon name="plus" size={14} /> Nueva Factura
+        </button>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 20 }}>
@@ -196,14 +188,6 @@ export default function FacturasPage() {
           </table>
         </div>
       )}
-
-      <CajaRapida
-        open={cajaAbierta} onClose={() => setCajaAbierta(false)} onOtroTipo={() => { setCajaAbierta(false); setModalAbierto(true); }}
-        tenantId={tenant.tenantId} productos={productos} modo="produccion" esMuestra={false}
-        bloqueo={tenant.puedeEmitir ? undefined : "Tu plan de pago no está activo, así que todavía no puedes emitir comprobantes reales. Actívalo desde el aviso de arriba."}
-        nombreEmisor={nombresImpresion(tenant).nombre} nombreComercialEmisor={tenant.nombreComercial} rncEmisor={tenant.rnc}
-        logoTermicoUrl={personalizacion?.logoTermicoUrl} onSave={onSave}
-      />
 
       <ModalNuevaFactura
         open={modalAbierto} onClose={() => setModalAbierto(false)} tenantId={tenant.tenantId}

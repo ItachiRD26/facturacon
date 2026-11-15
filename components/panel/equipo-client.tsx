@@ -13,9 +13,10 @@ interface Admin { uid: string; rol: RolMembership; nombre: string; email: string
 type Pestana = "personal" | "admins" | "permisos";
 
 const DESCRIPCION_ROL: Record<RolMembership, string> = {
-  owner: "Control total de la empresa, el plan y el equipo.",
-  admin: "Opera todo el sistema y administra el equipo. No cambia el plan de pago del dueño.",
+  owner: "Control total de la empresa, el plan y el equipo. Ve todas las facturas y cotiza; factura solo si activa «Yo también facturo».",
+  admin: "Supervisa todo el sistema y administra el equipo. No factura salvo que el dueño lo active. No cambia el plan de pago.",
   vendedor: "Solo factura, cotiza y atiende clientes. No ve cuánto factura el negocio.",
+  almacen: "Maneja el inventario y las compras: productos, precios, entradas y ajustes de stock. No vende ni ve cuánto factura el negocio.",
   contador: "Consulta facturas, cuentas por cobrar y recibidas; descarga la contabilidad. No emite.",
   viewer: "Solo mira el resumen. Útil para un socio o un supervisor.",
 };
@@ -25,6 +26,21 @@ const MODULO_LABEL: Record<Modulo, string> = {
   "cuentas-por-cobrar": "Cuentas por cobrar", clientes: "Clientes", inventario: "Inventario",
   recibidas: "Facturas recibidas", personalizacion: "Personalización",
 };
+
+function Interruptor({ id, titulo, detalle, activo, deshabilitado, onCambio }: {
+  id: string; titulo: string; detalle: string; activo: boolean; deshabilitado?: boolean; onCambio: (v: boolean) => void;
+}) {
+  return (
+    <label htmlFor={id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 0", borderTop: "1px solid var(--c-border)", cursor: deshabilitado ? "not-allowed" : "pointer", opacity: deshabilitado ? 0.7 : 1 }}>
+      <input id={id} type="checkbox" role="switch" checked={activo} disabled={deshabilitado} onChange={(e) => onCambio(e.target.checked)}
+        style={{ width: 20, height: 20, marginTop: 2, accentColor: "var(--c-brand)", flexShrink: 0 }} />
+      <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <span style={{ fontSize: 14, fontWeight: 700 }}>{titulo}</span>
+        <span style={{ fontSize: 12.5, color: "var(--c-text-3)", lineHeight: 1.5 }}>{detalle}</span>
+      </span>
+    </label>
+  );
+}
 
 type Confirmacion = { titulo: string; texto: string; boton: string; peligro?: boolean; accion: () => Promise<void> } | null;
 
@@ -58,6 +74,29 @@ export default function EquipoClient({ tenantId, esOwner, tabInicial }: { tenant
   const [trabajando, setTrabajando] = useState<string | null>(null);
   const [confirmar, setConfirmar] = useState<Confirmacion>(null);
   const [codigoNuevo, setCodigoNuevo] = useState<{ codigo: string; nombre: string } | null>(null);
+  const [permisos, setPermisos] = useState<{ duenoFactura: boolean; adminFactura: boolean; soloUnUsuario: boolean } | null>(null);
+  const [guardandoPerm, setGuardandoPerm] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "permisos") return;
+    let vivo = true;
+    fetch(`/api/tenant/permisos?t=${tenantId}`).then((r) => r.json()).then((d) => {
+      if (vivo && typeof d?.duenoFactura === "boolean") setPermisos(d);
+    }).catch(() => { /* la tarjeta queda cargando: no es crítico */ });
+    return () => { vivo = false; };
+  }, [tab, tenantId]);
+
+  const cambiarPermiso = async (campo: "duenoFactura" | "adminFactura", valor: boolean) => {
+    setGuardandoPerm(true); setError("");
+    try {
+      const res = await fetch("/api/tenant/permisos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tenantId, [campo]: valor }) });
+      const d = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(d?.error ?? "No se pudo guardar el cambio.");
+      setPermisos((p) => (p ? { ...p, [campo]: valor } : p));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo guardar el cambio.");
+    } finally { setGuardandoPerm(false); }
+  };
   const [copiado, setCopiado] = useState<string | null>(null);
 
   const [modalPersonal, setModalPersonal] = useState(false);
@@ -309,6 +348,27 @@ export default function EquipoClient({ tenantId, esOwner, tabInicial }: { tenant
 
           {tab === "permisos" && (
             <>
+              <Card padding={18} style={{ marginBottom: 20 }}>
+                <CardTitle>Quién puede facturar</CardTitle>
+                <p style={{ fontSize: 12.5, color: "var(--c-text-3)", lineHeight: 1.55, margin: "4px 0 10px" }}>
+                  La factura la hace la caja. El dueño y los administradores ven todas las facturas y pueden cotizar, pero no facturan a menos que lo actives aquí.
+                </p>
+                {!permisos ? <p style={{ fontSize: 13, color: "var(--c-text-3)" }}>Cargando…</p> : (
+                  <>
+                    <Interruptor id="sw-dueno" titulo="Yo también facturo (dueño)"
+                      detalle={permisos.soloUnUsuario ? "Tu plan es de una sola persona: siempre puedes facturar." : "Actívalo si atiendes ventas tú mismo. Se apaga solo al agregar el primer cajero, si no lo habías decidido."}
+                      activo={permisos.duenoFactura} deshabilitado={!esOwner || permisos.soloUnUsuario || guardandoPerm}
+                      onCambio={(v) => void cambiarPermiso("duenoFactura", v)} />
+                    {!permisos.soloUnUsuario && (
+                      <Interruptor id="sw-admin" titulo="Los administradores también facturan"
+                        detalle="Por defecto un administrador supervisa y no emite facturas."
+                        activo={permisos.adminFactura} deshabilitado={!esOwner || guardandoPerm}
+                        onCambio={(v) => void cambiarPermiso("adminFactura", v)} />
+                    )}
+                    {!esOwner && <p style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 6 }}>Solo el dueño puede cambiar estos permisos.</p>}
+                  </>
+                )}
+              </Card>
               <p style={{ fontSize: 12.5, color: "var(--c-text-3)", lineHeight: 1.55, marginBottom: 16 }}>
                 Cada rol ya trae sus permisos. Elige el más limitado que le sirva a la persona para su trabajo.
               </p>

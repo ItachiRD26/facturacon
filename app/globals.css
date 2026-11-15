@@ -748,3 +748,5 @@ body {
   .caja-linea-tot { grid-column: 1 / 3; text-align: left; }
 }
 @media (prefers-reduced-motion: reduce) { .caja-cobrar { transition: none; } }
+
+.caja-sin-stock { display: inline-flex; align-items: center; gap: 4px; color: var(--c-red) !important; font-weight: 700 !important; }

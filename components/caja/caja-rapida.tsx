@@ -249,7 +249,7 @@ function CajaAbierta({
                 {sugerencias.map((p, i) => (
                   <li key={p.id} role="option" aria-selected={i === sel}>
                     <button type="button" className={i === sel ? "act" : ""} onMouseDown={(e) => { e.preventDefault(); agregar(p); setTexto(""); setSel(0); pitar(true); enfocar(); }}>
-                      <span>{p.nombre}<small>{p.codigo}</small></span><b>RD$ {fmt(p.precio)}</b>
+                      <span>{p.nombre}<small>{p.codigo}{p.controlaStock && p.stock !== undefined ? ` · quedan ${p.stock}` : ""}</small></span><b>RD$ {fmt(p.precio)}</b>
                     </button>
                   </li>
                 ))}
@@ -267,7 +267,12 @@ function CajaAbierta({
               </div>
             ) : lineas.map((l, i) => (
               <div className="caja-linea" key={`${l.servicioId ?? l.codigo}-${i}`}>
-                <div className="caja-linea-nom"><span>{l.descripcion}</span><small>{l.codigo} · RD$ {fmt(l.precio)}{l.itbis ? "" : " · exento"}</small></div>
+                <div className="caja-linea-nom"><span>{l.descripcion}</span><small>{l.codigo} · RD$ {fmt(l.precio)}{l.itbis ? "" : " · exento"}</small>{(() => {
+                  const p = activos.find((x) => x.id === l.servicioId);
+                  return p?.controlaStock && p.stock !== undefined && l.cant > p.stock
+                    ? <small className="caja-sin-stock"><Warning size={12} weight="fill" aria-hidden="true" /> {p.stock > 0 ? `Solo hay ${p.stock} en inventario` : "Sin existencias en inventario"}</small>
+                    : null;
+                })()}</div>
                 <div className="caja-cant" role="group" aria-label={`Cantidad de ${l.descripcion}`}>
                   <button type="button" onClick={() => cambiarCant(i, l.cant - 1)} aria-label="Quitar una unidad" disabled={!!fin}><Minus size={16} weight="bold" aria-hidden="true" /></button>
                   <input type="number" inputMode="decimal" min={0} step="any" value={l.cant} disabled={!!fin}
