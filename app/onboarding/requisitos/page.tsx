@@ -171,7 +171,7 @@ function RequisitosShell() {
         </div>
 
         <a
-          href="https://www.camarasantodomingo.do/solicitudes/FormularioWeb/?AspxAutoDetectCookieSupport=1"
+          href="https://digi.camarasantodomingo.do/solicitud-en-linea/certificado-facturacion-electronica/"
           target="_blank" rel="noopener noreferrer"
           style={{
             marginTop: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
@@ -184,11 +184,29 @@ function RequisitosShell() {
               Solicita tu certificado con DigiFirma (Cámara de Comercio de Santo Domingo)
             </div>
             <div style={{ color: "var(--c-text-3)" }}>
-              camarasantodomingo.do — formulario oficial de solicitud
+              Certificado de Facturación Electrónica — solicitud en línea de la Cámara
             </div>
           </span>
-          <span style={{ color: "var(--c-brand)", fontWeight: 700, flexShrink: 0 }}>Abrir →</span>
+          <span style={{ color: "var(--c-brand)", fontWeight: 700, flexShrink: 0 }}>Conseguir mi certificado →</span>
         </a>
+
+        {/* Datos tomados de la página de solicitud y de las preguntas frecuentes de DigiFirma (pueden cambiar:
+            siempre manda lo que diga su página). No se graban tutoriales propios: se enlaza el de ellos. */}
+        <div style={{ marginTop: 10, padding: "12px 14px", border: "1px solid var(--c-border)", borderRadius: 8, fontSize: 12, lineHeight: 1.6, color: "var(--c-text-2)", background: "var(--c-surface)" }}>
+          <div style={{ fontWeight: 700, color: "var(--c-text-1)", marginBottom: 6 }}>Lo que debes saber antes de pedirlo</div>
+          <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 3 }}>
+            <li><b>Costo:</b> USD 29.95 por 1 año, o USD 45.00 por 2 años (según su página).</li>
+            <li><b>Tiempo:</b> la aprobación y emisión toma unas 12 horas laborales desde que la solicitud y los documentos estén correctos.</li>
+            <li><b>Documentos:</b> tu cédula a color por ambos lados y, si el certificado es para una empresa, la cédula del representante legal y una carta de autorización sellada y firmada por él.</li>
+            <li><b>Prueba de vida:</b> al crear la solicitud te llega un correo para hacerla desde tu teléfono o computadora.</li>
+            <li><b>Antes de pagar,</b> confirma con DigiFirma que te entregarán el certificado como <b>archivo .p12 (o .pfx)</b> que puedas guardar: Facturacon necesita ese archivo para firmar tus comprobantes.</li>
+          </ul>
+          <div style={{ marginTop: 8, display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <a href="https://digi.camarasantodomingo.do/assets/documents/instructivos/pasos-video-id.png" target="_blank" rel="noopener noreferrer" style={{ color: "var(--c-brand)", fontWeight: 600 }}>Instructivo de la prueba de vida (de DigiFirma) →</a>
+            <a href="https://digi.camarasantodomingo.do/informacion-adicional/preguntas-frecuentes/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--c-brand)", fontWeight: 600 }}>Preguntas frecuentes →</a>
+          </div>
+          <div style={{ marginTop: 6, color: "var(--c-text-3)" }}>Dudas con tu solicitud: (809) 682-2688 o info@camarasantodomingo.do, de lunes a viernes de 8:00 a. m. a 5:00 p. m.</div>
+        </div>
 
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
           {GUIA_DIGIFIRMA.map((s, i) => (

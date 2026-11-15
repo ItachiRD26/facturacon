@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     loadCertAndKey(p12Buffer, password);
     rncCertificado = extraerRncDelCertificado(p12Buffer, password);
   } catch {
-    return NextResponse.json({ valid: false, error: "La contraseña no es correcta para este certificado. Verifica que no tenga espacios ni mayúsculas distintas e intenta de nuevo." }, { status: 400 });
+    return NextResponse.json({ valid: false, error: "La contraseña no coincide con este certificado. Revísala letra por letra: una mayúscula distinta, una letra mal o un espacio de más es lo más común. Escríbela de nuevo e intenta otra vez." }, { status: 400 });
   }
 
   if (!rncCertificado || rncCertificado !== tenant.rnc) {
