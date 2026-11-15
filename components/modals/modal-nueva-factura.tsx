@@ -76,7 +76,7 @@ export default function ModalNuevaFactura({
     let timer: ReturnType<typeof setTimeout>;
 
     const procesarScan = (codigo: string) => {
-      const p = productos.find((prod) => prod.controlaStock && prod.codigo.toLowerCase() === codigo.toLowerCase());
+      const p = productos.find((prod) => prod.codigo.toLowerCase() === codigo.toLowerCase());
       if (!p) return;
       setItems((prev) => {
         const existIdx = prev.findIndex((it) => it.codigo === p.codigo && it.fromCatalog);
@@ -223,7 +223,7 @@ El número ${factura.eCF} ya quedó registrado; el envío a la DGII se podrá re
         </Campo>
 
         <Campo label="Líneas de la factura">
-          {productos.some((p) => p.controlaStock) && (
+          {productos.length > 0 && (
             <div style={{ fontSize: 11, color: "var(--c-text-3)", marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}>
               <Icon name="scan" size={12} />
               Puedes escanear un código de barras en cualquier momento para agregar el producto.

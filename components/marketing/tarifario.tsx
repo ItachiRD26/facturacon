@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Check, UserPlus, Receipt, Buildings } from "@phosphor-icons/react/dist/ssr";
 import Reveal from "./reveal";
-import { PLANES, TARIFAS_ADICIONALES, VOLUMEN_EMPRESA } from "@/lib/payments/planes";
+import { PLANES, TARIFAS_ADICIONALES, VOLUMEN_EMPRESA, textoUsuarios } from "@/lib/payments/planes";
 
 // Tarifario completo de la landing: una sola tabla con todos los planes (en vez de
 // siete tarjetas iguales) y, debajo, lo que se suma al plan. Sin botón por plan a
@@ -23,10 +23,10 @@ export default function Tarifario() {
           {PLANES.map((p) => (
             <li key={p.id} className="tarifa-fila">
               <div className="tc-vol">
-                <div className="tc-vol-t"><b className="num-sans">{p.facturas.toLocaleString("es-DO")}</b><span>comprobantes</span></div>
+                <div className="tc-vol-t"><b className="num-sans">{p.facturas.toLocaleString("es-DO")}</b><span>comprobantes</span>{p.nombre && <em style={{ fontStyle: "normal", fontSize: 11, fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", background: "var(--c-yellow-bg)", color: "var(--c-yellow)", border: "1px solid var(--c-yellow-border)", borderRadius: 6, padding: "1px 7px", marginLeft: 8 }}>{p.nombre}</em>}</div>
                 <div className="tarifa-barra" aria-hidden="true"><i style={{ width: `${Math.sqrt(p.facturas / maxPlan) * 100}%` }} /></div>
               </div>
-              <div className="tc" data-label="Usuarios incluidos">{p.usuarios} usuarios</div>
+              <div className="tc" data-label="Usuarios incluidos">{textoUsuarios(p.usuarios)}</div>
               <div className="tc" data-label="Comprobante adicional">RD$ {dinero(p.extraRD)}</div>
               <div className="tc-precio">
                 <b className="num-sans">RD$ {p.montoRD.toLocaleString("es-DO")}</b><span>/mes</span>

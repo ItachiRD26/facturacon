@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Modal from "@/components/modals/modal";
 import { Button, Card, CardTitle, PageHeader, Pill, ProgressBar } from "@/components/ui/kit";
 import { useSuscripcion } from "@/hooks/use-suscripcion";
-import { PLANES, VOLUMEN_EMPRESA, type Plan } from "@/lib/payments/planes";
+import { PLANES, VOLUMEN_EMPRESA, textoUsuarios, type Plan } from "@/lib/payments/planes";
 import type { EstadoTenant } from "@/types/tenant";
 import SuscripcionWizard from "./suscripcion-wizard";
 import TutorialButton from "./tutorial-button";
@@ -22,7 +22,7 @@ function TarjetaPlan({ plan, onElegir, destacada, soloVer }: { plan: Plan; onEle
   return (
     <Card padding={18} style={{ display: "flex", flexDirection: "column", gap: 4, borderColor: destacada ? "var(--c-brand)" : undefined, boxShadow: destacada ? "0 0 0 3px var(--c-brand-bg)" : undefined }}>
       <div className="num" style={{ fontSize: 22, fontWeight: 700 }}>{plan.facturas.toLocaleString("es-DO")}</div>
-      <div style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 10 }}>comprobantes al mes · hasta {plan.usuarios} usuarios</div>
+      <div style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 10 }}>comprobantes al mes · {plan.soloUnUsuario ? "1 usuario (todo en uno)" : `hasta ${textoUsuarios(plan.usuarios)}`}{plan.nombre ? ` · ${plan.nombre}` : ""}</div>
       <div className="num" style={{ fontSize: 18, fontWeight: 700, marginBottom: 14 }}>
         RD$ {plan.montoRD.toLocaleString("es-DO")}<span style={{ fontSize: 12, fontWeight: 500, color: "var(--c-text-3)" }}> /mes</span>
       </div>
@@ -85,7 +85,7 @@ function AdicionalesCard({ tenantId }: { tenantId: string }) {
         </div>
       </div>
       <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 12, lineHeight: 1.55 }}>
-        Tu plan incluye {r.comprobantes.incluidos.toLocaleString("es-DO")} comprobantes y {r.usuarios.incluidos} usuarios al mes. Pasado el tope puedes seguir emitiendo: cada comprobante
+        Tu plan incluye {r.comprobantes.incluidos.toLocaleString("es-DO")} comprobantes y {textoUsuarios(r.usuarios.incluidos)} al mes. Pasado el tope puedes seguir emitiendo: cada comprobante
         extra cuesta {rd(r.comprobantes.costoUnitarioRD)} y cada usuario extra {rd(r.usuarios.costoUnitarioRD)} al mes. Si lo necesitas seguido, subir de plan sale más barato.
       </div>
     </Card>
@@ -205,7 +205,7 @@ export default function PlanClient({
                 </div>
                 <div className="num" style={{ fontSize: 13, color: "var(--c-text-3)" }}>
                   {plan ? `RD$ ${plan.montoRD.toLocaleString("es-DO")} al mes` : null}
-                  {plan && plan.usuarios ? ` · hasta ${plan.usuarios} usuarios` : null}
+                  {plan && plan.usuarios ? ` · ${plan.soloUnUsuario ? "1 usuario" : `hasta ${textoUsuarios(plan.usuarios)}`}` : null}
                 </div>
               </div>
               {urlSistema && <Button href={urlSistema}>Abrir mi sistema →</Button>}

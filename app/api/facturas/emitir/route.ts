@@ -33,6 +33,7 @@ interface Body {
   items: LineaServicio[];
   esConsumidorFinal?: boolean;
   nombreConsumidor?: string;
+  telefonoConsumidor?: string;
   rncCompradorOcasional?: string;
   esExtranjeroComprador?: boolean;
   modalidadPago: "unico" | "plazo";
@@ -190,6 +191,7 @@ export async function POST(req: NextRequest) {
     terminos, metodoPago: txt(body.metodoPago, 40) || undefined,
     clienteId: cliente ? cliente.id : "walk-in", idTransaccion: txt(body.idTransaccion, 60) || undefined,
     esConsumidorFinal: body.esConsumidorFinal, nombreConsumidor: txt(body.nombreConsumidor, 120) || undefined,
+    telefonoConsumidor: txt(body.telefonoConsumidor, 30) || undefined,
     rncCompradorOcasional: txt(body.rncCompradorOcasional, 30) || undefined, esExtranjeroComprador: body.esExtranjeroComprador,
     estado: terminos === "Contado" ? "pagada" : "pendiente",
     items, notas: txt(body.notas, 500) || undefined,

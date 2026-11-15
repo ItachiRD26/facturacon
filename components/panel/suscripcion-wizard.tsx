@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Script from "next/script";
-import { PLANES } from "@/lib/payments/planes";
+import { PLANES, textoUsuarios } from "@/lib/payments/planes";
 import Modal from "@/components/modals/modal";
 import { Boton, Campo, Input } from "@/components/sandbox/ui";
 import InfoTooltip from "./info-tooltip";
@@ -141,7 +141,7 @@ export default function SuscripcionWizard({
                   background: planId === p.id ? "var(--c-brand-bg)" : "#fff",
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{p.facturas.toLocaleString("es-DO")} facturas/mes</div>
-                  <div style={{ fontSize: 11, color: "var(--c-text-3)", marginBottom: 6 }}>Hasta {p.usuarios} usuarios</div>
+                  <div style={{ fontSize: 11, color: "var(--c-text-3)", marginBottom: 6 }}>{p.soloUnUsuario ? "1 usuario · todo en uno" : `Hasta ${textoUsuarios(p.usuarios)}`}</div>
                   <div style={{ fontSize: 16, fontWeight: 700 }}>
                     RD$ {p.montoRD.toLocaleString("es-DO")}<span style={{ fontSize: 11, fontWeight: 400 }}>/mes</span>
                   </div>

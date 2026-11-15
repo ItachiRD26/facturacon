@@ -71,8 +71,9 @@ export default function ModalProductoForm({
         </Campo>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10 }}>
-          <Campo label="Código">
-            <Input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Auto" />
+          <Campo label="Código de barras o interno">
+            <Input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Escanéalo o déjalo vacío (se crea uno)" />
+            <div style={{ fontSize: 11, color: "var(--c-text-3)", marginTop: 4 }}>Es el que lee el lector en la caja. Sin lector, el cajero también lo puede escribir o buscar por nombre.</div>
           </Campo>
           <Campo label="Nombre">
             <Input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej. Tornillo 1/4, Consultoría, Amoxicilina 500mg" />

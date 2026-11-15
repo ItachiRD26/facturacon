@@ -3,7 +3,7 @@ import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { requireOwnerOAdmin } from "@/lib/tenant/auth";
 import { listMembershipsForTenant, createMembership } from "@/lib/tenant/get-memberships";
 import { ROLES_INVITABLES } from "@/lib/tenant/roles";
-import { cupoUsuarios, mensajeUsuarioAdicional } from "@/lib/tenant/limite-usuarios";
+import { cupoUsuarios, mensajeUsuarioAdicional, MENSAJE_SOLO_UN_USUARIO } from "@/lib/tenant/limite-usuarios";
 import type { RolMembership, UserPerfil } from "@/types/tenant";
 
 // Lista el equipo del tenant con nombre/correo — no se puede armar esto
@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
   }
 
   const cupo = await cupoUsuarios(body.tenantId);
+  if (cupo.soloUnUsuario && cupo.lleno) return NextResponse.json({ error: MENSAJE_SOLO_UN_USUARIO }, { status: 403 });
   if (cupo.lleno && !(body as { confirmoExtra?: boolean }).confirmoExtra) {
     // No se bloquea: se pide confirmar el costo del usuario adicional.
     return NextResponse.json({ requiereConfirmacion: true, costoRD: cupo.costoExtraRD, error: mensajeUsuarioAdicional(cupo) }, { status: 409 });

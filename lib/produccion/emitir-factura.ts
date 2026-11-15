@@ -17,7 +17,7 @@ export class ErrorRedEmision extends Error {}
 export interface EntradaEmision {
   tenantId: string; idempotencyKey: string;
   tipoECF: TipoECF; terminos: string; metodoPago?: string; clienteId: string; items: LineaServicio[];
-  esConsumidorFinal?: boolean; nombreConsumidor?: string;
+  esConsumidorFinal?: boolean; nombreConsumidor?: string; telefonoConsumidor?: string;
   rncCompradorOcasional?: string; esExtranjeroComprador?: boolean;
   modalidadPago: "unico" | "plazo"; fechaVencimientoPago?: string; notas?: string;
   idTransaccion?: string;

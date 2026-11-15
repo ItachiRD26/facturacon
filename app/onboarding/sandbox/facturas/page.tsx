@@ -17,6 +17,7 @@ import { guardarFactura } from "@/lib/sandbox/acciones";
 
 import { nombresImpresion } from "@/lib/tenant/nombres";
 import AvisoDatosEjemplo from "@/components/sandbox/aviso-datos-ejemplo";
+import CajaRapida from "@/components/caja/caja-rapida";
 const sans  = "var(--font-sans)";
 const mono  = "var(--font-mono)";
 const serif = "var(--font-serif)";
@@ -42,6 +43,7 @@ export default function SandboxFacturasPage() {
   const { personalizacion } = usePersonalizacion(tenantId);
 
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [cajaAbierta, setCajaAbierta] = useState(false);
   const [imprimiendo,  setImprimiendo]  = useState<Factura | null>(null);
   const [busqueda,     setBusqueda]     = useState("");
   const [filtroEstado, setFiltroEstado] = useState<EstadoFactura | "todos">("todos");
@@ -74,10 +76,16 @@ export default function SandboxFacturasPage() {
           <h1 style={{ fontFamily: serif, fontSize: 24, fontWeight: 600, color: "var(--c-text-1)", marginBottom: 2 }}>Facturas</h1>
           <div style={{ fontSize: 13, color: "var(--c-text-3)", fontFamily: sans }}>Comprobantes fiscales electrónicos de prueba</div>
         </div>
-        <button onClick={() => setModalAbierto(true)} disabled={productos.length === 0} data-tour="btn-nueva-factura"
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: productos.length === 0 ? "var(--c-text-4)" : "var(--c-brand)", color: "#fff", border: "none", borderRadius: 10, cursor: productos.length === 0 ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: sans }}>
-          <Icon name="plus" size={14} /> Nueva Factura
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button onClick={() => setCajaAbierta(true)} disabled={productos.length === 0} data-tour="btn-nueva-factura"
+            style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", background: productos.length === 0 ? "var(--c-text-4)" : "var(--c-brand)", color: "#fff", border: "none", borderRadius: 10, cursor: productos.length === 0 ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 700, fontFamily: sans }}>
+            <Icon name="plus" size={14} /> Caja · Nueva venta
+          </button>
+          <button onClick={() => setModalAbierto(true)} disabled={productos.length === 0}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", background: "var(--c-surface)", color: "var(--c-text-1)", border: "1px solid var(--c-border)", borderRadius: 10, cursor: productos.length === 0 ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: sans }}>
+            Factura con datos (crédito fiscal, otros…)
+          </button>
+        </div>
       </div>
 
       {!cargandoClientes && !cargandoProductos && productos.length === 0 && clientes.length === 0 && (
@@ -162,6 +170,13 @@ export default function SandboxFacturasPage() {
           </table>
         </div>
       )}
+
+      <CajaRapida
+        open={cajaAbierta} onClose={() => setCajaAbierta(false)} onOtroTipo={() => { setCajaAbierta(false); setModalAbierto(true); }}
+        tenantId={tenantId} productos={productos} modo="sandbox" esMuestra
+        nombreEmisor={nombresImpresion(tenant).nombre} nombreComercialEmisor={tenant.nombreComercial} rncEmisor={tenant.rnc} rootDomain={ROOT_DOMAIN}
+        logoTermicoUrl={personalizacion?.logoTermicoUrl} onSave={onSave}
+      />
 
       <ModalNuevaFactura
         open={modalAbierto} onClose={() => setModalAbierto(false)} tenantId={tenantId}

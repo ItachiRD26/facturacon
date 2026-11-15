@@ -25,8 +25,8 @@ interface Paso {
 const PASOS: Paso[] = [
   { id: "nav-facturas", modulo: "facturas", tipo: "nav", placement: "right", title: "Facturas",
     body: "Desde aquí emites comprobantes fiscales electrónicos." },
-  { id: "btn-nueva-factura", modulo: "facturas", tipo: "pagina", placement: "bottom", title: "Emite tu primera factura de prueba",
-    body: "Elige un cliente y un producto de los de ejemplo. El sistema decide solo qué tipo de comprobante fiscal aplica y simula el envío, con código QR de prueba e impresión en A4 o térmica." },
+  { id: "btn-nueva-factura", modulo: "facturas", tipo: "pagina", placement: "bottom", title: "Factura en segundos desde la Caja",
+    body: "Pulsa «Caja», escanea un producto o búscalo por nombre o código, cobra en efectivo (te dice la devuelta) o con tarjeta, e imprime. Siempre sale una factura de consumo (E32) a consumidor final; para crédito fiscal u otros tipos usa «Factura con datos». Nada se envía a la DGII real." },
   { id: "nav-cotizaciones", modulo: "cotizaciones", tipo: "nav", placement: "right", title: "Cotizaciones",
     body: "Crea una cotización y conviértela en factura cuando el cliente la acepte." },
   { id: "nav-clientes", modulo: "clientes", tipo: "nav", placement: "right", title: "Clientes",

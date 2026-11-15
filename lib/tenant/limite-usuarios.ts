@@ -11,6 +11,8 @@ export interface CupoUsuarios {
   lleno: boolean;
   extra: number;
   costoExtraRD: number;
+  // Plan de una sola persona (Emprendedor): no se puede agregar a nadie, ni pagando.
+  soloUnUsuario: boolean;
 }
 
 // Cada plan incluye un número de usuarios (dueño + administradores + cajeros).
@@ -30,6 +32,7 @@ export async function cupoUsuarios(tenantId: string): Promise<CupoUsuarios> {
   return {
     incluidos, usados, lleno: incluidos !== null && usados >= incluidos,
     extra: incluidos !== null ? Math.max(0, usados - incluidos) : 0, costoExtraRD: TARIFAS_ADICIONALES.usuarioRD,
+    soloUnUsuario: !!plan?.soloUnUsuario,
   };
 }
 
@@ -37,3 +40,6 @@ export async function cupoUsuarios(tenantId: string): Promise<CupoUsuarios> {
 export function mensajeUsuarioAdicional(c: CupoUsuarios): string {
   return `Tu plan incluye ${c.incluidos} usuarios y ya los usaste todos. Este usuario será adicional: RD$ ${c.costoExtraRD.toLocaleString("es-DO")} al mes, que se suman a tu cobro del mes siguiente. ¿Agregarlo?`;
 }
+
+export const MENSAJE_SOLO_UN_USUARIO =
+  "El plan Emprendedor es para una sola persona. Para invitar a tu equipo cambia a un plan con más usuarios.";
