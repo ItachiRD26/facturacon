@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { TourStep } from "./sandbox-tour-steps";
 
@@ -118,23 +118,55 @@ export default function TourProvider({
   );
 }
 
+// Coloca el globo dentro de la pantalla usando su ALTO REAL (los textos son de distinto largo): antes
+// se suponía un alto fijo y, con un texto largo, los botones quedaban fuera de la pantalla y no se
+// podían pulsar. Se prueba el lado preferido y los demás; si ninguno cabe entero, va abajo y centrado.
+function colocar(
+  rect: DOMRect | null, ancho: number, alto: number, pref: TourStep["placement"],
+): { top: number; left: number } {
+  const vw = window.innerWidth, vh = window.innerHeight, m = 12, sep = 14;
+  const dentro = (top: number, left: number) => top >= m && left >= m && top + alto <= vh - m && left + ancho <= vw - m;
+  if (!rect) return { top: Math.max(m, (vh - alto) / 2), left: Math.max(m, (vw - ancho) / 2) };
+
+  const lados: Record<string, { top: number; left: number }> = {
+    right:  { top: rect.top, left: rect.right + sep },
+    left:   { top: rect.top, left: rect.left - ancho - sep },
+    bottom: { top: rect.bottom + sep, left: rect.left },
+    top:    { top: rect.top - alto - sep, left: rect.left },
+  };
+  const orden = [pref ?? "bottom", "bottom", "right", "top", "left"];
+  for (const lado of orden) {
+    const c = lados[lado];
+    // Se acepta el lado si cabe con la posición ideal, ajustando solo el eje que sobra.
+    const ajustado = { top: Math.min(Math.max(c.top, m), vh - alto - m), left: Math.min(Math.max(c.left, m), vw - ancho - m) };
+    const tapa = lado === "right" || lado === "left"
+      ? ajustado.left < rect.right && ajustado.left + ancho > rect.left            // se encimaría al elemento
+      : ajustado.top < rect.bottom && ajustado.top + alto > rect.top;
+    if (!tapa || dentro(c.top, c.left)) return ajustado;
+  }
+  return { top: Math.max(m, vh - alto - m), left: Math.max(m, (vw - ancho) / 2) };
+}
+
 function TourBubble({
   step, rect, indice, total, onSiguiente, onAtras, onOmitir,
 }: {
   step: TourStep; rect: DOMRect | null; indice: number; total: number;
   onSiguiente: () => void; onAtras: () => void; onOmitir: () => void;
 }) {
-  const ancho = 300;
-  let top = rect ? rect.bottom + 12 : window.innerHeight / 2 - 80;
-  let left = rect ? rect.left : window.innerWidth / 2 - ancho / 2;
+  const ancho = Math.min(320, window.innerWidth - 24);
+  const globoRef = useRef<HTMLDivElement>(null);
+  const [alto, setAlto] = useState(240);
 
-  if (rect) {
-    if (step.placement === "right") { top = rect.top; left = rect.right + 14; }
-    else if (step.placement === "top") { top = rect.top - 12; left = rect.left; }
-    else { top = rect.bottom + 12; left = rect.left; }
-    left = Math.min(Math.max(left, 12), window.innerWidth - ancho - 12);
-    top = Math.min(Math.max(top, 12), window.innerHeight - 220);
-  }
+  // Mide el alto real del globo (cambia con cada paso y al cambiar el tamaño de la ventana).
+  useEffect(() => {
+    const el = globoRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setAlto(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [step.id]);
+
+  const { top, left } = colocar(rect, ancho, alto, step.placement);
 
   return (
     <>
@@ -147,27 +179,27 @@ function TourBubble({
           transition: "all 0.2s ease",
         }} />
       )}
-      <div style={{
-        position: "fixed", zIndex: 9999, top, left, width: ancho,
+      <div ref={globoRef} role="dialog" aria-label={step.title} style={{
+        position: "fixed", zIndex: 9999, top, left, width: ancho, maxHeight: "calc(100vh - 24px)", overflowY: "auto",
         background: "#fff", borderRadius: 8, boxShadow: "0 12px 32px rgba(0,0,0,0.25)",
         padding: 18, fontFamily: sans, transition: "top 0.2s ease, left 0.2s ease",
       }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
           Paso {indice + 1} de {total}
         </div>
         <div style={{ fontFamily: serif, fontSize: 15, fontWeight: 700, color: "#111", marginBottom: 6 }}>{step.title}</div>
-        <p style={{ fontSize: 12.5, color: "#374151", lineHeight: 1.5, marginBottom: 14 }}>{step.body}</p>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <button onClick={onOmitir} style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 12, cursor: "pointer", fontFamily: sans }}>
+        <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.5, marginBottom: 14 }}>{step.body}</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <button onClick={onOmitir} style={{ background: "none", border: "none", color: "#6b7280", fontSize: 12.5, cursor: "pointer", fontFamily: sans, padding: "8px 4px" }}>
             Omitir tutorial
           </button>
           <div style={{ display: "flex", gap: 6 }}>
             {indice > 0 && (
-              <button onClick={onAtras} style={{ padding: "6px 12px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 12, cursor: "pointer", fontFamily: sans, color: "#374151" }}>
+              <button onClick={onAtras} style={{ padding: "8px 14px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: sans, color: "#374151" }}>
                 Atrás
               </button>
             )}
-            <button onClick={onSiguiente} style={{ padding: "6px 14px", background: "var(--c-brand)", color: "#fff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: sans }}>
+            <button onClick={onSiguiente} style={{ padding: "8px 16px", background: "var(--c-brand)", color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: sans }}>
               {indice >= total - 1 ? "Finalizar" : "Siguiente"}
             </button>
           </div>
