@@ -8,6 +8,7 @@ import { getToken, enviarECF, enviarRFCE } from "@/lib/dgii/dgii-client";
 import { obtenerCertificado } from "@/lib/kms/p12-vault";
 import { contarComprobantesEsteMes } from "@/lib/tenant/estadisticas";
 import { obtenerSuscripcion } from "@/lib/payments/suscripcion";
+import { buscarPlan } from "@/lib/payments/planes";
 import { ErrorSecuencia, TIPOS_CON_SECUENCIA, hoyRD, reservarENCF } from "@/lib/tenant/secuencias-fiscales";
 import type { Cliente, Factura, LineaServicio, TipoECF } from "@/types";
 import type { EmpresaConfig } from "@/types/tenant";
@@ -97,12 +98,18 @@ export async function POST(req: NextRequest) {
       error: "Tu cuenta todavía no tiene un cobro recurrente activo. Actívalo en Plan y facturación para poder emitir comprobantes reales.",
     }, { status: 402 });
   }
+  // Pasado el tope del plan ya NO se bloquea: cada comprobante extra se cobra como
+  // adicional al cierre del mes (tarifa por plan en lib/payments/planes.ts). Solo hay
+  // un tope de seguridad a 3 veces el plan, para que un error o abuso no genere un cobro
+  // desmedido: ahí se pide hablar con ventas.
   const emitidasEsteMes = await contarComprobantesEsteMes(tenantId);
-  if (emitidasEsteMes >= suscripcion.facturasMes) {
+  const esAdicional = emitidasEsteMes >= suscripcion.facturasMes;
+  if (emitidasEsteMes >= suscripcion.facturasMes * 3) {
     return NextResponse.json({
-      error: `Alcanzaste el límite de ${suscripcion.facturasMes} comprobantes/mes de tu plan. Actualiza tu plan para seguir emitiendo.`,
+      error: `Llegaste a ${emitidasEsteMes.toLocaleString("es-DO")} comprobantes este mes, el triple de tu plan. Por seguridad pausamos la emisión: escríbenos para pasar a un plan acorde a tu volumen.`,
     }, { status: 403 });
   }
+  const costoAdicionalRD = esAdicional ? (buscarPlan(suscripcion.planId)?.extraRD ?? 0) : 0;
 
   const empresaSnap = await adminDb.collection("tenants").doc(tenantId).collection("config").doc("empresa").get();
   if (!empresaSnap.exists) {
@@ -262,5 +269,7 @@ export async function POST(req: NextRequest) {
     ok: true, id: key, factura: cleanData(facturaCompleta),
     // Número y XML ya guardados, pero la DGII aún no lo recibió.
     ...(estadoDGII === "pendiente" ? { advertencia: "El comprobante quedó guardado, pero no se pudo enviar a la DGII todavía." } : {}),
+    // Avisa al cliente que este comprobante pasó el tope del plan y se cobra como adicional.
+    ...(esAdicional ? { adicional: { costoRD: costoAdicionalRD } } : {}),
   });
 }

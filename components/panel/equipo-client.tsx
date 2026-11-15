@@ -8,7 +8,7 @@ import { Campo, Input, Select } from "@/components/sandbox/ui";
 import { MODULOS_POR_ROL, ROL_LABEL, ROLES_INVITABLES, type Modulo } from "@/lib/tenant/roles";
 import type { Empleado, RolMembership } from "@/types/tenant";
 
-interface Cupo { incluidos: number | null; usados: number; lleno: boolean }
+interface Cupo { incluidos: number | null; usados: number; lleno: boolean; extra: number; costoExtraRD: number }
 interface Admin { uid: string; rol: RolMembership; nombre: string; email: string }
 type Pestana = "personal" | "admins" | "permisos";
 
@@ -30,7 +30,12 @@ type Confirmacion = { titulo: string; texto: string; boton: string; peligro?: bo
 
 async function post(url: string, body: unknown): Promise<{ ok: boolean; data: Record<string, unknown> | null }> {
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  return { ok: res.ok, data: await res.json().catch(() => null) };
+  const data = await res.json().catch(() => null);
+  // Plan lleno: ya no se bloquea, se pide confirmar el costo del usuario adicional y se reenvía.
+  if (res.status === 409 && data?.requiereConfirmacion && window.confirm(String(data.error))) {
+    return post(url, { ...(body as object), confirmoExtra: true });
+  }
+  return { ok: res.ok, data };
 }
 
 function urlDeLink(slug: string, token: string): string {
@@ -173,8 +178,8 @@ export default function EquipoClient({ tenantId, esOwner, tabInicial }: { tenant
         titulo="Equipo y accesos"
         descripcion="Quién puede entrar a tu sistema y qué puede hacer. Tus cajeros entran con un código, sin correo ni contraseña; tus administradores y contador, con su propia cuenta."
         acciones={tab === "personal"
-          ? <Button onClick={() => setModalPersonal(true)} disabled={cupo?.lleno}>+ Agregar cajero o personal</Button>
-          : tab === "admins" ? <Button onClick={() => setModalAdmin(true)} disabled={cupo?.lleno}>+ Invitar administrador o contador</Button> : undefined}
+          ? <Button onClick={() => setModalPersonal(true)}>+ Agregar cajero o personal</Button>
+          : tab === "admins" ? <Button onClick={() => setModalAdmin(true)}>+ Invitar administrador o contador</Button> : undefined}
       />
 
       {cupo && (
@@ -189,7 +194,7 @@ export default function EquipoClient({ tenantId, esOwner, tabInicial }: { tenant
               <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>Sin tope por ahora: el límite lo define el plan que actives después de certificarte.</div>
             )}
           </div>
-          {cupo.lleno && <Button variante="secondary" href={`/panel/${tenantId}/plan`}>Subir de plan →</Button>}
+          {cupo.lleno && <Button variante="secondary" href={`/panel/${tenantId}/plan`}>Ver plan →</Button>}
         </Card>
       )}
 

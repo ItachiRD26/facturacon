@@ -4,7 +4,7 @@ import { requireOwnerOAdmin } from "@/lib/tenant/auth";
 import { createMembership } from "@/lib/tenant/get-memberships";
 import { generarCodigoEmpleado, generarTokenLinkEmpleado, hashCodigo } from "@/lib/tenant/codigo-empleado";
 import { ROLES_INVITABLES } from "@/lib/tenant/roles";
-import { cupoUsuarios, mensajeCupoLleno } from "@/lib/tenant/limite-usuarios";
+import { cupoUsuarios, mensajeUsuarioAdicional } from "@/lib/tenant/limite-usuarios";
 import type { Empleado } from "@/types/tenant";
 
 // Lista de empleados del tenant — nunca incluye codigoHash. También devuelve
@@ -56,7 +56,10 @@ export async function POST(req: NextRequest) {
   }
 
   const cupo = await cupoUsuarios(tenantId);
-  if (cupo.lleno) return NextResponse.json({ error: mensajeCupoLleno(cupo) }, { status: 403 });
+  if (cupo.lleno && !(body as { confirmoExtra?: boolean }).confirmoExtra) {
+    // No se bloquea: se pide confirmar el costo del usuario adicional.
+    return NextResponse.json({ requiereConfirmacion: true, costoRD: cupo.costoExtraRD, error: mensajeUsuarioAdicional(cupo) }, { status: 409 });
+  }
 
   const userRecord = await adminAuth.createUser({ displayName: nombre });
   const uid = userRecord.uid;

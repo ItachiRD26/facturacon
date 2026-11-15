@@ -17,4 +17,7 @@ export interface Suscripcion {
   creadoEn?:         string;
   actualizadoEn?:    string;
   ultimoPagoEn?:     string;
+  // Datos del dispositivo con que se activó el plan: Pagadito los pide en cada cobro con
+  // token, y los adicionales de fin de mes se cobran sin que el cliente esté presente.
+  browserInfo?:      { deviceFingerprintID: string; customerIp: string };
 }

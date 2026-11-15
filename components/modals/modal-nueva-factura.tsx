@@ -180,6 +180,10 @@ export default function ModalNuevaFactura({
         : await construirFacturaSimulada({ ...await datosSandbox(datosComunes), rncEmisor: rncEmisor ?? "", nombreEmisor: nombreEmisor ?? "", rootDomain: rootDomain ?? "" });
       await onSave(factura);
       llaveEmision.current = null;
+      const adicional = (factura as { adicional?: { costoRD: number } }).adicional;
+      if (adicional) {
+        window.alert(`Este comprobante pasó el tope de comprobantes de tu plan: se cobra como adicional (RD$ ${adicional.costoRD.toLocaleString("es-DO", { minimumFractionDigits: 2 })}) al cierre del mes.`);
+      }
       if ("advertencia" in factura && factura.advertencia) {
         window.alert(`${factura.advertencia}
 El número ${factura.eCF} ya quedó registrado; el envío a la DGII se podrá reintentar desde Facturas.`);

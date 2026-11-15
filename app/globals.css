@@ -71,14 +71,16 @@
   padding: 0;
 }
 
-html { height: 100%; }
+html { min-height: 100%; }
 
 /* Titulares compactos y firmes; el peso lo decide cada uso. */
 h1, h2, h3 { font-weight: 700; letter-spacing: -0.022em; text-wrap: balance; }
 p { text-wrap: pretty; }
 
 body {
-  height: 100%;
+  /* min-height y no height: con height:100% el cuerpo mide una pantalla y un header
+     sticky se soltaba al pasar de esa altura (se "escondía" al bajar). */
+  min-height: 100%;
   font-family: var(--font-sans), system-ui, sans-serif;
   background: var(--c-bg);
   color: var(--c-text-1);
@@ -604,3 +606,7 @@ body {
   .tarifa-empresa { grid-template-columns: 1fr; }
   .tarifa-empresa .btn-l { width: 100%; }
 }
+
+/* Header público: al bajar gana desenfoque y sombra, pero sigue a la vista. */
+.site-header { transition: background .25s ease, box-shadow .25s ease; }
+.site-header--scrolled { background: rgba(15,26,48,.88) !important; -webkit-backdrop-filter: saturate(1.5) blur(14px); backdrop-filter: saturate(1.5) blur(14px); box-shadow: 0 8px 28px rgba(0,0,0,.28); }

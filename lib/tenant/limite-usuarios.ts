@@ -1,13 +1,16 @@
 import "server-only";
 import { adminDb } from "@/lib/firebase-admin";
 import { obtenerSuscripcion } from "@/lib/payments/suscripcion";
-import { buscarPlan } from "@/lib/payments/planes";
+import { buscarPlan, TARIFAS_ADICIONALES } from "@/lib/payments/planes";
 
 export interface CupoUsuarios {
   // null = sin tope (todavía no hay plan: sandbox o certificándose).
   incluidos: number | null;
   usados: number;
+  // Ya se usaron todos los incluidos: el siguiente usuario es ADICIONAL (se cobra aparte).
   lleno: boolean;
+  extra: number;
+  costoExtraRD: number;
 }
 
 // Cada plan incluye un número de usuarios (dueño + administradores + cajeros).
@@ -24,9 +27,13 @@ export async function cupoUsuarios(tenantId: string): Promise<CupoUsuarios> {
   const usados = Math.max(0, miembros.data().count - revocados.data().count);
   const plan = suscripcion?.estado === "activa" ? buscarPlan(suscripcion.planId) : undefined;
   const incluidos = plan?.usuarios ?? null;
-  return { incluidos, usados, lleno: incluidos !== null && usados >= incluidos };
+  return {
+    incluidos, usados, lleno: incluidos !== null && usados >= incluidos,
+    extra: incluidos !== null ? Math.max(0, usados - incluidos) : 0, costoExtraRD: TARIFAS_ADICIONALES.usuarioRD,
+  };
 }
 
-export function mensajeCupoLleno(c: CupoUsuarios): string {
-  return `Tu plan incluye ${c.incluidos} usuarios y ya los usaste todos. Sube de plan en "Plan y facturación" para agregar más personas.`;
+// Con el plan lleno se puede seguir agregando gente: cada usuario extra se cobra aparte al cierre del mes.
+export function mensajeUsuarioAdicional(c: CupoUsuarios): string {
+  return `Tu plan incluye ${c.incluidos} usuarios y ya los usaste todos. Este usuario será adicional: RD$ ${c.costoExtraRD.toLocaleString("es-DO")} al mes, que se suman a tu cobro del mes siguiente. ¿Agregarlo?`;
 }

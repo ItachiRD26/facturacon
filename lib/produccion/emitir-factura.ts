@@ -24,7 +24,7 @@ export interface EntradaEmision {
   eCFRef?: string; motivoNota?: string; codigoModificacion?: string;
 }
 
-export async function construirFacturaReal(input: EntradaEmision): Promise<Factura & { advertencia?: string }> {
+export async function construirFacturaReal(input: EntradaEmision): Promise<Factura & { advertencia?: string; adicional?: { costoRD: number } }> {
   let res: Response;
   try {
     res = await fetch("/api/facturas/emitir", {
@@ -36,5 +36,5 @@ export async function construirFacturaReal(input: EntradaEmision): Promise<Factu
   }
   const data = await res.json().catch(() => null);
   if (!res.ok || !data?.factura) throw new Error(data?.error ?? "No se pudo emitir el comprobante.");
-  return { ...data.factura, id: data.id, ...(data.advertencia ? { advertencia: data.advertencia } : {}) } as Factura & { advertencia?: string };
+  return { ...data.factura, id: data.id, ...(data.advertencia ? { advertencia: data.advertencia } : {}), ...(data.adicional ? { adicional: data.adicional } : {}) } as Factura & { advertencia?: string; adicional?: { costoRD: number } };
 }

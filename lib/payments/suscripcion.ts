@@ -76,6 +76,7 @@ export async function activarCobroRecurrente(params: {
     ultimos4: params.card.number.slice(-4),
     creadoEn: new Date().toISOString(),
     ultimoPagoEn: new Date().toISOString(),
+    browserInfo: params.browserInfo,
   };
   await refSuscripcion(params.tenantId).set(suscripcion);
 

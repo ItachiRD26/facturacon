@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/modals/modal";
 import { Button, Card, CardTitle, PageHeader, Pill, ProgressBar } from "@/components/ui/kit";
@@ -40,6 +40,54 @@ function TarjetaEmpresa() {
         Con {VOLUMEN_EMPRESA.toLocaleString("es-DO")} o más, o varias sucursales, armamos un plan a tu medida.
       </div>
       <Button href="/empresas" variante="secondary" full>Hablar con ventas</Button>
+    </Card>
+  );
+}
+
+
+// Adicionales del mes: comprobantes que pasan el tope y usuarios sobre los incluidos.
+interface DatosAdicionales {
+  resumen: { mes: string; comprobantes: { incluidos: number; emitidos: number; excedentes: number; costoUnitarioRD: number; costoRD: number };
+    usuarios: { incluidos: number; usados: number; extra: number; costoUnitarioRD: number; costoRD: number }; totalRD: number } | null;
+  cargos: { mes: string; estado: "sin_cargo" | "cobrado" | "fallido" | "pendiente"; totalRD: number; excedentes: number; usuariosExtra: number }[];
+}
+const rd = (n: number) => "RD$ " + n.toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function AdicionalesCard({ tenantId }: { tenantId: string }) {
+  const [d, setD] = useState<DatosAdicionales | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    fetch(`/api/tenant/adicionales?t=${tenantId}`).then((r) => r.json()).then((x) => { if (vivo && x?.cargos) setD(x); }).catch(() => {});
+    return () => { vivo = false; };
+  }, [tenantId]);
+  if (!d?.resumen) return null;
+  const r = d.resumen;
+  const fallido = d.cargos.find((c) => c.estado === "fallido" || c.estado === "pendiente");
+  return (
+    <Card style={{ marginBottom: 16 }}>
+      <CardTitle extra="Se cobran una sola vez, al cierre del mes">Adicionales de este mes</CardTitle>
+      {fallido && (
+        <div style={{ padding: "10px 12px", marginBottom: 14, borderRadius: "var(--radius-md)", fontSize: 13, background: "var(--c-red-bg)", border: "1px solid var(--c-red-border)", color: "var(--c-red)" }}>
+          No pudimos cobrar los adicionales de {fallido.mes} ({rd(fallido.totalRD)}). Confirma tu tarjeta y lo reintentamos.
+        </div>
+      )}
+      <div style={{ display: "grid", gap: 10, fontSize: 13.5 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+          <span>Comprobantes adicionales <span style={{ color: "var(--c-text-3)" }}>({r.comprobantes.excedentes} × {rd(r.comprobantes.costoUnitarioRD)})</span></span>
+          <b className="num">{rd(r.comprobantes.costoRD)}</b>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+          <span>Usuarios adicionales <span style={{ color: "var(--c-text-3)" }}>({r.usuarios.extra} × {rd(r.usuarios.costoUnitarioRD)})</span></span>
+          <b className="num">{rd(r.usuarios.costoRD)}</b>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, paddingTop: 10, borderTop: "1px solid var(--c-border)", fontSize: 15 }}>
+          <b>Total de adicionales</b><b className="num">{rd(r.totalRD)}</b>
+        </div>
+      </div>
+      <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 12, lineHeight: 1.55 }}>
+        Tu plan incluye {r.comprobantes.incluidos.toLocaleString("es-DO")} comprobantes y {r.usuarios.incluidos} usuarios al mes. Pasado el tope puedes seguir emitiendo: cada comprobante
+        extra cuesta {rd(r.comprobantes.costoUnitarioRD)} y cada usuario extra {rd(r.usuarios.costoUnitarioRD)} al mes. Si lo necesitas seguido, subir de plan sale más barato.
+      </div>
     </Card>
   );
 }
@@ -169,6 +217,8 @@ export default function PlanClient({
             <ProgressBar valor={usoMes} maximo={suscripcion.facturasMes} />
           </Card>
 
+          <AdicionalesCard tenantId={tenantId} />
+
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14, marginBottom: 16 }}>
             <Card padding={18}>
               <CardTitle>Método de pago</CardTitle>
@@ -190,7 +240,7 @@ export default function PlanClient({
           <Card padding={18}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
               <div style={{ fontSize: 12.5, color: "var(--c-text-3)", lineHeight: 1.55, maxWidth: 520 }}>
-                ¿Necesitas más comprobantes o usuarios? Escríbenos desde <strong>Ayuda y soporte</strong> y cambiamos tu plan. Si cancelas, dejarás de poder emitir comprobantes reales.
+                ¿Necesitas más comprobantes o usuarios de forma permanente? Escríbenos desde <strong>Ayuda y soporte</strong> y cambiamos tu plan. Si cancelas, dejarás de poder emitir comprobantes reales.
               </div>
               <Button variante="danger" tamano="sm" onClick={() => setConfirmarCancelar(true)}>Cancelar cobro recurrente</Button>
             </div>

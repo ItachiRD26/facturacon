@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Logo from "@/components/ui/logo";
 import { registroAbierto } from "@/lib/registro";
+import HeaderShell from "./header-shell";
 
 // Header fijo en tinta: continúa el hero oscuro y se mantiene igual de claro
 // sobre cualquier sección. Altura fija (--header-h) para calcular el hero.
@@ -8,10 +9,7 @@ const enlace = { color: "rgba(255,255,255,0.78)", textDecoration: "none" } as co
 
 export default function SiteHeader() {
   return (
-    <header className="site-header" style={{
-      position: "sticky", top: 0, zIndex: 40, background: "var(--c-navy)",
-      borderBottom: "1px solid rgba(255,255,255,0.1)", fontFamily: "var(--font-sans)",
-    }}>
+    <HeaderShell>
       <div style={{
         maxWidth: "var(--container)", margin: "0 auto", padding: "0 24px", height: "var(--header-h)",
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
@@ -33,6 +31,6 @@ export default function SiteHeader() {
           </Link>
         </nav>
       </div>
-    </header>
+    </HeaderShell>
   );
 }
