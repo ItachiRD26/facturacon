@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Tenant } from "@/types/tenant";
+import JornadaProgreso from "@/components/panel/jornada-progreso";
 import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder";
 
 const sans = "var(--font-sans)";
@@ -89,6 +90,7 @@ function RequisitosShell() {
 
   return (
     <main style={{ maxWidth: 640, margin: "48px auto", padding: "0 24px 80px", fontFamily: sans }}>
+      <div style={{ marginBottom: 28 }}><JornadaProgreso actual="preparacion" compacta /></div>
       <a href={`/panel/${tenantId}`} style={{ fontSize: 13, color: "var(--c-text-3)", display: "inline-block", marginBottom: 20 }}>
         ← Volver a mi cuenta
       </a>

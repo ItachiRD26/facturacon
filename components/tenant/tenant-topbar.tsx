@@ -30,7 +30,7 @@ export default function TenantTopbar() {
 
   return (
     <header style={{
-      height: 52, background: "#fff", borderBottom: "1px solid #e5e7eb",
+      height: 56, background: "var(--c-surface)", borderBottom: "1px solid var(--c-border)",
       display: "flex", alignItems: "center", padding: "0 16px", flexShrink: 0, gap: 10,
     }}>
       <button
@@ -40,19 +40,19 @@ export default function TenantTopbar() {
         style={{
           display: "none", alignItems: "center", justifyContent: "center",
           width: 36, height: 36, background: "none",
-          border: "1px solid #e5e7eb", borderRadius: 4, cursor: "pointer", flexShrink: 0,
+          border: "1px solid var(--c-border)", borderRadius: 8, cursor: "pointer", flexShrink: 0,
         }}
       >
         <svg width={18} height={14} viewBox="0 0 18 14" fill="none">
-          <rect x="0" y="0"  width="18" height="2" rx="1" fill="#374151" />
-          <rect x="0" y="6"  width="18" height="2" rx="1" fill="#374151" />
-          <rect x="0" y="12" width="18" height="2" rx="1" fill="#374151" />
+          <rect x="0" y="0"  width="18" height="2" rx="1" fill="var(--c-text-2)" />
+          <rect x="0" y="6"  width="18" height="2" rx="1" fill="var(--c-text-2)" />
+          <rect x="0" y="12" width="18" height="2" rx="1" fill="var(--c-text-2)" />
         </svg>
       </button>
-      <div style={{ flex: 1, fontSize: 12, color: "#6b7280", fontFamily: "var(--font-sans)", fontWeight: 500 }}>
+      <div style={{ flex: 1, fontSize: 17, color: "var(--c-text-1)", fontFamily: "var(--font-sans)", fontWeight: 800, letterSpacing: "-0.02em" }}>
         {label}
       </div>
-      <div style={{ fontSize: 11, color: "#9ca3af", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+      <div style={{ fontSize: 11, color: "var(--c-text-4)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
         {dateDisplay}
       </div>
     </header>

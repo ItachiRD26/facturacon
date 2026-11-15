@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { fmt } from "@/types";
 
 const sans = "var(--font-sans)";
@@ -57,12 +58,12 @@ export default async function DemoComprobantePage({
           ))}
         </div>
 
-        <a href="/" style={{
+        <Link href="/" style={{
           display: "block", textAlign: "center", marginTop: 20, fontSize: 13,
           fontWeight: 600, color: "var(--c-brand)",
         }}>
           ← Volver a Facturacon
-        </a>
+        </Link>
       </div>
     </main>
   );

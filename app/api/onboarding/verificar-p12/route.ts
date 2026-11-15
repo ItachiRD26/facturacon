@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUid } from "@/lib/auth/session";
+import { limitar } from "@/lib/seguridad/limite-tasa";
 import { getMembership } from "@/lib/tenant/get-memberships";
 import { getTenantById } from "@/lib/tenant/resolve-tenant";
 import { loadCertAndKey, extraerRncDelCertificado } from "@/lib/dgii/xml-signer";
@@ -11,6 +12,9 @@ import { loadCertAndKey, extraerRncDelCertificado } from "@/lib/dgii/xml-signer"
 export async function POST(req: NextRequest) {
   const uid = await getSessionUid();
   if (!uid) return NextResponse.json({ error: "Sesión requerida" }, { status: 401 });
+  // Abrir un .p12 es trabajo de CPU: tope por usuario.
+  const lim = await limitar(req, { nombre: "verificar-p12", id: uid, max: 15, ventanaSeg: 600 });
+  if (lim) return lim;
 
   const form = await req.formData().catch(() => null);
   if (!form) return NextResponse.json({ error: "Formulario inválido" }, { status: 400 });

@@ -8,6 +8,7 @@ import FacturaTermica from "@/components/print/factura-termica";
 import { Boton } from "@/components/sandbox/ui";
 import type { Factura } from "@/types";
 
+import { nombresImpresion } from "@/lib/tenant/nombres";
 // Factura ficticia solo para la vista previa — nunca se guarda ni se envía
 // a ningún lado, es puramente para ver cómo queda el logo en el diseño real.
 const FACTURA_EJEMPLO: Factura = {
@@ -35,7 +36,7 @@ export default function PersonalizacionPage() {
   const contenidoRef = useRef<HTMLDivElement>(null);
 
   const empresa = {
-    nombre: tenant.nombreNegocio, rnc: tenant.rnc,
+    ...nombresImpresion(tenant), rnc: tenant.rnc,
     logoA4Url: personalizacion?.logoA4Url, logoTermicoUrl: personalizacion?.logoTermicoUrl,
   };
 
@@ -92,7 +93,7 @@ export default function PersonalizacionPage() {
             <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>Cargando...</div>
           ) : personalizacion?.logoA4Url ? (
             <div style={{
-              marginBottom: 12, padding: 12, border: "1px solid var(--c-border-lt)", borderRadius: 6,
+              marginBottom: 12, padding: 12, border: "1px solid var(--c-border-lt)", borderRadius: 10,
               display: "flex", justifyContent: "center", background: "var(--c-bg)",
             }}>
               {/* eslint-disable-next-line @next/next/no-img-element -- imagen del tenant en Storage */}
@@ -123,14 +124,14 @@ export default function PersonalizacionPage() {
         <div style={{ minWidth: 0 }}>
           <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
             <button type="button" onClick={() => setFormato("a4")} style={{
-              padding: "6px 12px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+              padding: "6px 12px", fontSize: 12, fontWeight: 600, borderRadius: 10, cursor: "pointer",
               border: `1px solid ${formato === "a4" ? "var(--c-brand)" : "var(--c-border)"}`,
               background: formato === "a4" ? "var(--c-brand-bg)" : "transparent",
             }}>
               Vista A4
             </button>
             <button type="button" onClick={() => setFormato("termica")} style={{
-              padding: "6px 12px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+              padding: "6px 12px", fontSize: 12, fontWeight: 600, borderRadius: 10, cursor: "pointer",
               border: `1px solid ${formato === "termica" ? "var(--c-brand)" : "var(--c-border)"}`,
               background: formato === "termica" ? "var(--c-brand-bg)" : "transparent",
             }}>

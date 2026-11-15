@@ -10,7 +10,7 @@ import { simularEmisionECF } from "@/lib/dgii/dgii-simulador";
 export async function construirFacturaSimulada(input: {
   tipoECF: TipoECF; noFactura: string; eCF: string; fecha: string; vencimientoECF: string;
   terminos: string; metodoPago?: string; clienteId: string; items: LineaServicio[];
-  esConsumidorFinal?: boolean; nombreConsumidor?: string;
+  esConsumidorFinal?: boolean; nombreConsumidor?: string; telefonoConsumidor?: string;
   rncCompradorOcasional?: string; esExtranjeroComprador?: boolean;
   modalidadPago: "unico" | "plazo"; fechaVencimientoPago?: string; notas?: string;
   idTransaccion?: string;
@@ -30,6 +30,7 @@ export async function construirFacturaSimulada(input: {
     terminos: input.terminos, metodoPago: input.metodoPago,
     clienteId: input.clienteId, idTransaccion: input.idTransaccion,
     esConsumidorFinal: input.esConsumidorFinal, nombreConsumidor: input.nombreConsumidor,
+    ...(input.telefonoConsumidor ? { telefonoConsumidor: input.telefonoConsumidor } : {}),
     rncCompradorOcasional: input.rncCompradorOcasional, esExtranjeroComprador: input.esExtranjeroComprador,
     estado: input.terminos === "Contado" ? "pagada" : "pendiente",
     items: input.items, notas: input.notas,

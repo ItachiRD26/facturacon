@@ -5,7 +5,8 @@ import { fmtRNCDisplay } from "@/lib/dgii/xml-builder";
 import SelloMuestra from "./sello-muestra";
 
 export interface EmpresaImpresion {
-  nombre: string; rnc: string; direccion?: string; telefono?: string;
+  // `nombre` = razón social (como consta en el RNC); `nombreComercial` solo si la DGII lo tiene.
+  nombre: string; nombreComercial?: string; rnc: string; direccion?: string; telefono?: string;
   logoA4Url?: string; logoTermicoUrl?: string;
 }
 
@@ -16,6 +17,14 @@ function fmtFechaFirma(iso?: string): string {
   return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
+// Catálogo oficial DGII (Informe Técnico e-CF v1.0) — obligatorio mostrar el
+// eNCF modificado y el código de modificación en la representación impresa
+// de una Nota de Débito/Crédito, no solo llevarlo en el XML.
+export const CODIGO_MODIFICACION: Record<string, string> = {
+  "1": "Anula el NCF modificado", "2": "Corrige texto", "3": "Corrige montos",
+  "4": "Reemplazo NCF por contingencia",
+};
+
 export default function FacturaA4({ factura, cliente, empresa, esMuestra = true }: { factura: Factura; cliente?: Cliente; empresa: EmpresaImpresion; esMuestra?: boolean }) {
   const totales = calcTotales(factura.items);
   const titulo = `Comprobante Fiscal Electrónico ${factura.tipoECF}`;
@@ -25,24 +34,33 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
       {esMuestra && <SelloMuestra />}
       <div style={{ position: "relative", zIndex: 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "2px solid #111", paddingBottom: 12, marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
           {empresa.logoA4Url && (
             // eslint-disable-next-line @next/next/no-img-element -- imagen del tenant en Storage, no un asset propio del sitio
             <img src={empresa.logoA4Url} alt={empresa.nombre} style={{ maxWidth: 90, maxHeight: 60, objectFit: "contain" }} />
           )}
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>{empresa.nombre}</div>
+          <div style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+            {empresa.nombreComercial && <div style={{ fontWeight: 800, fontSize: 17 }}>{empresa.nombreComercial}</div>}
+            <div style={{ fontWeight: empresa.nombreComercial ? 500 : 700, fontSize: empresa.nombreComercial ? 12 : 16 }}>{empresa.nombre}</div>
             <div>RNC: {fmtRNCDisplay(empresa.rnc)}</div>
             {empresa.direccion && <div>{empresa.direccion}</div>}
             {empresa.telefono && <div>Tel: {empresa.telefono}</div>}
             <div>Fecha emisión: {fmtDate(factura.fecha)}</div>
           </div>
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 20 }}>
           <div style={{ fontWeight: 700 }}>{titulo}</div>
           <div>e-NCF: {factura.eCF}</div>
           {factura.tipoECF !== "E32" && factura.tipoECF !== "E34" && (
             <div>Válido hasta: {fmtDate(factura.vencimientoECF)}</div>
+          )}
+          {(factura.tipoECF === "E33" || factura.tipoECF === "E34") && factura.eCFRef && (
+            <>
+              <div>e-NCF Modificado: {factura.eCFRef}</div>
+              {factura.codigoModificacion && (
+                <div>Código Modificación: {CODIGO_MODIFICACION[factura.codigoModificacion] ?? factura.codigoModificacion}</div>
+              )}
+            </>
           )}
           <div>Términos: {factura.terminos}</div>
           {factura.metodoPago && <div>Pago: {factura.metodoPago}</div>}

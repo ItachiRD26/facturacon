@@ -4,6 +4,9 @@ import { resolveTenantBySlug, getTenantById } from "@/lib/tenant/resolve-tenant"
 import { getMembership, listMembershipsForUser } from "@/lib/tenant/get-memberships";
 import { TenantProvider, type TenantSummary } from "@/contexts/TenantContext";
 import TenantShell from "@/components/tenant/tenant-shell";
+import { obtenerSuscripcion } from "@/lib/payments/suscripcion";
+import { buscarPlan } from "@/lib/payments/planes";
+import { puedeEmitir as rolPuedeEmitir } from "@/lib/tenant/roles";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
@@ -31,14 +34,25 @@ export default async function TenantLayout({
     }))
   ).filter((t): t is TenantSummary => t !== null);
 
+  const suscripcion = await obtenerSuscripcion(tenant.id);
+  const puedeEmitir = tenant.estado === "activo" && suscripcion?.estado === "activa";
+  const motivoSinPlan = puedeEmitir ? null
+    : suscripcion?.estado === "pago_fallido" || tenant.estado === "suspendido" ? "pago_fallido"
+    : suscripcion?.estado === "cancelada" ? "cancelado" : "sin_plan";
+
   return (
     <TenantProvider value={{
       tenantId: tenant.id,
       slug,
       nombreNegocio: tenant.nombreNegocio,
+      razonSocial: tenant.razonSocial,
+      nombreComercial: tenant.nombreComercial,
       rnc: tenant.rnc,
       rol: membership.rol,
       otrasEmpresas,
+      puedeEmitir,
+      rolPuedeFacturar: rolPuedeEmitir(membership.rol, tenant, buscarPlan(suscripcion?.planId ?? "")?.soloUnUsuario),
+      motivoSinPlan,
     }}>
       <TenantShell>{children}</TenantShell>
     </TenantProvider>

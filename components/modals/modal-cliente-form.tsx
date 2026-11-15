@@ -92,7 +92,7 @@ export default function ModalClienteForm({
           <div style={{ display: "flex", gap: 6 }}>
             {TIPOS.map((t) => (
               <button key={t.v} type="button" onClick={() => setTipo(t.v)} style={{
-                flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+                flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 10, cursor: "pointer",
                 border: `1px solid ${tipo === t.v ? "var(--c-brand)" : "var(--c-border)"}`,
                 background: tipo === t.v ? "var(--c-brand-bg)" : "var(--c-surface)",
               }}>{t.label}</button>

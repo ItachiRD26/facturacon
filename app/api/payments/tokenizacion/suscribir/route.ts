@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireTenantActivo } from "@/lib/tenant/auth";
+import { requireAccesoFacturacion } from "@/lib/tenant/auth";
 import { activarCobroRecurrente } from "@/lib/payments/suscripcion";
 import type { TarjetaPagadito } from "@/lib/payments/pagadito-tokenizacion";
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Faltan datos requeridos." }, { status: 400 });
   }
 
-  const verif = await requireTenantActivo(body.tenantId, ["owner", "admin"]);
+  const verif = await requireAccesoFacturacion(body.tenantId);
   if (!verif.ok) return verif.response;
 
   const customerIp =

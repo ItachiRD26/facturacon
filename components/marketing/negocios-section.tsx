@@ -1,67 +1,42 @@
-const negocios = [
-  { emoji: "🔧", t: "Ferreterías" },
-  { emoji: "💊", t: "Farmacias" },
-  { emoji: "🛒", t: "Colmados y supermercados" },
-  { emoji: "🍽️", t: "Restaurantes" },
-  { emoji: "💇", t: "Salones y spas" },
-  { emoji: "🚗", t: "Talleres mecánicos" },
-  { emoji: "🩺", t: "Clínicas y consultorios" },
-  { emoji: "📋", t: "Servicios profesionales" },
-];
+import Reveal from "./reveal";
+import {
+  Wrench, Pill, Basket, ForkKnife, Scissors, Car, Stethoscope, Briefcase,
+} from "@phosphor-icons/react/dist/ssr";
 
-// Placeholder de imágenes con iniciales — listo para reemplazar por fotos
-// reales de clientes/equipo cuando estén disponibles. Paleta de la propia
-// marca (navy/teal) en vez de colores primarios sueltos, para que se vea
-// como parte del mismo sistema visual que el logo, no como avatares de
-// stock genéricos.
-const personas = [
-  { iniciales: "MR", color: "#111439" },
-  { iniciales: "JP", color: "#0e7490" },
-  { iniciales: "LD", color: "#1c2563" },
-  { iniciales: "CA", color: "#0891b2" },
+// Tipos de negocio para los que sirve el sistema base. Cuadrícula pareja de 4x2
+// con un icono por tipo (antes eran etiquetas sueltas que se partían en filas
+// desiguales). Los filetes salen del truco gap:1px sobre fondo de borde.
+const negocios = [
+  { t: "Ferreterías", d: "Productos, stock y códigos de barra", Icono: Wrench },
+  { t: "Farmacias", d: "Inventario y facturación ágil", Icono: Pill },
+  { t: "Colmados y supermercados", d: "Ventas rápidas, ticket térmico", Icono: Basket },
+  { t: "Restaurantes", d: "Facturas al momento, por mesa", Icono: ForkKnife },
+  { t: "Salones y spas", d: "Servicios, clientes y cobranza", Icono: Scissors },
+  { t: "Talleres mecánicos", d: "Cotizaciones y cuentas por cobrar", Icono: Car },
+  { t: "Clínicas y consultorios", d: "Facturas a pacientes y empresas", Icono: Stethoscope },
+  { t: "Servicios profesionales", d: "Cotiza, factura y da seguimiento", Icono: Briefcase },
 ];
 
 export default function NegociosSection() {
   return (
-    <section style={{ padding: "56px 24px", maxWidth: 960, margin: "0 auto" }}>
-      <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", textAlign: "center", marginBottom: 10 }}>
-        Negocios dominicanos como el tuyo ya se están preparando
-      </h2>
-      <p style={{ textAlign: "center", color: "var(--c-text-3)", fontSize: 13, maxWidth: 560, margin: "0 auto 32px" }}>
-        Facturacon funciona para cualquier negocio que venda productos o servicios y necesite
-        facturar electrónicamente ante la DGII.
+    <div>
+      <h3 style={{ fontWeight: 800, fontSize: "clamp(1.4rem, 2.4vw, 1.8rem)", letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: 8 }}>
+        Funciona para cualquier negocio que venda productos o servicios
+      </h3>
+      <p style={{ fontSize: 16.5, color: "var(--c-text-2)", marginBottom: 28, maxWidth: 560, lineHeight: 1.55 }}>
+        Si facturas, Facturacon se adapta. Estos son algunos de los negocios que más lo usarán.
       </p>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, marginBottom: 36 }}>
-        {negocios.map((n) => (
-          <div key={n.t} style={{
-            display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
-            background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 8, fontSize: 13,
-          }}>
-            <span style={{ fontSize: 18 }}>{n.emoji}</span>
-            <span style={{ fontWeight: 600 }}>{n.t}</span>
-          </div>
+      <Reveal as="ul" stagger className="grid-negocios" style={{ listStyle: "none" }}>
+        {negocios.map(({ t, d, Icono }) => (
+          <li key={t} className="celda-negocio">
+            <span className="celda-negocio-icono"><Icono size={26} weight="duotone" aria-hidden="true" /></span>
+            <span>
+              <span style={{ display: "block", fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", lineHeight: 1.25 }}>{t}</span>
+              <span style={{ display: "block", fontSize: 14, color: "var(--c-text-3)", lineHeight: 1.45, marginTop: 3 }}>{d}</span>
+            </span>
+          </li>
         ))}
-      </div>
-
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "center", gap: -8,
-      }}>
-        <div style={{ display: "flex" }}>
-          {personas.map((p, i) => (
-            <div key={p.iniciales} title="Foto próximamente" style={{
-              width: 44, height: 44, borderRadius: "50%", background: p.color, color: "#fff",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700,
-              border: "3px solid var(--c-bg)", marginLeft: i === 0 ? 0 : -12,
-            }}>
-              {p.iniciales}
-            </div>
-          ))}
-        </div>
-        <span style={{ marginLeft: 14, fontSize: 13, color: "var(--c-text-3)" }}>
-          Dueños de negocio ya en proceso de certificación
-        </span>
-      </div>
-    </section>
+      </Reveal>
+    </div>
   );
 }

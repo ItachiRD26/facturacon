@@ -6,6 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Tenant } from "@/types/tenant";
 import Icon from "@/components/ui/icon";
+import JornadaProgreso from "@/components/panel/jornada-progreso";
 
 const sans = "var(--font-sans)";
 const serif = "var(--font-serif)";
@@ -74,7 +75,13 @@ function CredencialesShell() {
     try {
       const res = await fetch(`/api/validate-rnc?number=${encodeURIComponent(cedula)}`);
       const data = await res.json();
-      if (!data.valid) setCedulaError("No encontramos esa cédula en el padrón de la DGII.");
+      // Mostramos el mensaje TAL CUAL lo da la DGII en su propio portal
+      // (ej. "El RNC/Cédula consultado no se encuentra inscrito como
+      // Contribuyente.") en vez de una redacción genérica nuestra — para que
+      // el usuario sepa exactamente qué le respondió la DGII, no una
+      // paráfrasis que podría no coincidir con lo que él mismo vería si
+      // consultara directo en dgii.gov.do.
+      if (!data.valid) setCedulaError(data.mensajeDgii || "No encontramos esa cédula en el padrón de la DGII.");
       else setCedulaResultado(data);
     } catch {
       setCedulaError("No se pudo validar la cédula ahora. Intenta de nuevo.");
@@ -125,7 +132,10 @@ function CredencialesShell() {
       if (etapaTimer.current) clearInterval(etapaTimer.current);
       setEtapa(ETAPAS_ENVIO.length - 1);
       setCompletado(true);
-      setTimeout(() => router.push(`/panel/${tenantId}`), 1100);
+      // Directo al asistente de certificación, no al resumen de la cuenta —
+      // ya validamos cédula y certificado aquí mismo, forzar un clic extra
+      // en "Ir al asistente" ahí solo rompe la continuidad del flujo.
+      setTimeout(() => router.push(`/panel/${tenantId}/certificacion`), 1100);
     } catch (err) {
       if (etapaTimer.current) clearInterval(etapaTimer.current);
       setError(err instanceof Error ? err.message : "Error inesperado");
@@ -180,6 +190,7 @@ function CredencialesShell() {
 
   return (
     <main style={{ maxWidth: 520, margin: "48px auto", padding: "0 24px", fontFamily: sans }}>
+      <div style={{ marginBottom: 28 }}><JornadaProgreso actual="preparacion" compacta /></div>
       <a href={`/onboarding/requisitos?t=${tenantId}`} style={{ fontSize: 13, color: "var(--c-text-3)", display: "inline-block", marginBottom: 20 }}>
         ← Atrás
       </a>
@@ -212,7 +223,38 @@ function CredencialesShell() {
             {validandoCedula ? "Validando..." : "Validar"}
           </button>
         </div>
-        {cedulaError && <div style={{ marginTop: 6, fontSize: 12, color: "#991b1b" }}>{cedulaError}</div>}
+        {cedulaError && (
+          <div style={{ marginTop: 8, padding: "10px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6 }}>
+            <div style={{ fontSize: 12, color: "#991b1b", fontWeight: 600, marginBottom: 8 }}>
+              La DGII respondió: &quot;{cedulaError}&quot;
+            </div>
+            <div style={{ fontSize: 12, color: "#7f1d1d", lineHeight: 1.5, marginBottom: 8 }}>
+              Primero revisa que escribiste bien el número. Si está correcto, esto casi siempre
+              significa una de estas dos cosas:
+            </div>
+            <div style={{ fontSize: 12, color: "#7f1d1d", lineHeight: 1.5, marginBottom: 8 }}>
+              <strong>1. Esta persona todavía no tiene Oficina Virtual (OFV).</strong> Es muy común
+              — pasa, por ejemplo, con alguien que trabaja en relación de dependencia y nunca ha
+              necesitado hacer trámites con la DGII por su cuenta. La OFV es solo un registro de
+              identificación; <u>no genera ningún compromiso fiscal nuevo</u> para quien la activa,
+              solo le permite a la DGII confirmar que es quien dice ser. Para solicitarla: entra a{" "}
+              <a href="https://www.dgii.gov.do" target="_blank" rel="noopener noreferrer" style={{ color: "#991b1b", fontWeight: 700 }}>
+                dgii.gov.do
+              </a>{" "}
+              → &quot;Oficina Virtual&quot; → &quot;Solicitar Clave&quot;. La DGII le envía una
+              notificación a esa OFV con el rol asignado.
+            </div>
+            <div style={{ fontSize: 12, color: "#7f1d1d", lineHeight: 1.5 }}>
+              <strong>2. Ya tiene OFV, pero está inactiva o no está al día.</strong> En ese caso no
+              hay que crear una cuenta nueva — hay que regularizar la que ya tiene.
+            </div>
+            <div style={{ fontSize: 12, color: "#7f1d1d", lineHeight: 1.5, marginTop: 8 }}>
+              En ambos casos es un trámite externo, directo con la DGII — nosotros no podemos
+              hacerlo por ti. Si no logras resolverlo desde el portal, visita la administración
+              local de la DGII más cercana.
+            </div>
+          </div>
+        )}
         {cedulaResultado?.valid && (
           <div style={{ marginTop: 6, fontSize: 12, color: cedulaResultado.activo ? "#166534" : "#991b1b" }}>
             {cedulaResultado.activo

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { getSessionUid } from "@/lib/auth/session";
+import { limitar } from "@/lib/seguridad/limite-tasa";
 import { getMembership } from "@/lib/tenant/get-memberships";
 import { adminDb, adminStorage } from "@/lib/firebase-admin";
 
@@ -30,6 +31,8 @@ const EXPIRA = new Date("2050-01-01");
 export async function POST(req: NextRequest) {
   const uid = await getSessionUid();
   if (!uid) return NextResponse.json({ error: "Sesión requerida" }, { status: 401 });
+  const lim = await limitar(req, { nombre: "logo", id: uid, max: 10, ventanaSeg: 600 });
+  if (lim) return lim;
 
   const form = await req.formData().catch(() => null);
   const tenantId = form?.get("tenantId");

@@ -18,13 +18,13 @@ export default function DemoBanner() {
       </div>
       <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
         <button onClick={() => router.push(`/panel/${tenantId}`)} style={{
-          padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer",
+          padding: "6px 14px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer",
           border: "1px solid rgba(255,255,255,0.3)", background: "transparent", color: "#fff",
         }}>
           ← Mi cuenta
         </button>
         <button onClick={() => router.push(`/onboarding/requisitos?t=${tenantId}`)} data-tour="btn-comenzar-certificacion" style={{
-          padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer",
+          padding: "6px 14px", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer",
           border: "none", background: "var(--c-brand)", color: "#fff",
         }}>
           Listo, comenzar certificación →

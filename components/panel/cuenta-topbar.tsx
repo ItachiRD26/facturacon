@@ -5,8 +5,12 @@ import { useSidebarCtx } from "@/contexts/SidebarUIContext";
 
 const LABELS: Record<string, string> = {
   "": "Resumen",
-  "metodos-pago": "Métodos de pago",
-  soporte: "Soporte",
+  certificacion: "Certificación DGII",
+  equipo: "Equipo y accesos",
+  contabilidad: "Contabilidad",
+  secuencias: "Secuencias fiscales",
+  plan: "Plan y facturación",
+  soporte: "Ayuda y soporte",
 };
 
 function getLabel(pathname: string) {

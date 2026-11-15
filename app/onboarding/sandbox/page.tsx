@@ -3,13 +3,13 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-function RedirectAlDashboard() {
+function RedirectAFacturas() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const t = searchParams.get("t");
-    router.replace(`/onboarding/sandbox/dashboard${t ? `?t=${t}` : ""}`);
+    router.replace(`/onboarding/sandbox/facturas${t ? `?t=${t}` : ""}`);
   }, [router, searchParams]);
 
   return null;
@@ -18,7 +18,7 @@ function RedirectAlDashboard() {
 export default function SandboxIndexPage() {
   return (
     <Suspense>
-      <RedirectAlDashboard />
+      <RedirectAFacturas />
     </Suspense>
   );
 }

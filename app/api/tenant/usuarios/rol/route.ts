@@ -24,6 +24,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No se puede cambiar el rol del dueño de la cuenta." }, { status: 400 });
   }
 
+  // Solo el dueño promueve a administrador o modifica a uno — si no, un
+  // administrador podría ascender a cualquiera a su mismo nivel.
+  if ((body.rol === "admin" || objetivo.rol === "admin") && verif.rol !== "owner") {
+    return NextResponse.json({ error: "Solo el dueño de la cuenta puede gestionar administradores." }, { status: 403 });
+  }
+
   await updateMembershipRol(body.uid, body.tenantId, body.rol);
   return NextResponse.json({ ok: true });
 }

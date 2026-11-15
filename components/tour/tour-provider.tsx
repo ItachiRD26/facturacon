@@ -29,6 +29,9 @@ export default function TourProvider({
     if (!window.localStorage.getItem(storageKey)) setActive(true);
   }, [storageKey]);
 
+  // Al cambiar de rol el recorrido cambia: el paso actual no puede quedar fuera de la lista.
+  useEffect(() => { setIndex((i) => Math.min(i, Math.max(0, steps.length - 1))); }, [steps]);
+
   const step = steps[index];
 
   // Navega a la ruta del paso si todavia no estamos ahi.

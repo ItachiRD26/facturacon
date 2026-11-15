@@ -8,7 +8,7 @@ export default function VideoTutorial() {
   const videoId = url ? extraerIdYoutube(url) : null;
 
   return (
-    <section style={{ padding: "0 24px 56px", maxWidth: 880, margin: "0 auto" }}>
+    <div style={{ maxWidth: 880 }}>
       <div style={{
         borderRadius: 12, overflow: "hidden", border: "1px solid var(--c-border)",
         background: "var(--c-navy)", position: "relative", aspectRatio: "16 / 9",
@@ -39,13 +39,13 @@ export default function VideoTutorial() {
             }}>
               ▶
             </div>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>Video tutorial — próximamente</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>Video tutorial: próximamente</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
               Aquí irá un recorrido en video por todo el proceso de certificación
             </div>
           </a>
         )}
       </div>
-    </section>
+    </div>
   );
 }

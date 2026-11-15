@@ -41,6 +41,33 @@ export async function requireTenantActivo(
   return { ok: true, uid, tenant, rol: membership.rol };
 }
 
+// Para las rutas de facturación/suscripción (activar, reactivar, cancelar).
+// A diferencia de requireTenantActivo, acepta tenant "activo" O "suspendido"
+// — un cobro fallido pone al tenant en "suspendido" precisamente para
+// bloquear EMITIR FACTURAS, pero si requireTenantActivo también bloqueara
+// esta ruta, el dueño quedaría sin ninguna forma de arreglar su propio pago
+// (ver lib/payments/suscripcion.ts, marcarPagoRecurrenteFallido). Nunca
+// acepta "demo"/"pendiente_certificacion"/"certificando" — no tiene sentido
+// cobrar a un tenant que ni siquiera terminó de certificarse.
+export async function requireAccesoFacturacion(tenantId: string): Promise<VerificacionOk | VerificacionError> {
+  const uid = await getSessionUid();
+  if (!uid) {
+    return { ok: false, response: NextResponse.json({ error: "Sesión requerida" }, { status: 401 }) };
+  }
+  const membership = await getMembership(uid, tenantId);
+  if (!membership || (membership.rol !== "owner" && membership.rol !== "admin")) {
+    return { ok: false, response: NextResponse.json({ error: "No tienes permiso para esta acción" }, { status: 403 }) };
+  }
+  const tenant = await getTenantById(tenantId);
+  if (!tenant) {
+    return { ok: false, response: NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 }) };
+  }
+  if (tenant.estado !== "activo" && tenant.estado !== "suspendido") {
+    return { ok: false, response: NextResponse.json({ error: "Esta empresa todavía no está certificada/activa." }, { status: 400 }) };
+  }
+  return { ok: true, uid, tenant, rol: membership.rol };
+}
+
 // Para gestión de equipo/roles — a diferencia de requireTenantActivo, no
 // exige que el tenant esté certificado (se puede armar el equipo desde el
 // sandbox), solo que quien llama sea owner o admin.
@@ -51,6 +78,28 @@ export async function requireOwnerOAdmin(tenantId: string): Promise<Verificacion
   }
   const membership = await getMembership(uid, tenantId);
   if (!membership || (membership.rol !== "owner" && membership.rol !== "admin")) {
+    return { ok: false, response: NextResponse.json({ error: "No tienes permiso para esta acción" }, { status: 403 }) };
+  }
+  const tenant = await getTenantById(tenantId);
+  if (!tenant) {
+    return { ok: false, response: NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 }) };
+  }
+  return { ok: true, uid, tenant, rol: membership.rol };
+}
+
+// Para pantallas/rutas de lectura del panel de cuenta que no exigen un rol
+// fijo (ej. contabilidad: dueño, administrador y contador). No pide que el
+// tenant esté certificado — el panel se usa desde el sandbox también.
+export async function requireRolEnTenant(
+  tenantId: string,
+  roles: RolMembership[],
+): Promise<VerificacionOk | VerificacionError> {
+  const uid = await getSessionUid();
+  if (!uid) {
+    return { ok: false, response: NextResponse.json({ error: "Sesión requerida" }, { status: 401 }) };
+  }
+  const membership = await getMembership(uid, tenantId);
+  if (!membership || !roles.includes(membership.rol)) {
     return { ok: false, response: NextResponse.json({ error: "No tienes permiso para esta acción" }, { status: 403 }) };
   }
   const tenant = await getTenantById(tenantId);

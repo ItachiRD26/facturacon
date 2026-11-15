@@ -12,20 +12,21 @@ export default function CotizacionA4({ cotizacion, cliente, empresa, esMuestra =
       {esMuestra && <SelloMuestra />}
       <div style={{ position: "relative", zIndex: 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "2px solid #111", paddingBottom: 12, marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
           {empresa.logoA4Url && (
             // eslint-disable-next-line @next/next/no-img-element -- imagen del tenant en Storage, no un asset propio del sitio
             <img src={empresa.logoA4Url} alt={empresa.nombre} style={{ maxWidth: 90, maxHeight: 60, objectFit: "contain" }} />
           )}
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>{empresa.nombre}</div>
+          <div style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+            {empresa.nombreComercial && <div style={{ fontWeight: 800, fontSize: 17 }}>{empresa.nombreComercial}</div>}
+            <div style={{ fontWeight: empresa.nombreComercial ? 500 : 700, fontSize: empresa.nombreComercial ? 12 : 16 }}>{empresa.nombre}</div>
             <div>RNC: {fmtRNCDisplay(empresa.rnc)}</div>
             {empresa.direccion && <div>{empresa.direccion}</div>}
             {empresa.telefono && <div>Tel: {empresa.telefono}</div>}
             <div>Fecha: {fmtDate(cotizacion.fecha)}</div>
           </div>
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 20 }}>
           <div style={{ fontWeight: 700 }}>Cotización</div>
           <div>No. {cotizacion.noCotizacion}</div>
           <div>Vence: {fmtDate(cotizacion.vencimiento)}</div>

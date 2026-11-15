@@ -135,6 +135,7 @@ export function parseSetPaso2(buffer: Buffer): FilaSetPrueba[] {
       montoTotal:      montoTotal || items.reduce((s, it) => s + it.cantidad * it.precioUnitario, 0),
       items,
       eCFRef:             raw(row, "ncfmodificado") || undefined,
+      fechaECFRef:        fmtFechaISO(raw(row, "fechancfmodificado")) || undefined,
       motivoNota:         raw(row, "razonmodificacion") || undefined,
       codigoModificacion: raw(row, "codigomodificacion") || undefined,
       estadoEnvio: "pendiente",

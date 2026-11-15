@@ -1,16 +1,20 @@
 import Link from "next/link";
 import SiteHeader from "@/components/marketing/site-header";
 import SiteFooter from "@/components/marketing/site-footer";
+import Seccion from "@/components/marketing/seccion";
+import Reveal from "@/components/marketing/reveal";
 import VideoTutorial from "@/components/marketing/video-tutorial";
 import NegociosSection from "@/components/marketing/negocios-section";
-import ProductMockup from "@/components/marketing/product-mockup";
-import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder";
 import PagaditoBadge from "@/components/marketing/pagadito-badge";
 import BeneficiosStrip from "@/components/marketing/beneficios-strip";
 import TrustStrip from "@/components/marketing/trust-strip";
+import VistasProducto from "@/components/marketing/vistas-producto";
 import FaqAccordion from "@/components/marketing/faq-accordion";
-import PricingCalculator from "@/components/marketing/pricing-calculator";
+import Tarifario from "@/components/marketing/tarifario";
+import TicketHero from "@/components/marketing/ticket-hero";
 import { PLANES } from "@/lib/payments/planes";
+import { ETAPAS } from "@/lib/tenant/jornada";
+import { registroAbierto } from "@/lib/registro";
 
 const faqs = [
   {
@@ -34,230 +38,124 @@ const faqs = [
     a: "La certificación como emisor electrónico es completamente gratis. Solo pagas una suscripción mensual, según cuántos comprobantes electrónicos emitas, y únicamente a partir de que ya estés certificado y facturando de verdad — no antes. Ve la sección de Precios arriba.",
   },
   {
+    q: "¿Y si mi empresa emite muchísimos comprobantes?",
+    a: "Si emites 10,000 comprobantes o más al mes, o tienes varias sucursales, armamos un plan adaptado a tu operación y lo acordamos contigo. Escríbenos desde la página de empresas y alguien de nuestro equipo te contacta.",
+  },
+  {
     q: "¿Sirve para mi tipo de negocio?",
     a: "El sistema base funciona para ferreterías, farmacias, colmados, restaurantes, salones, talleres, clínicas, consultoras y la mayoría de negocios que venden productos o servicios. Si tu negocio tiene necesidades muy particulares (ej. hoteles con gestión de reservas) contáctanos para evaluar una solución a medida.",
   },
 ];
 
-const pasos = [
-  { n: "1", t: "Regístrate y describe tu negocio", d: "Crea tu cuenta y cuéntanos el RNC y el tipo de negocio que tienes." },
-  { n: "2", t: "Prueba el sistema completo", d: "Clientes, inventario, cotizaciones, facturas e impresión — con datos de prueba, antes de pagar nada." },
-  { n: "3", t: "Certifícate como emisor electrónico", d: "Te guiamos por los requisitos de la DGII y completamos el proceso de certificación por ti." },
-  { n: "4", t: "Empieza a facturar de verdad", d: "Accede a tu propio sistema de facturación electrónica, ya certificado y funcionando." },
-];
+const hayVideo = !!process.env.NEXT_PUBLIC_YOUTUBE_TUTORIAL_URL;
 
+// Orden y tono (un solo tono claro; tinta y cobalto con propósito):
+//   hero (tinta) → qué incluye (papel) → así se ve (tinta) → cómo funciona
+//   (papel) → precios (cobalto) → preguntas (papel) → cierre (tinta) → footer.
 export default function LandingPage() {
+  // Con el registro cerrado, todos los botones llevan a la lista de espera.
+  const cta = registroAbierto() ? "Crear mi cuenta" : "Unirme a la lista de espera";
   return (
     <>
       <SiteHeader />
-      <main style={{ fontFamily: "var(--font-sans)", color: "var(--c-text-1)" }}>
-        {/* Hero — minimalismo editorial: sin degradé de blobs ni grano, la
-            tipografía serif enorme carga todo el peso. Navy plano, como una
-            portada de revista financiera — confianza silenciosa en vez de
-            "vendedor gritando" con efectos. */}
-        <section style={{
-          minHeight: "calc(100vh - 64px)", padding: "64px 24px", textAlign: "center",
-          background: "var(--c-navy)", position: "relative",
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        }}>
-          <div style={{ position: "relative", maxWidth: 900 }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 40,
-              fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)",
-              letterSpacing: "0.16em", textTransform: "uppercase",
-            }}>
-              <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#5eead4", flexShrink: 0 }} />
-              Facturación Electrónica · República Dominicana
-            </div>
-            <h1 style={{
-              fontFamily: "var(--font-serif)", fontWeight: 600,
-              fontSize: "clamp(2.2rem, 6vw, 4.6rem)", lineHeight: 1.08,
-              textTransform: "uppercase", letterSpacing: "0.004em",
-              margin: "0 auto 28px", color: "#fff",
-            }}>
-              Certifícate ante la DGII<br />y factura electrónicamente<br />desde el primer día
-            </h1>
-            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.62)", maxWidth: 480, margin: "0 auto 44px", lineHeight: 1.65 }}>
-              Te guiamos por todo el proceso de certificación de emisor electrónico y te entregamos
-              un sistema de facturación listo para usar — sin contratar un desarrollador, sin montar
-              servidores propios.
-            </p>
-            <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-              <Link href="/registro" style={{
-                padding: "14px 30px", background: "#fff", color: "var(--c-navy)",
-                borderRadius: "var(--radius)", fontWeight: 700, fontSize: 12.5, textDecoration: "none",
-                letterSpacing: "0.05em", textTransform: "uppercase",
-              }}>
-                Empezar gratis
-              </Link>
-              <a href="#como-funciona" style={{
-                padding: "14px 30px", background: "transparent", color: "#fff",
-                border: "1px solid rgba(255,255,255,0.3)", borderRadius: "var(--radius)", fontWeight: 600, fontSize: 12.5,
-                textDecoration: "none", letterSpacing: "0.05em", textTransform: "uppercase",
-              }}>
-                Ver cómo funciona
-              </a>
-            </div>
-          </div>
-        </section>
-
-        <div style={{ marginTop: -56, position: "relative", zIndex: 1 }}>
-          <ProductMockup />
-        </div>
-
-        <BeneficiosStrip />
-
-        <VideoTutorial />
-
-        {/* Qué resolvemos — el primer punto lleva más peso visual a propósito,
-            rompe la grilla perfectamente simétrica por una más editorial. */}
-        <section style={{ padding: "16px 24px 64px", maxWidth: 1040, margin: "0 auto" }}>
-          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.7rem", textAlign: "center", marginBottom: 40, maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
-            La certificación de emisor electrónico no es trivial — nosotros nos encargamos
-          </h2>
-          <div className="resolvemos-grid" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gridTemplateRows: "auto auto", gap: 20 }}>
-            <div style={{
-              background: "var(--c-navy)", borderRadius: 12, padding: 28,
-              gridColumn: "1", gridRow: "1 / 3",
-              color: "#fff", display: "flex", flexDirection: "column", justifyContent: "space-between",
-            }}>
-              <div style={{ fontFamily: "var(--font-serif)", fontSize: "2.4rem", opacity: 0.5, marginBottom: 12 }}>01</div>
+      <main style={{ fontFamily: "var(--font-sans)" }}>
+        {/* Hero: ocupa la pantalla. Titular a la izquierda y, a la derecha, el
+            comprobante que dice lo que cuesta empezar, en papel blanco sobre tinta. */}
+        <section className="sec sec-ink hero">
+          <div className="sec-inner">
+            <div className="hero-grid">
               <div>
-                <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8 }}>Sin desarrollar nada</div>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>
-                  No necesitas construir ni mantener tu propio software de facturación electrónica.
+                <h1 className="hero-in" style={{ ["--d" as string]: 80,
+                  fontWeight: 800, fontSize: "clamp(2.5rem, 5.4vw, 4.4rem)", lineHeight: 1.02,
+                  letterSpacing: "-0.04em", marginBottom: 26, maxWidth: 660, color: "#fff",
+                }}>
+                  Certifícate gratis ante la DGII y empieza a facturar
+                </h1>
+                <p className="hero-in" style={{ ["--d" as string]: 260, fontSize: 19, lineHeight: 1.6, color: "rgba(255,255,255,0.76)", maxWidth: 520, marginBottom: 24 }}>
+                  Te llevamos de la mano por los 13 pasos del portal, nos encargamos de lo técnico y te
+                  entregamos un sistema de facturación listo para usar.
+                </p>
+                <p className="destacado hero-in" style={{ ["--d" as string]: 440 }}>La mensualidad empieza cuando ya estés certificado.</p>
+                <div className="hero-in" style={{ ["--d" as string]: 600, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                  <Link href="/registro" className="btn-l btn-white">{cta}</Link>
+                  <a href="#como-funciona" className="btn-l btn-ghost-d">Ver cómo funciona</a>
                 </div>
               </div>
-            </div>
-            <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, padding: 22, gridColumn: "2", gridRow: "1" }}>
-              <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.3rem", color: "var(--c-text-4)", marginBottom: 8 }}>02</div>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Sin perder semanas</div>
-              <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>El proceso de certificación de la DGII tiene ~15 pasos técnicos. Te los manejamos nosotros.</div>
-            </div>
-            <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, padding: 22, gridColumn: "3", gridRow: "1" }}>
-              <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.3rem", color: "var(--c-text-4)", marginBottom: 8 }}>03</div>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Pruébalo antes de pagar</div>
-              <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>Usa el sistema completo con datos de ejemplo antes de comprometerte.</div>
-            </div>
-            <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, padding: 22, gridColumn: "2 / 4", gridRow: "2" }}>
-              <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.3rem", color: "var(--c-text-4)", marginBottom: 8 }}>04</div>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Listo en un día</div>
-              <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>Una vez certificado, tu sistema queda funcionando de inmediato en tu propio dominio.</div>
+              <TicketHero />
             </div>
           </div>
         </section>
 
-        {/* Así se ve por dentro — espacios listos para capturas reales, uno a la vez para que cada uno se vea grande y completo */}
-        <section style={{ padding: "16px 24px 72px", maxWidth: 1040, margin: "0 auto" }}>
-          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", textAlign: "center", marginBottom: 8 }}>
-            Así se ve por dentro
-          </h2>
-          <p style={{ textAlign: "center", color: "var(--c-text-3)", fontSize: 13, maxWidth: 480, margin: "0 auto 40px" }}>
-            Capturas reales del sistema — próximamente.
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 56 }}>
-            {[
-              { titulo: "Dashboard", descripcion: "Vista general de tu negocio: facturado, por cobrar, comprobantes del mes." },
-              { titulo: "Factura con QR", descripcion: "Comprobante fiscal electrónico, listo para imprimir en A4 o térmica." },
-              { titulo: "Inventario y códigos de barra", descripcion: "Productos con control de stock, etiquetas y escaneo en facturación." },
-            ].map((s, i) => (
-              <div key={s.titulo} style={{
-                display: "flex", flexWrap: "wrap", gap: 28, alignItems: "center",
-                flexDirection: i % 2 === 1 ? "row-reverse" : "row",
-              }}>
-                <div style={{ flex: "1 1 480px", minWidth: 280 }}>
-                  <ScreenshotPlaceholder titulo={s.titulo} descripcion={s.descripcion} />
-                </div>
-                <div style={{ flex: "1 1 260px", minWidth: 220 }}>
-                  <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.2rem", fontWeight: 700, marginBottom: 8 }}>
-                    {s.titulo}
-                  </div>
-                  <div style={{ fontSize: 14, color: "var(--c-text-3)", lineHeight: 1.6 }}>
-                    {s.descripcion}
-                  </div>
-                </div>
-              </div>
+        <Seccion id="incluye" tono="paper" titulo="Todo lo necesario para facturar sin complicarte"
+          lede="La certificación guiada y un sistema completo, en un solo lugar.">
+          <BeneficiosStrip />
+          <div style={{ marginTop: 80 }}>
+            <NegociosSection />
+          </div>
+        </Seccion>
+
+        {/* Vistas del sistema con datos de ejemplo (scripts/landing-imagenes) y las
+            garantías de seguridad. Cuando haya capturas reales, reemplazan los PNG. */}
+        <Seccion id="producto" tono="ink" titulo="Así se ve por dentro">
+          <Reveal><VistasProducto /></Reveal>
+          <div style={{ marginTop: 72, paddingTop: 48, borderTop: "1px solid rgba(255,255,255,0.14)" }}>
+            <TrustStrip />
+          </div>
+        </Seccion>
+
+        {/* Cómo funciona: este SÍ es un proceso, por eso va numerado. Las cinco
+            etapas salen de lib/tenant/jornada.ts, la misma fuente que usa el panel. */}
+        <Seccion id="como-funciona" tono="paper" titulo="De crear tu cuenta a tu primera factura real"
+          lede="Pagas solo al final, cuando la DGII ya te autorizó.">
+          <Reveal as="ol" stagger className="cols-5" style={{ listStyle: "none" }}>
+            {ETAPAS.map((e, i) => (
+              <li key={e.id} className={`paso${e.id === "certificacion" ? " paso-sello" : ""}`}>
+                <div style={{ fontWeight: 800, fontSize: 44, lineHeight: 1, letterSpacing: "-0.04em", color: e.id === "certificacion" ? "var(--c-stamp)" : "var(--c-text-1)", marginBottom: 16 }}>{i + 1}</div>
+                <div style={{ fontWeight: 700, fontSize: 19, marginBottom: 6, letterSpacing: "-0.01em" }}>{e.titulo}</div>
+                <div style={{ fontSize: 15.5, color: "var(--c-text-2)", lineHeight: 1.55 }}>{e.detalle}</div>
+              </li>
             ))}
-          </div>
-        </section>
+          </Reveal>
+          {hayVideo && <div style={{ marginTop: 64 }}><VideoTutorial /></div>}
+        </Seccion>
 
-        <TrustStrip />
-
-        <NegociosSection />
-
-        {/* Cómo funciona — fondo navy para romper la alternancia blanco/blanco
-            del resto de la página y darle un punto de anclaje visual fuerte. */}
-        <section id="como-funciona" style={{ padding: "72px 24px", background: "var(--c-navy)", position: "relative", overflow: "hidden" }}>
-          <div style={{
-            position: "absolute", inset: 0, opacity: 0.4, pointerEvents: "none",
-            background: "radial-gradient(circle at 90% 10%, rgba(94,234,212,0.10), transparent 45%)",
-          }} />
-          <div style={{ maxWidth: 960, margin: "0 auto", position: "relative" }}>
-            <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.7rem", textAlign: "center", marginBottom: 40, color: "#fff" }}>
-              Cómo funciona
-            </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 28 }}>
-              {pasos.map((p) => (
-                <div key={p.n} style={{ borderLeft: "2px solid rgba(255,255,255,0.18)", paddingLeft: 18 }}>
-                  <div style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", color: "#5eead4", marginBottom: 10 }}>
-                    {p.n}
-                  </div>
-                  <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 14, color: "#fff" }}>{p.t}</div>
-                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>{p.d}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Precios — calculadora en vez de una fila de tarjetas: ancla el
-            precio más bajo arriba y deja que el usuario vea exactamente su
-            plan según su propio volumen. */}
-        <section id="precios" style={{ padding: "64px 24px", maxWidth: 1040, margin: "0 auto", textAlign: "center" }}>
-          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", marginBottom: 8 }}>
-            Desde RD$ {PLANES[0].montoRD.toLocaleString("es-DO")}/mes
-          </h2>
-          <p style={{ color: "var(--c-text-2)", marginBottom: 40, maxWidth: 560, margin: "0 auto 40px" }}>
-            La certificación como emisor electrónico es gratis. Pagas una sola suscripción
-            mensual según cuántos comprobantes electrónicos emitas — y solo empieza a cobrarse
-            una vez ya estés certificado y facturando de verdad.
-          </p>
-
-          <PricingCalculator />
-
-          <div style={{ marginTop: 28 }}>
+        {/* Precios: el único momento en cobalto. Todos los planes a la vista (sin
+            slider) y sin botón por plan: el plan se elige después de certificarse. */}
+        <Seccion id="precios" tono="brand" titulo={<>Desde RD$ {PLANES[0].montoRD.toLocaleString("es-DO")} al mes</>}
+          lede="La certificación como emisor electrónico es gratis. Pagas una sola suscripción mensual según cuántos comprobantes emitas, y eliges tu plan cuando ya estés certificado.">
+          <p className="destacado">La mensualidad empieza cuando ya estés certificado.</p>
+          <Tarifario />
+          <div style={{ marginTop: 36, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 20 }}>
+            <Link href="/registro" className="btn-l btn-ticket">{cta}</Link>
             <PagaditoBadge />
           </div>
-        </section>
+          <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.72)", marginTop: 24, lineHeight: 1.55, maxWidth: 640 }}>
+            Cifras de referencia mientras confirmamos los montos finales; no son precios cerrados
+            todavía. Te avisaremos antes de que se active cualquier cobro.
+          </p>
+        </Seccion>
 
-        {/* FAQ */}
-        <section id="faq" style={{ padding: "64px 24px", background: "var(--c-surface)", borderTop: "1px solid var(--c-border)" }}>
-          <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.6rem", textAlign: "center", marginBottom: 32 }}>
-              Preguntas frecuentes
-            </h2>
+        <Seccion id="faq" tono="paper">
+          <div className="split">
+            <div>
+              <h2 className="sec-h2">Preguntas frecuentes</h2>
+              <p className="sec-lede">
+                ¿No ves la tuya? Escríbenos a{" "}
+                <a href="mailto:contacto@facturacon.com.do" style={{ color: "var(--c-brand)", fontWeight: 600 }}>contacto@facturacon.com.do</a>.
+              </p>
+            </div>
             <FaqAccordion faqs={faqs} />
           </div>
-        </section>
+        </Seccion>
 
-        {/* CTA final */}
-        <section style={{ padding: "0 24px 64px", maxWidth: 960, margin: "0 auto" }}>
-          <div style={{
-            background: "var(--gradient-hero)", borderRadius: 16, padding: "48px 24px",
-            textAlign: "center",
-          }}>
-            <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "1.4rem", marginBottom: 16, color: "#fff" }}>
+        <Seccion tono="ink">
+          <Reveal style={{ textAlign: "center", paddingBlock: "clamp(8px, 3vw, 32px)" }}>
+            <h2 className="sec-h2" style={{ maxWidth: 680, marginInline: "auto", marginBottom: 32 }}>
               ¿Listo para certificarte como emisor electrónico?
             </h2>
-            <Link href="/registro" style={{
-              padding: "12px 28px", background: "#fff", color: "var(--c-navy)",
-              borderRadius: 6, fontWeight: 700, fontSize: 14, textDecoration: "none",
-              display: "inline-block",
-            }}>
-              Crear mi cuenta
-            </Link>
-          </div>
-        </section>
+            <Link href="/registro" className="btn-l btn-ticket">{cta}</Link>
+          </Reveal>
+        </Seccion>
       </main>
       <SiteFooter />
     </>

@@ -19,7 +19,7 @@ export default async function CuentaLayout({
   if (!membership || !tenant) redirect("/panel");
 
   return (
-    <CuentaShell tenant={tenant} tenantId={tenantId} multiplesEmpresas={memberships.length > 1}>
+    <CuentaShell tenant={tenant} tenantId={tenantId} multiplesEmpresas={memberships.length > 1} rol={membership.rol}>
       {children}
     </CuentaShell>
   );

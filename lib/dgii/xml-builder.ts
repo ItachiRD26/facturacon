@@ -6,7 +6,6 @@
 //   3. FechaHoraFirma: obligatorio antes del <Signature> en el XSD → se incluye en buildXML
 
 import type { Factura, Cliente, LineaServicio } from "@/types";
-import { calcLinea, calcTotales } from "@/types";
 import type { EmpresaConfig } from "@/types/tenant";
 
 const VERSION = "1.0";
@@ -76,13 +75,21 @@ function escapeXml(str: string): string {
 
 function fmt(n: number): string { return n.toFixed(2); }
 
+// Teléfono en el formato del XSD (NNN-NNN-NNNN). Si no son 10 dígitos se omite
+// el campo (es opcional) en vez de arriesgar el rechazo del comprobante.
+function fmtTelefono(t?: string): string {
+  const d = (t ?? "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+  return d.length === 10 ? `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}` : "";
+}
+
 // ── Emisor ────────────────────────────────────────────────────────
 function buildEmisor(e: EmpresaConfig, fecha: string): string {
   return `<Emisor>
     <RNCEmisor>${fmtRNC(e.rnc)}</RNCEmisor>
     <RazonSocialEmisor>${escapeXml(e.nombre)}</RazonSocialEmisor>
+    ${e.nombreComercial ? `<NombreComercial>${escapeXml(e.nombreComercial)}</NombreComercial>` : ""}
     <DireccionEmisor>${escapeXml(e.direccion)}</DireccionEmisor>
-    ${e.telefono ? `<TablaTelefonoEmisor><TelefonoEmisor>${e.telefono}</TelefonoEmisor></TablaTelefonoEmisor>` : ""}
+    ${fmtTelefono(e.telefono) ? `<TablaTelefonoEmisor><TelefonoEmisor>${fmtTelefono(e.telefono)}</TelefonoEmisor></TablaTelefonoEmisor>` : ""}
     <ActividadEconomica>${escapeXml(e.actividadEconomica)}</ActividadEconomica>
     <FechaEmision>${fmtFecha(fecha)}</FechaEmision>
   </Emisor>`;
@@ -131,9 +138,9 @@ function idDocE33(f: Factura, inclMontoGrav = false): string {
 
 function idDocE34(f: Factura, inclMontoGrav = false): string {
   // IndicadorNotaCredito: 0 si la fecha de emisión es <= 30 días calendario, 1 si > 30 días
-  const parts = fmtFecha(f.fecha).split("-"); // DD-MM-YYYY
-  const emision = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-  const diffDays = (Date.now() - emision.getTime()) / 86400000;
+  // Días entre el comprobante ORIGINAL y esta nota (ambas fechas del documento).
+  const aMs = (d: string) => { const p = fmtFecha(d).split("-"); return new Date(`${p[2]}-${p[1]}-${p[0]}`).getTime(); };
+  const diffDays = (aMs(f.fecha) - aMs(f.fechaECFRef ?? f.fecha)) / 86400000;
   const indNotaC = diffDays <= 30 ? "0" : "1";
   return `<IdDoc>
     <TipoeCF>34</TipoeCF>
@@ -208,176 +215,188 @@ function compradorExtranjero(f: Factura): string {
   </Comprador>`;
 }
 
+// ── Líneas y totales fiscales ─────────────────────────────────────
+// UNA sola fuente de verdad para lo que se declara a la DGII: cada Item cumple
+// CantidadItem × PrecioUnitarioItem − DescuentoMonto = MontoItem, y los
+// totales son la suma de los MontoItem por tasa. Antes los ítems "unidad"
+// (todo producto de inventario) salían con CantidadItem=1 aunque se vendieran
+// varios, y el ITBIS al 16% se declaraba como 18%: la DGII lo rechaza.
+const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+// Precio con 2 a 4 decimales (el XSD admite hasta 4).
+function fmtPrecio(n: number): string {
+  return (Math.round(n * 10000) / 10000).toFixed(4).replace(/0{1,2}$/, "");
+}
+
+interface LineaFiscal { cant: number; precioU: number; desc: number; monto: number; tasa: number }
+
+function lineaFiscal(item: LineaServicio): LineaFiscal {
+  // por_grupo = un solo paquete al precio indicado (cantidad 1): evita dividir
+  // el precio entre pax y que la multiplicación no cuadre por redondeo.
+  const cant = item.modo === "por_grupo" ? 1 : item.modo === "unidad" ? (item.cant || 1) : (item.pax || 1);
+  const bruto = r2(cant * item.precio);
+  const desc  = Math.min(r2(item.descuentoMonto || 0), bruto);
+  return { cant, precioU: item.precio, desc, monto: r2(bruto - desc), tasa: item.itbis || 0 };
+}
+
+export type TratamientoITBIS = "normal" | "exento" | "tasa3";
+
+export interface TotalesFiscales {
+  gravadoI1: number; gravadoI2: number; gravadoI3: number; exento: number;
+  itbis1: number; itbis2: number; itbis: number; total: number;
+}
+
+// Totales exactamente como van en <Totales>. "exento" fuerza todo a exento
+// (E43/E44/E47) y "tasa3" todo a tasa 0% gravada (E46 exportaciones).
+export function totalesFiscales(items: LineaServicio[], modo: TratamientoITBIS = "normal"): TotalesFiscales {
+  let g1 = 0, g2 = 0, g3 = 0, ex = 0;
+  for (const it of items) {
+    const l = lineaFiscal(it);
+    if (modo === "exento") ex += l.monto;
+    else if (modo === "tasa3") g3 += l.monto;
+    else if (l.tasa === 0.18) g1 += l.monto;
+    else if (l.tasa === 0.16) g2 += l.monto;
+    else ex += l.monto;
+  }
+  g1 = r2(g1); g2 = r2(g2); g3 = r2(g3); ex = r2(ex);
+  const itbis1 = r2(g1 * 0.18), itbis2 = r2(g2 * 0.16);
+  return {
+    gravadoI1: g1, gravadoI2: g2, gravadoI3: g3, exento: ex,
+    itbis1, itbis2, itbis: r2(itbis1 + itbis2),
+    total: r2(g1 + g2 + g3 + ex + itbis1 + itbis2),
+  };
+}
+
 // ── Items ─────────────────────────────────────────────────────────
-// Orden correcto según XSD:
-// NumeroLinea → IndicadorFacturacion → NombreItem → IndicadorBienoServicio →
-// DescripcionItem? → CantidadItem → UnidadMedida? → PrecioUnitarioItem →
-// DescuentoMonto? → MontoItem
-function buildItems(items: LineaServicio[]): string {
-  return items.map((item, i) => {
-    const c       = calcLinea(item);
-    const paxDesc = item.pax > 0 ? ` | PAX: ${item.pax}` : "";
-    const cant    = item.modo === "por_persona" ? (item.pax || 1) : Math.max(item.pax, 1);
-    const precioU = item.modo === "por_grupo"
-      ? (c.bruto / Math.max(item.pax, 1))
-      : item.precio;
-    const descLarga = item.descripcion.length > 80 || paxDesc;
-    const indFact = item.itbis === 0.18 ? 1 : item.itbis === 0.16 ? 2 : 4;
-    return `<Item>
+// Orden según XSD: NumeroLinea → IndicadorFacturacion → Retencion? → NombreItem →
+// IndicadorBienoServicio → DescripcionItem? → CantidadItem → UnidadMedida →
+// PrecioUnitarioItem → DescuentoMonto? → MontoItem
+function itemXml(item: LineaServicio, i: number, o: {
+  indFact: number; retencion?: string; conDescripcion?: boolean; conDescuento?: boolean;
+}): string {
+  const l = lineaFiscal(item);
+  const paxDesc = item.pax > 0 ? ` | PAX: ${item.pax}` : "";
+  const descLarga = o.conDescripcion && (item.descripcion.length > 80 || paxDesc);
+  return `<Item>
       <NumeroLinea>${i + 1}</NumeroLinea>
-      <IndicadorFacturacion>${indFact}</IndicadorFacturacion>
+      <IndicadorFacturacion>${o.indFact}</IndicadorFacturacion>
+      ${o.retencion ?? ""}
       <NombreItem>${escapeXml(item.descripcion.substring(0, 80))}</NombreItem>
       <IndicadorBienoServicio>2</IndicadorBienoServicio>
       ${descLarga ? `<DescripcionItem>${escapeXml((item.descripcion + paxDesc).substring(0, 1000))}</DescripcionItem>` : ""}
-      <CantidadItem>${fmt(cant)}</CantidadItem>
+      <CantidadItem>${fmt(l.cant)}</CantidadItem>
       <UnidadMedida>43</UnidadMedida>
-      <PrecioUnitarioItem>${fmt(precioU)}</PrecioUnitarioItem>
-      ${item.descuentoMonto > 0 ? `<DescuentoMonto>${fmt(item.descuentoMonto)}</DescuentoMonto>` : ""}
-      <MontoItem>${fmt(c.sub)}</MontoItem>
+      <PrecioUnitarioItem>${fmtPrecio(l.precioU)}</PrecioUnitarioItem>
+      ${o.conDescuento !== false && l.desc > 0 ? `<DescuentoMonto>${fmt(l.desc)}</DescuentoMonto>` : ""}
+      <MontoItem>${fmt(l.monto)}</MontoItem>
     </Item>`;
-  }).join("\n");
 }
 
-// E41 — Comprobante de Compras: el comprador retiene ITBIS (18%) e ISR (10%) por ítem.
+const indicadorDe = (tasa: number) => (tasa === 0.18 ? 1 : tasa === 0.16 ? 2 : 4);
+
+function buildItems(items: LineaServicio[]): string {
+  return items.map((it, i) => itemXml(it, i, { indFact: indicadorDe(it.itbis), conDescripcion: true })).join("\n");
+}
+
+// E41 — Comprobante de Compras: el comprador retiene el ITBIS del ítem y 10% de ISR.
 const ISR_RATE_E41 = 0.10;
+const retItbisE41 = (l: LineaFiscal) => r2(l.monto * l.tasa);
+const retIsrE41   = (l: LineaFiscal) => r2(l.monto * ISR_RATE_E41);
 
 function buildItemsE41(items: LineaServicio[]): string {
-  return items.map((item, i) => {
-    const c       = calcLinea(item);
-    const cant    = item.modo === "por_persona" ? (item.pax || 1) : Math.max(item.pax, 1);
-    const precioU = item.modo === "por_grupo"
-      ? (c.bruto / Math.max(item.pax, 1))
-      : item.precio;
-    const indFact = item.itbis === 0.18 ? 1 : item.itbis === 0.16 ? 2 : 4;
-    return `<Item>
-      <NumeroLinea>${i + 1}</NumeroLinea>
-      <IndicadorFacturacion>${indFact}</IndicadorFacturacion>
-      <Retencion>
+  return items.map((it, i) => {
+    const l = lineaFiscal(it);
+    const retencion = `<Retencion>
         <IndicadorAgenteRetencionoPercepcion>1</IndicadorAgenteRetencionoPercepcion>
-        ${c.itbisAmt > 0 ? `<MontoITBISRetenido>${fmt(c.itbisAmt)}</MontoITBISRetenido>` : ""}
-        <MontoISRRetenido>${fmt(c.sub * ISR_RATE_E41)}</MontoISRRetenido>
-      </Retencion>
-      <NombreItem>${escapeXml(item.descripcion.substring(0, 80))}</NombreItem>
-      <IndicadorBienoServicio>2</IndicadorBienoServicio>
-      <CantidadItem>${fmt(cant)}</CantidadItem>
-      <UnidadMedida>43</UnidadMedida>
-      <PrecioUnitarioItem>${fmt(precioU)}</PrecioUnitarioItem>
-      ${item.descuentoMonto > 0 ? `<DescuentoMonto>${fmt(item.descuentoMonto)}</DescuentoMonto>` : ""}
-      <MontoItem>${fmt(c.sub)}</MontoItem>
-    </Item>`;
+        ${retItbisE41(l) > 0 ? `<MontoITBISRetenido>${fmt(retItbisE41(l))}</MontoITBISRetenido>` : ""}
+        <MontoISRRetenido>${fmt(retIsrE41(l))}</MontoISRRetenido>
+      </Retencion>`;
+    return itemXml(it, i, { indFact: indicadorDe(it.itbis), retencion });
   }).join("\n");
 }
 
-// E46 — Exportaciones: IndicadorFacturacion=3 (tasa 3, 0%)
+// E43/E44 — siempre exentos: IndicadorFacturacion=4 fijo sin importar la tasa
+// que traiga el producto en el catálogo.
+function buildItemsExento(items: LineaServicio[]): string {
+  return items.map((it, i) => itemXml(it, i, { indFact: 4, conDescripcion: true })).join("\n");
+}
+
+// E46 — Exportaciones: IndicadorFacturacion=3 (tasa 0%).
 function buildItemsE46(items: LineaServicio[]): string {
-  return items.map((item, i) => {
-    const c       = calcLinea(item);
-    const paxDesc = item.pax > 0 ? ` | PAX: ${item.pax}` : "";
-    const cant    = item.modo === "por_persona" ? (item.pax || 1) : Math.max(item.pax, 1);
-    const precioU = item.modo === "por_grupo"
-      ? (c.bruto / Math.max(item.pax, 1))
-      : item.precio;
-    const descLarga = item.descripcion.length > 80 || paxDesc;
-    return `<Item>
-      <NumeroLinea>${i + 1}</NumeroLinea>
-      <IndicadorFacturacion>3</IndicadorFacturacion>
-      <NombreItem>${escapeXml(item.descripcion.substring(0, 80))}</NombreItem>
-      <IndicadorBienoServicio>2</IndicadorBienoServicio>
-      ${descLarga ? `<DescripcionItem>${escapeXml((item.descripcion + paxDesc).substring(0, 1000))}</DescripcionItem>` : ""}
-      <CantidadItem>${fmt(cant)}</CantidadItem>
-      <UnidadMedida>43</UnidadMedida>
-      <PrecioUnitarioItem>${fmt(precioU)}</PrecioUnitarioItem>
-      ${item.descuentoMonto > 0 ? `<DescuentoMonto>${fmt(item.descuentoMonto)}</DescuentoMonto>` : ""}
-      <MontoItem>${fmt(c.sub)}</MontoItem>
-    </Item>`;
-  }).join("\n");
+  return items.map((it, i) => itemXml(it, i, { indFact: 3, conDescripcion: true })).join("\n");
 }
 
-// E47 — Retencion con ISR retenido (27%)
+// E47 — Pagos al exterior: ISR retenido 27%, sin ITBIS ni descuento.
+const ISR_RATE_E47 = 0.27;
+const retIsrE47 = (l: LineaFiscal) => r2(l.monto * ISR_RATE_E47);
+
 function buildItemsE47(items: LineaServicio[]): string {
-  return items.map((item, i) => {
-    const c       = calcLinea(item);
-    const cant    = item.modo === "por_persona" ? (item.pax || 1) : Math.max(item.pax, 1);
-    const precioU = item.modo === "por_grupo"
-      ? (c.bruto / Math.max(item.pax, 1))
-      : item.precio;
-    return `<Item>
-      <NumeroLinea>${i + 1}</NumeroLinea>
-      <IndicadorFacturacion>4</IndicadorFacturacion>
-      <Retencion>
+  return items.map((it, i) => {
+    const retencion = `<Retencion>
         <IndicadorAgenteRetencionoPercepcion>1</IndicadorAgenteRetencionoPercepcion>
-        <MontoISRRetenido>${fmt(c.sub * 0.27)}</MontoISRRetenido>
-      </Retencion>
-      <NombreItem>${escapeXml(item.descripcion.substring(0, 80))}</NombreItem>
-      <IndicadorBienoServicio>2</IndicadorBienoServicio>
-      <CantidadItem>${fmt(cant)}</CantidadItem>
-      <UnidadMedida>43</UnidadMedida>
-      <PrecioUnitarioItem>${fmt(precioU)}</PrecioUnitarioItem>
-      <MontoItem>${fmt(c.sub)}</MontoItem>
-    </Item>`;
+        <MontoISRRetenido>${fmt(retIsrE47(lineaFiscal(it)))}</MontoISRRetenido>
+      </Retencion>`;
+    return itemXml(it, i, { indFact: 4, retencion, conDescuento: false });
   }).join("\n");
 }
 
 // ── Totales por tipo ──────────────────────────────────────────────
+const sumaLineas = (items: LineaServicio[], f: (l: LineaFiscal) => number) =>
+  r2(items.reduce((s, it) => s + f(lineaFiscal(it)), 0));
 
-// E31, E32, E33, E45 — gravado + ITBIS + total
+// E31, E32, E33, E34, E45 — gravado + ITBIS + total (soporta 18% y 16% a la vez)
 function totalesGravados(f: Factura): string {
-  const t      = calcTotales(f.items);
-  const exentos = f.items.filter(i => i.itbis === 0).reduce((s, i) => s + calcLinea(i).sub, 0);
-  const grav   = t.sub - exentos;
+  const t = totalesFiscales(f.items);
+  const gravado = r2(t.gravadoI1 + t.gravadoI2);
   return `<Totales>
-    <MontoGravadoTotal>${fmt(grav)}</MontoGravadoTotal>
-    <MontoGravadoI1>${fmt(grav)}</MontoGravadoI1>
-    <MontoExento>${fmt(exentos)}</MontoExento>
-    ${t.itbis > 0 ? `<ITBIS1>18</ITBIS1>` : ""}
+    <MontoGravadoTotal>${fmt(gravado)}</MontoGravadoTotal>
+    <MontoGravadoI1>${fmt(t.gravadoI1)}</MontoGravadoI1>
+    ${t.gravadoI2 > 0 ? `<MontoGravadoI2>${fmt(t.gravadoI2)}</MontoGravadoI2>` : ""}
+    <MontoExento>${fmt(t.exento)}</MontoExento>
+    ${t.gravadoI1 > 0 ? `<ITBIS1>18</ITBIS1>` : ""}
+    ${t.gravadoI2 > 0 ? `<ITBIS2>16</ITBIS2>` : ""}
     <TotalITBIS>${fmt(t.itbis)}</TotalITBIS>
-    <TotalITBIS1>${fmt(t.itbis)}</TotalITBIS1>
+    <TotalITBIS1>${fmt(t.itbis1)}</TotalITBIS1>
+    ${t.gravadoI2 > 0 ? `<TotalITBIS2>${fmt(t.itbis2)}</TotalITBIS2>` : ""}
     <MontoTotal>${fmt(t.total)}</MontoTotal>
   </Totales>`;
 }
 
 // E41 — comprobante de compras con retenciones
 function totalesE41(f: Factura): string {
-  const t      = calcTotales(f.items);
-  const exentos = f.items.filter(i => i.itbis === 0).reduce((s, i) => s + calcLinea(i).sub, 0);
-  const grav   = t.sub - exentos;
+  const t = totalesFiscales(f.items);
+  const gravado = r2(t.gravadoI1 + t.gravadoI2);
   return `<Totales>
-    <MontoGravadoTotal>${fmt(grav)}</MontoGravadoTotal>
-    <MontoGravadoI1>${fmt(grav)}</MontoGravadoI1>
-    <MontoExento>${fmt(exentos)}</MontoExento>
-    ${t.itbis > 0 ? `<ITBIS1>18</ITBIS1>` : ""}
+    <MontoGravadoTotal>${fmt(gravado)}</MontoGravadoTotal>
+    <MontoGravadoI1>${fmt(t.gravadoI1)}</MontoGravadoI1>
+    ${t.gravadoI2 > 0 ? `<MontoGravadoI2>${fmt(t.gravadoI2)}</MontoGravadoI2>` : ""}
+    <MontoExento>${fmt(t.exento)}</MontoExento>
+    ${t.gravadoI1 > 0 ? `<ITBIS1>18</ITBIS1>` : ""}
+    ${t.gravadoI2 > 0 ? `<ITBIS2>16</ITBIS2>` : ""}
     <TotalITBIS>${fmt(t.itbis)}</TotalITBIS>
-    <TotalITBIS1>${fmt(t.itbis)}</TotalITBIS1>
+    <TotalITBIS1>${fmt(t.itbis1)}</TotalITBIS1>
+    ${t.gravadoI2 > 0 ? `<TotalITBIS2>${fmt(t.itbis2)}</TotalITBIS2>` : ""}
     <MontoTotal>${fmt(t.total)}</MontoTotal>
-    <TotalITBISRetenido>${fmt(t.itbis)}</TotalITBISRetenido>
-    <TotalISRRetencion>${fmt(t.sub * ISR_RATE_E41)}</TotalISRRetencion>
+    <TotalITBISRetenido>${fmt(sumaLineas(f.items, retItbisE41))}</TotalITBISRetenido>
+    <TotalISRRetencion>${fmt(sumaLineas(f.items, retIsrE41))}</TotalISRRetencion>
   </Totales>`;
 }
 
-// E43 — gastos menores (todos los ítems son exentos)
-function totalesE43(f: Factura): string {
-  const t = calcTotales(f.items);
+// E43 y E44 — todo exento
+function totalesExentos(f: Factura): string {
+  const t = totalesFiscales(f.items, "exento");
   return `<Totales>
-    <MontoExento>${fmt(t.sub)}</MontoExento>
-    <MontoTotal>${fmt(t.total)}</MontoTotal>
-  </Totales>`;
-}
-
-// E44 — regímenes especiales (exento)
-function totalesE44(f: Factura): string {
-  const t = calcTotales(f.items);
-  return `<Totales>
-    <MontoExento>${fmt(t.sub)}</MontoExento>
+    <MontoExento>${fmt(t.exento)}</MontoExento>
     <MontoTotal>${fmt(t.total)}</MontoTotal>
   </Totales>`;
 }
 
 // E46 — exportaciones (tasa 3 = 0%, no exento)
 function totalesE46(f: Factura): string {
-  const t = calcTotales(f.items);
+  const t = totalesFiscales(f.items, "tasa3");
   return `<Totales>
-    <MontoGravadoTotal>${fmt(t.sub)}</MontoGravadoTotal>
-    <MontoGravadoI3>${fmt(t.sub)}</MontoGravadoI3>
+    <MontoGravadoTotal>${fmt(t.gravadoI3)}</MontoGravadoTotal>
+    <MontoGravadoI3>${fmt(t.gravadoI3)}</MontoGravadoI3>
     <ITBIS3>0</ITBIS3>
     <TotalITBIS>${fmt(0)}</TotalITBIS>
     <TotalITBIS3>${fmt(0)}</TotalITBIS3>
@@ -387,20 +406,21 @@ function totalesE46(f: Factura): string {
 
 // E47 — pagos al exterior (exentos + ISR retenido)
 function totalesE47(f: Factura): string {
-  const t = calcTotales(f.items);
+  const t = totalesFiscales(f.items, "exento");
   return `<Totales>
-    <MontoExento>${fmt(t.sub)}</MontoExento>
+    <MontoExento>${fmt(t.exento)}</MontoExento>
     <MontoTotal>${fmt(t.total)}</MontoTotal>
-    <TotalISRRetencion>${fmt(t.sub * 0.27)}</TotalISRRetencion>
+    <TotalISRRetencion>${fmt(sumaLineas(f.items, retIsrE47))}</TotalISRRetencion>
   </Totales>`;
 }
 
 // ── InformacionReferencia (E33/E34) ───────────────────────────────
-// XSD E33: NCFModificado(1) → FechaNCFModificado(1) → CodigoModificacion(1) → RazonModificacion(0)
+// XSD: NCFModificado → FechaNCFModificado → CodigoModificacion → RazonModificacion?
+// FechaNCFModificado es la fecha del comprobante ORIGINAL (no la de la nota).
 function infoRef(f: Factura, codMod: string): string {
   return `<InformacionReferencia>
     <NCFModificado>${f.eCFRef ?? ""}</NCFModificado>
-    <FechaNCFModificado>${fmtFecha(f.fecha)}</FechaNCFModificado>
+    <FechaNCFModificado>${fmtFecha(f.fechaECFRef ?? f.fecha)}</FechaNCFModificado>
     <CodigoModificacion>${codMod}</CodigoModificacion>
     ${f.motivoNota ? `<RazonModificacion>${escapeXml(f.motivoNota.substring(0, 90))}</RazonModificacion>` : ""}
   </InformacionReferencia>`;
@@ -412,7 +432,7 @@ function infoRef(f: Factura, codMod: string): string {
 // lo que lo coloca correctamente DESPUÉS de FechaHoraFirma.
 
 function buildE31(f: Factura, c: Cliente, e: EmpresaConfig, fh: string): string {
-  const hasITBIS = calcTotales(f.items).itbis > 0;
+  const hasITBIS = totalesFiscales(f.items).itbis > 0;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <ECF>
   <Encabezado>
@@ -430,7 +450,7 @@ function buildE31(f: Factura, c: Cliente, e: EmpresaConfig, fh: string): string 
 }
 
 function buildE32(f: Factura, cliente: Cliente | undefined, e: EmpresaConfig, fh: string): string {
-  const hasITBIS = calcTotales(f.items).itbis > 0;
+  const hasITBIS = totalesFiscales(f.items).itbis > 0;
   // Prioridad: cliente registrado con RNC > cédula/ID ocasional > consumidor anónimo
   const comp = cliente?.rnc
     ? compradorB2B(cliente)
@@ -453,9 +473,20 @@ function buildE32(f: Factura, cliente: Cliente | undefined, e: EmpresaConfig, fh
 </ECF>`;
 }
 
+// RNCComprador es obligatorio por regla de negocio en 33/34 aunque el XSD lo
+// marque opcional — la DGII rechaza una nota de crédito/débito sin RNC del
+// comprador. compradorConsumidor() no lo incluye (solo RazonSocialComprador),
+// así que hay que caer en compradorOcasional() cuando no hay un Cliente
+// registrado pero sí un RNC ocasional — mismo fallback que ya usa E32.
+function compradorNotaCredito(f: Factura, c: Cliente | undefined): string {
+  if (c) return compradorB2B(c);
+  if (f.rncCompradorOcasional) return compradorOcasional(f);
+  return compradorConsumidor(f);
+}
+
 function buildE33(f: Factura, c: Cliente | undefined, e: EmpresaConfig, fh: string): string {
-  const comp = c ? compradorB2B(c) : compradorConsumidor(f);
-  const hasITBIS = calcTotales(f.items).itbis > 0;
+  const comp = compradorNotaCredito(f, c);
+  const hasITBIS = totalesFiscales(f.items).itbis > 0;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <ECF>
   <Encabezado>
@@ -474,8 +505,15 @@ function buildE33(f: Factura, c: Cliente | undefined, e: EmpresaConfig, fh: stri
 }
 
 function buildE34(f: Factura, c: Cliente | undefined, e: EmpresaConfig, fh: string): string {
-  const comp = c ? compradorB2B(c) : compradorConsumidor(f);
-  const hasITBIS = calcTotales(f.items).itbis > 0;
+  const comp = compradorNotaCredito(f, c);
+  const hasITBIS = totalesFiscales(f.items).itbis > 0;
+  const codMod = f.codigoModificacion ?? "1";
+  // CodigoModificacion=2 (Corrige Texto) exige MontoTotal=0 por regla de
+  // negocio de la DGII — el default "1" (Anula el NCF modificado) nunca cae
+  // en esto, pero un caller podría pasar "2" con un monto real.
+  if (codMod === "2" && totalesFiscales(f.items).total !== 0) {
+    throw new Error("CodigoModificacion=2 (Corrige Texto) requiere MontoTotal=0 en la nota de crédito.");
+  }
   return `<?xml version="1.0" encoding="UTF-8"?>
 <ECF>
   <Encabezado>
@@ -488,13 +526,13 @@ function buildE34(f: Factura, c: Cliente | undefined, e: EmpresaConfig, fh: stri
   <DetallesItems>
     ${buildItems(f.items)}
   </DetallesItems>
-  ${infoRef(f, f.codigoModificacion ?? "1")}
+  ${infoRef(f, codMod)}
   <FechaHoraFirma>${fh}</FechaHoraFirma>
 </ECF>`;
 }
 
 function buildE41(f: Factura, c: Cliente, e: EmpresaConfig, fh: string): string {
-  const hasITBIS = calcTotales(f.items).itbis > 0;
+  const hasITBIS = totalesFiscales(f.items).itbis > 0;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <ECF>
   <Encabezado>
@@ -518,10 +556,10 @@ function buildE43(f: Factura, e: EmpresaConfig, fh: string): string {
     <Version>${VERSION}</Version>
     ${idDocE43(f)}
     ${buildEmisor(e, f.fecha)}
-    ${totalesE43(f)}
+    ${totalesExentos(f)}
   </Encabezado>
   <DetallesItems>
-    ${buildItems(f.items)}
+    ${buildItemsExento(f.items)}
   </DetallesItems>
   <FechaHoraFirma>${fh}</FechaHoraFirma>
 </ECF>`;
@@ -536,17 +574,17 @@ function buildE44(f: Factura, c: Cliente | undefined, e: EmpresaConfig, fh: stri
     ${idDocConIngresos(f, "44")}
     ${buildEmisor(e, f.fecha)}
     ${comp}
-    ${totalesE44(f)}
+    ${totalesExentos(f)}
   </Encabezado>
   <DetallesItems>
-    ${buildItems(f.items)}
+    ${buildItemsExento(f.items)}
   </DetallesItems>
   <FechaHoraFirma>${fh}</FechaHoraFirma>
 </ECF>`;
 }
 
 function buildE45(f: Factura, c: Cliente, e: EmpresaConfig, fh: string): string {
-  const hasITBIS = calcTotales(f.items).itbis > 0;
+  const hasITBIS = totalesFiscales(f.items).itbis > 0;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <ECF>
   <Encabezado>
@@ -602,9 +640,7 @@ function buildE47(f: Factura, e: EmpresaConfig, fh: string): string {
 
 // ── RFCE — Resumen E32 < RD$250,000 ──────────────────────────────
 function buildRFCE(f: Factura, e: EmpresaConfig, codigoSeguridad: string = "", cliente?: Cliente): string {
-  const t       = calcTotales(f.items);
-  const exentos = f.items.filter(i => i.itbis === 0).reduce((s, i) => s + calcLinea(i).sub, 0);
-  const grav    = t.sub - exentos;
+  const t = totalesFiscales(f.items);
   const nombreComprador = escapeXml(cliente?.nombre ?? f.nombreConsumidor ?? "CONSUMIDOR FINAL");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <RFCE>
@@ -621,11 +657,13 @@ function buildRFCE(f: Factura, e: EmpresaConfig, codigoSeguridad: string = "", c
       <RazonSocialComprador>${nombreComprador}</RazonSocialComprador>
     </Comprador>
     <Totales>
-      <MontoGravadoTotal>${fmt(grav)}</MontoGravadoTotal>
-      <MontoGravadoI1>${fmt(grav)}</MontoGravadoI1>
-      <MontoExento>${fmt(exentos)}</MontoExento>
+      <MontoGravadoTotal>${fmt(t.gravadoI1 + t.gravadoI2)}</MontoGravadoTotal>
+      <MontoGravadoI1>${fmt(t.gravadoI1)}</MontoGravadoI1>
+      ${t.gravadoI2 > 0 ? `<MontoGravadoI2>${fmt(t.gravadoI2)}</MontoGravadoI2>` : ""}
+      <MontoExento>${fmt(t.exento)}</MontoExento>
       <TotalITBIS>${fmt(t.itbis)}</TotalITBIS>
-      <TotalITBIS1>${fmt(t.itbis)}</TotalITBIS1>
+      <TotalITBIS1>${fmt(t.itbis1)}</TotalITBIS1>
+      ${t.gravadoI2 > 0 ? `<TotalITBIS2>${fmt(t.itbis2)}</TotalITBIS2>` : ""}
       <MontoTotal>${fmt(t.total)}</MontoTotal>
     </Totales>
     ${codigoSeguridad ? `<CodigoSeguridadeCF>${codigoSeguridad.substring(0, 6)}</CodigoSeguridadeCF>` : ""}

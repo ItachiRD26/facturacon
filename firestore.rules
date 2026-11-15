@@ -32,6 +32,8 @@ service cloud.firestore {
     function puedeVender(tenantId)   { return rolDe(tenantId) in ['owner', 'admin', 'vendedor']; }
     function puedeCobranza(tenantId) { return rolDe(tenantId) in ['owner', 'admin', 'contador']; }
     function esOwnerOAdmin(tenantId) { return rolDe(tenantId) in ['owner', 'admin']; }
+    // Encargado de almacén: maneja la mercancía (productos y compras), no vende.
+    function manejaInventario(tenantId) { return rolDe(tenantId) in ['owner', 'admin', 'almacen']; }
     // Un cajero (vendedor) no debe poder sumar el total facturado del
     // negocio leyendo todas las facturas — solo dueño/admin/contador ven
     // el libro completo; el cajero solo lee las que él mismo emitió.
@@ -105,6 +107,14 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Cuentas de empleado (login por código, ver lib/tenant/codigo-
+      // empleado.ts) — codigoHash nunca debe ser legible por el cliente, así
+      // que todo el documento queda server-only. El dueño/admin lo gestiona
+      // vía /api/tenant/empleados/*, no por lectura/escritura directa.
+      match /empleados/{uid} {
+        allow read, write: if false;
+      }
+
       // Suscripción de cobro recurrente (Pagadito Tokenización): visible
       // para miembros (para mostrar el estado en el panel), pero
       // payment_token/subscription_code solo los escribe el backend tras
@@ -129,8 +139,14 @@ service cloud.firestore {
       // Servicios/productos (inventario): solo owner/admin — un cajero
       // puede vender lo que ya existe en el catálogo, pero no crear
       // productos ni tocar precios/stock.
-      match /servicios/{docId} { allow read: if hasMembership(tenantId); allow write: if hasMembership(tenantId) && esOwnerOAdmin(tenantId); }
-      match /productos/{docId} { allow read: if hasMembership(tenantId); allow write: if hasMembership(tenantId) && esOwnerOAdmin(tenantId); }
+      match /servicios/{docId} { allow read: if hasMembership(tenantId); allow write: if hasMembership(tenantId) && manejaInventario(tenantId); }
+      match /productos/{docId} { allow read: if hasMembership(tenantId); allow write: if hasMembership(tenantId) && manejaInventario(tenantId); }
+      // Historial de movimientos del inventario (ventas, entradas, ajustes): lo escribe solo el
+      // backend; lo leen quienes manejan el inventario o revisan los números.
+      match /movimientos_inventario/{docId} {
+        allow read: if hasMembership(tenantId) && rolDe(tenantId) in ['owner', 'admin', 'almacen', 'contador'];
+        allow write: if false;
+      }
       // Facturas: el cliente puede crear/editar libremente mientras el
       // tenant está en sandbox (datos simulados), y siempre puede cambiar
       // el estado de negocio de una factura real (pagada/anulada/notas) —
@@ -158,15 +174,7 @@ service cloud.firestore {
       }
       match /facturas_recibidas/{docId} {
         allow read:  if hasMembership(tenantId);
-        allow write: if hasMembership(tenantId) && puedeCobranza(tenantId);
-      }
-      // Métodos de pago: solo datos de visualización (marca, últimos 4
-      // dígitos, vencimiento) — nunca el número completo de tarjeta ni CVV,
-      // así que no requiere el mismo aislamiento que /config/certificado.
-      // Es un tema de facturación de la cuenta, no operativo — solo owner/admin.
-      match /metodos_pago/{docId} {
-        allow read:  if hasMembership(tenantId);
-        allow write: if hasMembership(tenantId) && esOwnerOAdmin(tenantId);
+        allow write: if hasMembership(tenantId) && (puedeCobranza(tenantId) || rolDe(tenantId) == 'almacen');
       }
     }
   }

@@ -1,14 +1,3 @@
-export type MarcaTarjeta = "visa" | "mastercard" | "amex" | "otra";
-
-export interface MetodoPago {
-  id:             string;
-  marca:          MarcaTarjeta;
-  ultimos4:       string;
-  vencimiento:    string; // "MM/YY"
-  predeterminado: boolean;
-  creadoEn?:      string;
-}
-
 // Suscripción de cobro recurrente mensual (Pagadito Tokenización) — activa el
 // cobro del plan mes a mes una vez el tenant ya está certificado. Vive en
 // tenants/{tenantId}/facturacion/suscripcion, escrita solo por el backend
@@ -28,4 +17,7 @@ export interface Suscripcion {
   creadoEn?:         string;
   actualizadoEn?:    string;
   ultimoPagoEn?:     string;
+  // Datos del dispositivo con que se activó el plan: Pagadito los pide en cada cobro con
+  // token, y los adicionales de fin de mes se cobran sin que el cliente esté presente.
+  browserInfo?:      { deviceFingerprintID: string; customerIp: string };
 }

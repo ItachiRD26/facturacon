@@ -54,7 +54,7 @@ export default function TablaItems({
                 <button key={p.id} type="button" onClick={() => agregarDeCatalogo(p)} style={{
                   display: "flex", justifyContent: "space-between", width: "100%", textAlign: "left",
                   padding: "8px 6px", border: "none", background: "transparent", cursor: "pointer",
-                  borderRadius: 4, fontSize: 12,
+                  borderRadius: 8, fontSize: 12,
                 }}>
                   <span>{p.nombre}</span>
                   <span style={{ fontWeight: 600 }}>RD$ {fmt(p.precio)}</span>
@@ -74,7 +74,7 @@ export default function TablaItems({
           <div style={{
             display: "grid", gridTemplateColumns: "2.2fr 0.7fr 1fr 1fr 0.9fr 1fr 28px",
             gap: 6, padding: "6px 10px", fontSize: 10, fontWeight: 700, color: "var(--c-text-3)",
-            textTransform: "uppercase", background: "var(--c-bg)",
+            background: "var(--c-bg)",
           }}>
             <span>Descripción</span><span>Cant.</span><span>Precio</span><span>Desc.</span><span>ITBIS</span><span>Total</span><span />
           </div>

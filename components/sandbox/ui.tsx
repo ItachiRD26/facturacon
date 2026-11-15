@@ -7,8 +7,8 @@ export function Campo({ label, children }: { label: string; children: React.Reac
   return (
     <div>
       <label style={{
-        display: "block", fontSize: 11, fontWeight: 600, color: "#374151",
-        textTransform: "uppercase", marginBottom: 5, letterSpacing: 0.3,
+        display: "block", fontSize: 11, fontWeight: 600, color: "var(--c-text-2)",
+        marginBottom: 5, letterSpacing: 0.3,
       }}>{label}</label>
       {children}
     </div>
@@ -16,7 +16,7 @@ export function Campo({ label, children }: { label: string; children: React.Reac
 }
 
 const inputBase: React.CSSProperties = {
-  width: "100%", padding: "9px 11px", border: "1px solid #d1d5db",
+  width: "100%", padding: "9px 11px", border: "1px solid #CDD1C9",
   borderRadius: 5, fontSize: 13, fontFamily: sans, background: "var(--c-surface)", color: "var(--c-text-1)",
 };
 
@@ -36,13 +36,13 @@ export function Boton({ children, onClick, disabled, variant = "primary", type =
   children: React.ReactNode; onClick?: () => void; disabled?: boolean;
   variant?: "primary" | "secondary" | "danger"; type?: "button" | "submit"; style?: React.CSSProperties;
 }) {
-  const bg = disabled ? "#9ca3af"
+  const bg = disabled ? "var(--c-text-4)"
     : variant === "primary" ? "var(--c-brand)"
     : variant === "danger" ? "#dc2626"
     : "var(--c-surface)";
   return (
     <button onClick={onClick} disabled={disabled} type={type} style={{
-      padding: "9px 18px", borderRadius: 6, fontSize: 13, fontWeight: 600, fontFamily: sans,
+      padding: "9px 18px", borderRadius: 8, fontSize: 13.5, fontWeight: 700, fontFamily: sans,
       cursor: disabled ? "not-allowed" : "pointer", background: bg,
       color: variant === "secondary" ? "var(--c-text-1)" : "#fff",
       border: variant === "secondary" ? "1px solid var(--c-border)" : "none",
@@ -64,9 +64,9 @@ export function Badge({ children, tone = "neutral" }: { children: React.ReactNod
   const [bg, fg] = tones[tone];
   return (
     <span style={{
-      display: "inline-block", padding: "2px 9px", borderRadius: 12, fontSize: 11,
-      fontWeight: 700, background: bg, color: fg, whiteSpace: "nowrap",
-    }}>{children}</span>
+      display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 999, fontSize: 12,
+      fontWeight: 600, background: bg, color: fg, whiteSpace: "nowrap",
+    }}><span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor" }} />{children}</span>
   );
 }
 

@@ -1,6 +1,5 @@
 import type { Cliente, Cotizacion, CuentaPorCobrar, Factura } from "@/types";
-import { calcTotales, genECF, localDate, resolverECFConfig, today } from "@/types";
-import { nextSecuencia } from "@/hooks/use-secuencias";
+import { localDate, resolverECFConfig } from "@/types";
 import { construirFacturaReal } from "@/lib/produccion/emitir-factura";
 import { crearCxCSiCredito } from "@/lib/sandbox/acciones";
 import type { DatosConversion } from "@/components/modals/modal-convertir-cotizacion";
@@ -20,9 +19,6 @@ export async function convertirCotizacionEnFacturaReal(
 ) {
   const ecfConfig = resolverECFConfig(cliente, false, false);
   const tipoECF = ecfConfig.tipoDefault;
-  const seq = await nextSecuencia(deps.tenantId, tipoECF);
-  const eCF = genECF(tipoECF, seq);
-  const vencimientoECF = (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return localDate(d); })();
   const fechaVencimientoPago = datos.terminos === "Crédito"
     ? (() => { const d = new Date(); d.setDate(d.getDate() + parseInt(datos.plazo ?? "30", 10)); return localDate(d); })()
     : undefined;
@@ -33,13 +29,13 @@ export async function convertirCotizacionEnFacturaReal(
   // y firestore.rules lo rechazaría de todas formas (campos fiscales en un
   // create de cliente, con el tenant ya activo).
   const factura = await construirFacturaReal({
-    tipoECF, noFactura: String(seq), eCF, fecha: today(), vencimientoECF,
+    tipoECF, idempotencyKey: crypto.randomUUID(),
     terminos: datos.terminos, metodoPago: datos.metodoPago, clienteId: cotizacion.clienteId,
     items: cotizacion.items, modalidadPago: datos.terminos === "Contado" ? "unico" : "plazo",
     fechaVencimientoPago, idTransaccion: datos.referencia,
     tenantId: deps.tenantId,
   });
 
-  await deps.actualizarCotizacion(cotizacion.id, { estado: "convertida", facturaRef: eCF });
+  await deps.actualizarCotizacion(cotizacion.id, { estado: "convertida", facturaRef: factura.eCF });
   await crearCxCSiCredito({ ...deps, rncEmisor: "", nombreEmisor: "", rootDomain: "" }, factura);
 }

@@ -8,13 +8,41 @@ const ROOT_DOMAIN     = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 // Rutas públicas en el dominio raíz (marketing, auth, sesión).
 const PUBLIC_ROOT_PATHS = [
   "/", "/login", "/registro", "/api/auth/session", "/_next", "/favicon.ico",
-  "/demo", "/terminos", "/privacidad", "/api/validate-rnc",
+  "/demo", "/terminos", "/privacidad", "/api/validate-rnc", "/api/lista-espera", "/empresas", "/api/contacto-comercial", "/robots.txt", "/sitemap.xml",
+  // /fe/* en el dominio raíz no tiene empresa: responde 404 en XML en vez de
+  // mandar a la DGII a una pantalla de login.
+  "/fe",
 ];
 
-// Rutas públicas dentro de un subdominio de tenant: DGII llama a /fe/* sin
-// cookies de sesión. Estas rutas viven en app/fe/* (no bajo app/sites/[slug]/)
-// y resuelven el tenant ellas mismas a partir del host — no se reescriben.
-const PUBLIC_TENANT_PATHS = ["/fe/", "/_next", "/favicon.ico"];
+// Rutas públicas dentro de un subdominio de tenant. "/api" es crítico: todas
+// las rutas API viven en app/api/... (no bajo app/sites/[slug]/api/...), así
+// que si se reescriben igual que una página normal, Next.js busca una ruta
+// que no existe y responde 404 — rompía TODA llamada fetch("/api/...") hecha
+// desde cualquier página del subdominio de un tenant (facturas, cotizaciones,
+// etc.), apenas un tenant llegaba a "activo" con subdominio propio. Cada ruta
+// API ya hace su propia verificación de sesión/rol internamente
+// (getSessionUid(), requireTenantActivo(), etc.), así que no necesita que el
+// middleware la bloquee. /fe/* (callbacks de DGII) sigue el mismo patrón:
+// vive en app/fe/*, resuelve el tenant desde el host, no se reescribe.
+const PUBLIC_TENANT_PATHS = ["/fe/", "/api", "/empleado", "/_next", "/favicon.ico"];
+
+function esHostLocal(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".localhost");
+}
+
+// URL del dominio raíz a partir del host REAL de la petición, no de la env
+// var a secas — igual que cookieDomainPara() en /api/auth/session. En local,
+// NEXT_PUBLIC_ROOT_DOMAIN sigue fijo en facturacon.com.do (necesario para
+// producción), así que redirigir con ese valor + https sacaría al que está
+// probando en localhost hacia el sitio real. Aquí en cambio: mismo protocolo
+// (http) y mismo puerto que ya está usando, solo cambiando "algo.localhost"
+// por "localhost".
+function urlRaiz(hostHeader: string): string {
+  const hostname = hostHeader.split(":")[0];
+  const puerto = hostHeader.includes(":") ? `:${hostHeader.split(":")[1]}` : "";
+  if (esHostLocal(hostname)) return `http://localhost${puerto}`;
+  return `https://${ROOT_DOMAIN}`;
+}
 
 function isPublic(pathname: string, list: string[]): boolean {
   // "/" debe matchear solo la raíz exacta — con startsWith("/") a secas
@@ -31,6 +59,16 @@ export function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const slug = getTenantSlugFromHost(host, ROOT_DOMAIN);
   const session = request.cookies.get(SESSION_COOKIE)?.value;
+
+  // /fe/* (servicio receptor que llama la DGII): las rutas de Next.js distinguen
+  // mayúsculas en Linux/Vercel y la DGII documenta URLs como
+  // ".../api/ValidacionCertificado". Se reescribe (nunca redirect: un redirect
+  // convertiría el POST en GET) a minúsculas, que es como están las carpetas.
+  if (pathname.toLowerCase().startsWith("/fe/") && pathname !== pathname.toLowerCase()) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.toLowerCase();
+    return NextResponse.rewrite(url);
+  }
 
   // ── Dominio raíz: marketing + panel de administración/suscripción ──
   if (!slug) {
@@ -55,7 +93,7 @@ export function proxy(request: NextRequest) {
 
   if (!session) {
     return NextResponse.redirect(
-      new URL(`https://${ROOT_DOMAIN}/login?redirect=${encodeURIComponent(pathname + request.nextUrl.search)}`, request.url)
+      new URL(`${urlRaiz(host)}/login?redirect=${encodeURIComponent(pathname + request.nextUrl.search)}`, request.url)
     );
   }
 

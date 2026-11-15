@@ -28,7 +28,9 @@ export async function POST(req: NextRequest) {
   }
 
   const empresa: EmpresaConfig = {
-    nombre:             verif.tenant.nombreNegocio,
+    // La razón social del RNC; las empresas anteriores a este cambio solo tienen nombreNegocio.
+    nombre:             verif.tenant.razonSocial ?? verif.tenant.nombreNegocio,
+    ...(verif.tenant.nombreComercial ? { nombreComercial: verif.tenant.nombreComercial } : {}),
     rnc:                verif.tenant.rnc,
     direccion:          direccion.trim(),
     telefono:           telefono?.trim() ?? "",

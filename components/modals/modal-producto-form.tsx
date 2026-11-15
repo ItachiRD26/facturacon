@@ -20,6 +20,7 @@ export default function ModalProductoForm({
   const [itbis, setItbis] = useState(0.18);
   const [controlaStock, setControlaStock] = useState(true);
   const [stock, setStock] = useState("");
+  const [stockMinimo, setStockMinimo] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,8 +34,12 @@ export default function ModalProductoForm({
     setItbis(inicial?.itbis ?? 0.18);
     setControlaStock(inicial?.controlaStock ?? true);
     setStock(inicial?.stock !== undefined ? String(inicial.stock) : "");
+    setStockMinimo(inicial?.stockMinimo !== undefined ? String(inicial.stockMinimo) : "");
     setError("");
   }, [open, inicial]);
+
+  // Editar un producto que ya controla stock: el stock se mueve con «Stock» (entrada, conteo, merma).
+  const stockBloqueado = !!inicial && inicial.controlaStock && controlaStock;
 
   const submit = async () => {
     const precioNum = parseFloat(precio);
@@ -46,7 +51,10 @@ export default function ModalProductoForm({
         codigo: codigo.trim() || `P-${Date.now().toString().slice(-6)}`,
         nombre: nombre.trim(), descripcion: descripcion.trim() || undefined,
         precio: precioNum, itbis, controlaStock: controla,
-        stock: controla ? (parseInt(stock, 10) || 0) : undefined,
+        // Al editar un producto que ya controla stock, el stock NO se toca aquí: cambia solo con
+        // entradas, ajustes o ventas, que dejan rastro. `stock` se omite para no pisarlo.
+        ...(controla && !stockBloqueado ? { stock: parseInt(stock, 10) || 0 } : {}),
+        stockMinimo: controla && stockMinimo.trim() !== "" ? Math.max(0, Number(stockMinimo) || 0) : undefined,
         activo: true,
       });
       onClose();
@@ -62,7 +70,7 @@ export default function ModalProductoForm({
           <div style={{ display: "flex", gap: 6 }}>
             {[["Producto (inventario)", false], ["Servicio", true]].map(([label, val]) => (
               <button key={label as string} type="button" onClick={() => setEsServicio(val as boolean)} style={{
-                flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+                flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 10, cursor: "pointer",
                 border: `1px solid ${esServicio === val ? "var(--c-brand)" : "var(--c-border)"}`,
                 background: esServicio === val ? "var(--c-brand-bg)" : "var(--c-surface)",
               }}>{label as string}</button>
@@ -71,8 +79,9 @@ export default function ModalProductoForm({
         </Campo>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10 }}>
-          <Campo label="Código">
-            <Input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Auto" />
+          <Campo label="Código de barras o interno">
+            <Input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Escanéalo o déjalo vacío (se crea uno)" />
+            <div style={{ fontSize: 11, color: "var(--c-text-3)", marginTop: 4 }}>Es el que lee el lector en la caja. Sin lector, el cajero también lo puede escribir o buscar por nombre.</div>
           </Campo>
           <Campo label="Nombre">
             <Input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej. Tornillo 1/4, Consultoría, Amoxicilina 500mg" />
@@ -100,11 +109,20 @@ export default function ModalProductoForm({
               <input type="checkbox" checked={controlaStock} onChange={(e) => setControlaStock(e.target.checked)} />
               Controlar inventario
             </label>
-            {controlaStock && (
+            {controlaStock && (stockBloqueado ? (
+              <span style={{ fontSize: 12.5, color: "var(--c-text-3)" }}>
+                Stock actual: <b style={{ color: "var(--c-text-1)" }}>{stock || 0}</b>. Para cambiarlo usa «Stock» en la lista (entrada, conteo o merma).
+              </span>
+            ) : (
               <Input value={stock} onChange={(e) => setStock(e.target.value)} type="number" min={0}
                 placeholder="Stock inicial" style={{ maxWidth: 140 }} />
-            )}
+            ))}
           </div>
+        )}
+        {!esServicio && controlaStock && (
+          <Campo label="Stock mínimo (opcional)">
+            <Input value={stockMinimo} onChange={(e) => setStockMinimo(e.target.value)} type="number" min={0} placeholder="Avísame cuando queden… o menos" style={{ maxWidth: 260 }} />
+          </Campo>
         )}
 
         {error && <div style={{ fontSize: 12, color: "#991b1b" }}>{error}</div>}

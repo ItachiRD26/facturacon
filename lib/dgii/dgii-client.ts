@@ -75,7 +75,10 @@ export async function getToken(
   tenant: DgiiTenantConfig,
   signSeed: () => Promise<{ p12Buffer: Buffer; password: string }>,
 ): Promise<string> {
-  const cached = tokenCacheByTenant.get(tenant.tenantId);
+  // El token es válido solo para el ambiente que lo emitió: al pasar de
+  // certecf a ecf (producción) no se debe reutilizar el de certificación.
+  const claveCache = `${tenant.tenantId}:${tenant.ambiente}`;
+  const cached = tokenCacheByTenant.get(claveCache);
   if (cached && cached.expira.getTime() - Date.now() > MARGEN_MS) {
     return cached.token;
   }
@@ -83,10 +86,10 @@ export async function getToken(
   try {
     const snap = await adminDb.collection("tenants").doc(tenant.tenantId).collection("config").doc("dgii_token").get();
     if (snap.exists) {
-      const data = snap.data() as { token: string; expira: string };
+      const data = snap.data() as { token: string; expira: string; ambiente?: string };
       const expira = new Date(data.expira);
-      if (expira.getTime() - Date.now() > MARGEN_MS) {
-        tokenCacheByTenant.set(tenant.tenantId, { token: data.token, expira });
+      if (data.ambiente === tenant.ambiente && expira.getTime() - Date.now() > MARGEN_MS) {
+        tokenCacheByTenant.set(claveCache, { token: data.token, expira });
         return data.token;
       }
     }
@@ -99,9 +102,9 @@ export async function getToken(
   const xmlFirmado = await firmarSemilla(xml, p12Buffer, password);
   const { token, expira } = await validarSemilla(xmlFirmado, tenant.ambiente);
 
-  tokenCacheByTenant.set(tenant.tenantId, { token, expira: new Date(expira) });
+  tokenCacheByTenant.set(claveCache, { token, expira: new Date(expira) });
   await adminDb.collection("tenants").doc(tenant.tenantId).collection("config").doc("dgii_token")
-    .set({ token, expira }).catch((e) => console.warn(`[DGII][${tenant.tenantId}] No se pudo cachear token:`, e));
+    .set({ token, expira, ambiente: tenant.ambiente }).catch((e) => console.warn(`[DGII][${tenant.tenantId}] No se pudo cachear token:`, e));
 
   return token;
 }

@@ -1,7 +1,7 @@
 import { QRCodeSVG } from "qrcode.react";
 import type { Cliente, Factura } from "@/types";
 import { calcLinea, calcTotales, fmt, fmtDate } from "@/types";
-import type { EmpresaImpresion } from "./factura-a4";
+import { CODIGO_MODIFICACION, type EmpresaImpresion } from "./factura-a4";
 import { fmtRNCDisplay } from "@/lib/dgii/xml-builder";
 import SelloMuestra from "./sello-muestra";
 
@@ -17,7 +17,8 @@ export default function FacturaTermica({ factura, cliente, empresa, esMuestra = 
           // eslint-disable-next-line @next/next/no-img-element -- imagen del tenant en Storage, no un asset propio del sitio
           <img src={empresa.logoTermicoUrl} alt={empresa.nombre} style={{ maxWidth: 140, maxHeight: 60, objectFit: "contain", margin: "0 auto 6px" }} />
         )}
-        <div style={{ fontWeight: 700 }}>{empresa.nombre}</div>
+        {empresa.nombreComercial && <div style={{ fontWeight: 700, fontSize: 13 }}>{empresa.nombreComercial}</div>}
+        <div style={{ fontWeight: empresa.nombreComercial ? 400 : 700 }}>{empresa.nombre}</div>
         <div>RNC: {fmtRNCDisplay(empresa.rnc)}</div>
         {empresa.direccion && <div>{empresa.direccion}</div>}
         {empresa.telefono && <div>Tel: {empresa.telefono}</div>}
@@ -26,6 +27,14 @@ export default function FacturaTermica({ factura, cliente, empresa, esMuestra = 
       <div style={{ textAlign: "center", borderTop: "1px dashed #000", borderBottom: "1px dashed #000", padding: "4px 0", marginBottom: 6 }}>
         <div>{factura.tipoECF} · e-NCF: {factura.eCF}</div>
         <div>{fmtDate(factura.fecha)}</div>
+        {(factura.tipoECF === "E33" || factura.tipoECF === "E34") && factura.eCFRef && (
+          <>
+            <div>Modifica: {factura.eCFRef}</div>
+            {factura.codigoModificacion && (
+              <div>{CODIGO_MODIFICACION[factura.codigoModificacion] ?? factura.codigoModificacion}</div>
+            )}
+          </>
+        )}
       </div>
 
       <div style={{ marginBottom: 6 }}>

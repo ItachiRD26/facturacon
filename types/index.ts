@@ -62,6 +62,8 @@ export interface Producto {
   itbis:         number;
   controlaStock: boolean;
   stock?:        number;
+  // Debajo (o igual) de este número el producto aparece como «stock bajo» en el inventario.
+  stockMinimo?:  number;
   activo:        boolean;
   creadoEn?:     string;
   actualizadoEn?: string;
@@ -124,6 +126,7 @@ export interface Factura {
   clienteId:             string;
   cotizacionRef?:        string;
   eCFRef?:               string;
+  fechaECFRef?:          string;   // fecha (YYYY-MM-DD) del comprobante que modifica una nota E33/E34
   motivoNota?:           string;
   codigoModificacion?:   string;
   esConsumidorFinal?:    boolean;
@@ -134,6 +137,10 @@ export interface Factura {
   notas?:                string;
   creadoEn?:             string;
   creadoPor?:            string;
+  // Nombre del cajero/empleado que emitió el comprobante — copiado del
+  // perfil al momento de emitir (no se resuelve por join en la UI), para
+  // mostrarlo directo en la lista de facturas sin lecturas extra.
+  creadoPorNombre?:      string;
   modalidadPago?:        "unico" | "plazo";
   fechaVencimientoPago?: string;
   rncCompradorOcasional?:  string;

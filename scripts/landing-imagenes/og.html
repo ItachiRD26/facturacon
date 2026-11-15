@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+  html, body { width: 1200px; height: 630px; }
+  body { background: #F3F4F1; display: flex; align-items: center; padding: 0 84px; gap: 56px; }
+  .l { flex: 1; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 40px; letter-spacing: -.035em; margin-bottom: 46px; }
+  h1 { font-size: 66px; line-height: 1.03; font-weight: 800; letter-spacing: -.035em; }
+  p { margin-top: 24px; font-size: 24px; color: var(--t2); line-height: 1.45; max-width: 560px; }
+  .t { width: 330px; background: #fff; padding: 26px 26px 22px; font-family: "DM Mono", monospace; font-size: 14px; line-height: 1.75; box-shadow: 0 26px 50px rgba(15,26,48,.18); position: relative; border-radius: 6px 6px 0 0; }
+  .t .f { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--t4); }
+  .t .f span:first-child { background: #fff; padding-right: 6px; }
+  .t .c { text-align: center; font-weight: 500; margin-bottom: 10px; }
+  .t .tot { display: flex; justify-content: space-between; font-size: 18px; font-weight: 500; margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--t4); }
+  .t .band { margin-top: 14px; padding: 9px 12px; background: var(--ticket); border-radius: 3px; font-size: 13px; line-height: 1.5; }
+  .sello { position: absolute; right: -26px; bottom: 26px; width: 118px; height: 118px; border-radius: 50%; border: 3px solid var(--stamp); color: var(--stamp); display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: "Schibsted Grotesk"; font-weight: 800; font-size: 13px; transform: rotate(-14deg); background: rgba(217,45,58,.05); mix-blend-mode: multiply; }
+  .sello::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; border: 1px solid var(--stamp); }
+  .zig { position: absolute; left: 0; right: 0; bottom: -10px; height: 10px; }
+</style></head>
+<body>
+  <div class="l">
+    <div class="brand"><svg width="52" height="52" viewBox="0 0 96 96"><path d="M16 12Q16 8 20 8H76Q80 8 80 12V82L72 76L64 82L56 76L48 82L40 76L32 82L24 76L16 82Z" fill="#0F1A30"/><rect x="26" y="21" width="34" height="5" rx="2.5" fill="#fff"/><rect x="26" y="33" width="44" height="5" rx="2.5" fill="#fff" opacity=".55"/><rect x="26" y="45" width="26" height="5" rx="2.5" fill="#fff" opacity=".55"/><circle cx="68" cy="64" r="20" fill="#D92D3A" stroke="#F3F4F1" stroke-width="4"/><path d="M59 64.5l6.5 6.5L78 57" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>facturacon</div>
+    <h1>Certifícate gratis ante la DGII y empieza a facturar</h1>
+    <p>Te guiamos por los 13 pasos y te entregamos el sistema de facturación listo.</p>
+  </div>
+  <div class="t">
+    <div class="c">Emisor electrónico ante la DGII</div>
+    <div class="f"><span>Cuenta y pruebas</span><span>0.00</span></div>
+    <div class="f"><span>Certificación DGII</span><span>0.00</span></div>
+    <div class="f"><span>Asistente 13 pasos</span><span>0.00</span></div>
+    <div class="tot"><span>Total hoy</span><span>RD$ 0.00</span></div>
+    <div class="band">La mensualidad empieza cuando ya estés certificado.</div>
+    <div style="height:30px"></div>
+    <div class="sello"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>CERTIFICADO</div>
+    <svg class="zig" viewBox="0 0 330 10" preserveAspectRatio="none"><path id="zz" fill="#fff"/></svg>
+  </div>
+<script>let d='M0 0H330';for(let i=27;i>0;i--)d+=`L${i*12.2-6.1} 10L${(i-1)*12.2} 0`;document.getElementById('zz').setAttribute('d',d+'Z');</script>
+</body></html>

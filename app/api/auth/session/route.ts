@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { registroAbierto } from "@/lib/registro";
+import { limitar } from "@/lib/seguridad/limite-tasa";
 
 const SESSION_COOKIE  = "__session";
 const SESSION_MS      = parseInt(process.env.SESSION_DURATION_MS ?? "432000000");
@@ -23,6 +25,9 @@ function cookieDomainPara(hostHeader: string): string | undefined {
 }
 
 export async function POST(request: NextRequest) {
+  // Cada llamada verifica el token y toca Firestore: tope por IP en memoria.
+  const lim = await limitar(request, { nombre: "auth-session", max: 30, ventanaSeg: 600 });
+  if (lim) return lim;
   try {
     const body = await request.json().catch(() => null);
     if (!body?.idToken || typeof body.idToken !== "string")
@@ -36,6 +41,15 @@ export async function POST(request: NextRequest) {
     const user = await adminAuth.getUser(decoded.uid);
     if (user.disabled)
       return NextResponse.json({ error: "Cuenta deshabilitada. Contacta al administrador." }, { status: 403 });
+
+    // Registro cerrado: quien ya tiene perfil entra normal; una cuenta de Auth
+    // nueva (correo o Google) no obtiene sesión, así que no llega al panel.
+    if (!registroAbierto()) {
+      const perfil = await adminDb.collection("users").doc(decoded.uid).get();
+      if (!perfil.exists) {
+        return NextResponse.json({ error: "Las cuentas nuevas todavía no están abiertas. Déjanos tu correo en la lista de espera." }, { status: 403 });
+      }
+    }
 
     const sessionCookie = await adminAuth.createSessionCookie(body.idToken, { expiresIn: SESSION_MS });
 

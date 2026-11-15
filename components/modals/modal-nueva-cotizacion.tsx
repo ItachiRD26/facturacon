@@ -97,7 +97,7 @@ export default function ModalNuevaCotizacion({
 
         <Campo label="Notas (opcional)">
           <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2}
-            style={{ width: "100%", padding: "9px 11px", border: "1px solid #d1d5db", borderRadius: 5, fontSize: 13 }} />
+            style={{ width: "100%", padding: "9px 11px", border: "1px solid #CDD1C9", borderRadius: 5, fontSize: 13 }} />
         </Campo>
 
         {error && <div style={{ fontSize: 12, color: "#991b1b" }}>{error}</div>}

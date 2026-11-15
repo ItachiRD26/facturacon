@@ -17,13 +17,15 @@ const serif = "var(--font-serif)";
 
 function KPICard({ label, valor, sub, accent, icon }: { label: string; valor: string | number; sub: string; accent: string; icon: string }) {
   return (
-    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderTop: `3px solid ${accent}`, borderRadius: 4, padding: "18px 20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans }}>{label}</div>
-        <div style={{ color: accent, opacity: 0.7 }}><Icon name={icon} size={16} /></div>
+    <div className="hov-lift" style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, boxShadow: "var(--shadow-sm)", padding: "16px 18px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: "var(--c-text-3)", fontFamily: sans }}>{label}</div>
+        <div style={{ width: 32, height: 32, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", background: `color-mix(in srgb, ${accent} 12%, transparent)`, color: accent }}>
+          <Icon name={icon} size={18} />
+        </div>
       </div>
-      <div style={{ fontFamily: mono, fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 4 }}>{valor}</div>
-      <div style={{ fontSize: 11, color: "#9ca3af", fontFamily: sans }}>{sub}</div>
+      <div style={{ fontFamily: sans, fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--c-text-1)", marginBottom: 2 }}>{valor}</div>
+      <div style={{ fontSize: 12.5, color: "var(--c-text-3)", fontFamily: sans }}>{sub}</div>
     </div>
   );
 }
@@ -65,7 +67,7 @@ export default function SandboxDashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "50vh", color: "#9ca3af", fontFamily: sans }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "50vh", color: "var(--c-text-4)", fontFamily: sans }}>
         Cargando dashboard...
       </div>
     );
@@ -75,13 +77,13 @@ export default function SandboxDashboardPage() {
     <div className="fade-in" data-tour="page-dashboard">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 2 }}>Dashboard</h1>
-          <div style={{ fontSize: 13, color: "#6b7280", fontFamily: sans }}>{tenant.nombreNegocio} · datos de prueba</div>
+          <h1 style={{ fontFamily: serif, fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--c-text-1)", marginBottom: 2 }}>Dashboard</h1>
+          <div style={{ fontSize: 13, color: "var(--c-text-3)", fontFamily: sans }}>{tenant.nombreNegocio} · datos de prueba</div>
         </div>
-        <div style={{ display: "flex", gap: 4, background: "#f3f4f6", borderRadius: 4, padding: 3 }}>
+        <div style={{ display: "flex", gap: 4, background: "var(--c-border-lt)", borderRadius: 8, padding: 3 }}>
           {PERIODOS.map(({ label, val }) => (
             <button key={String(val)} type="button" onClick={() => setPeriodo(val)}
-              style={{ padding: "5px 12px", borderRadius: 3, border: "none", cursor: "pointer", fontSize: 12, fontFamily: sans, fontWeight: 500, background: periodo === val ? "#fff" : "transparent", color: periodo === val ? "#111" : "#6b7280", boxShadow: periodo === val ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>
+              style={{ padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontFamily: sans, fontWeight: 500, background: periodo === val ? "#fff" : "transparent", color: periodo === val ? "var(--c-text-1)" : "var(--c-text-3)", boxShadow: periodo === val ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>
               {label}
             </button>
           ))}
@@ -89,27 +91,27 @@ export default function SandboxDashboardPage() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 24 }}>
-        <KPICard label="Ingresos cobrados"   valor={"RD$ " + fmt(ingresos)}   sub={facturasPeriodo.filter((f) => f.estado === "pagada").length + " facturas pagadas"} accent="#0e7490" icon="invoice"  />
+        <KPICard label="Ingresos cobrados"   valor={"RD$ " + fmt(ingresos)}   sub={facturasPeriodo.filter((f) => f.estado === "pagada").length + " facturas pagadas"} accent="#2540D9" icon="invoice"  />
         <KPICard label="Por cobrar"           valor={"RD$ " + fmt(porCobrar)}  sub={cuentas.length + " cuentas registradas"}                                           accent="#92400e" icon="alert"    />
         <KPICard label="Cotizaciones activas" valor={cotVigentes.length}       sub="Pendientes de convertir"                                                          accent="#1d4ed8" icon="quotes"   />
         <KPICard label="Inventario activo"    valor={productosActivos.length} sub="Productos y servicios"                                                            accent="#166534" icon="products" />
-        <KPICard label="Clientes"             valor={clientes.length}          sub="Registrados en el sistema"                                                        accent="#6b7280" icon="clients"  />
+        <KPICard label="Clientes"             valor={clientes.length}          sub="Registrados en el sistema"                                                        accent="var(--c-text-3)" icon="clients"  />
       </div>
 
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 6, overflow: "hidden" }}>
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid #e5e7eb" }}>
-          <div style={{ fontFamily: serif, fontSize: 15, fontWeight: 700, color: "#111" }}>Facturas Recientes</div>
+      <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--c-border)" }}>
+          <div style={{ fontFamily: serif, fontSize: 15, fontWeight: 700, color: "var(--c-text-1)" }}>Facturas Recientes</div>
         </div>
         {ultimasFacturas.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "32px 0", color: "#9ca3af", fontFamily: sans, fontSize: 13 }}>
+          <div style={{ textAlign: "center", padding: "32px 0", color: "var(--c-text-4)", fontFamily: sans, fontSize: 13 }}>
             No hay facturas emitidas aún
           </div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+              <tr style={{ background: "#FAFAF8", borderBottom: "1px solid var(--c-border)" }}>
                 {["e-CF", "Cliente", "Fecha", "Total", "Estado"].map((h) => (
-                  <th key={h} style={{ padding: "9px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: sans }}>{h}</th>
+                  <th key={h} style={{ padding: "9px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "var(--c-text-3)", fontFamily: sans }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -119,11 +121,11 @@ export default function SandboxDashboardPage() {
                 const nombre  = f.esConsumidorFinal ? (f.nombreConsumidor ?? "Consumidor Final") : (cliente?.nombre ?? "—");
                 const t       = calcTotales(f.items);
                 return (
-                  <tr key={f.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                    <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 12, fontWeight: 700, color: "#111" }}>{f.eCF}</td>
-                    <td style={{ padding: "11px 14px", fontSize: 13, color: "#374151", fontFamily: sans }}>{nombre}</td>
-                    <td style={{ padding: "11px 14px", fontSize: 12, color: "#6b7280", fontFamily: sans }}>{fmtDate(f.fecha)}</td>
-                    <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#111" }}>RD$ {fmt(t.total)}</td>
+                  <tr key={f.id} style={{ borderBottom: "1px solid var(--c-border-lt)" }}>
+                    <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 12, fontWeight: 700, color: "var(--c-text-1)" }}>{f.eCF}</td>
+                    <td style={{ padding: "11px 14px", fontSize: 13, color: "var(--c-text-2)", fontFamily: sans }}>{nombre}</td>
+                    <td style={{ padding: "11px 14px", fontSize: 12, color: "var(--c-text-3)", fontFamily: sans }}>{fmtDate(f.fecha)}</td>
+                    <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "var(--c-text-1)" }}>RD$ {fmt(t.total)}</td>
                     <td style={{ padding: "11px 14px" }}><Badge estado={f.estado} /></td>
                   </tr>
                 );
