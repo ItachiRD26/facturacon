@@ -9,11 +9,22 @@ import Badge from "@/components/ui/badge";
 import Icon  from "@/components/ui/icon";
 import ModalProductoForm from "@/components/modals/modal-producto-form";
 import ModalLoteEtiquetas from "@/components/sandbox/modal-lote-etiquetas";
+import ModalMovimiento from "@/components/inventario/modal-movimiento";
+import ModalHistorial from "@/components/inventario/modal-historial";
 import { generarEtiquetasHTML, abrirVentanaEtiquetas } from "@/lib/inventario/etiquetas";
 
 const sans  = "var(--font-sans)";
 const mono  = "var(--font-mono)";
 const serif = "var(--font-serif)";
+
+// Estado del stock de un producto: agotado (0 o menos), bajo (en o debajo de su mínimo) u ok.
+function estadoStock(p: Producto): "na" | "agotado" | "bajo" | "ok" {
+  if (!p.controlaStock) return "na";
+  const s = p.stock ?? 0;
+  if (s <= 0) return "agotado";
+  if (p.stockMinimo !== undefined && s <= p.stockMinimo) return "bajo";
+  return "ok";
+}
 
 export default function SandboxInventarioPage() {
   const { tenantId, tenant } = useSandbox();
@@ -22,18 +33,21 @@ export default function SandboxInventarioPage() {
   const [editando,  setEditando]  = useState<Producto | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [busqueda,  setBusqueda]  = useState("");
-  const [filtroTipo, setFiltroTipo] = useState<"todos" | "productos" | "servicios">("todos");
+  const [filtroTipo, setFiltroTipo] = useState<"todos" | "productos" | "servicios" | "bajo">("todos");
+  const [movProd,  setMovProd]  = useState<Producto | null>(null);
+  const [histProd, setHistProd] = useState<Producto | null>(null);
   const [showLote,   setShowLote]   = useState(false);
   const [showAyuda,  setShowAyuda]  = useState(false);
 
   const filtrados = productos.filter((p) => {
     const q = busqueda.toLowerCase();
     const matchBusq = !q || p.nombre.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q);
-    const matchTipo = filtroTipo === "todos" || (filtroTipo === "productos" ? p.controlaStock : !p.controlaStock);
+    const matchTipo = filtroTipo === "todos" || (filtroTipo === "bajo" ? ["bajo", "agotado"].includes(estadoStock(p)) : filtroTipo === "productos" ? p.controlaStock : !p.controlaStock);
     return matchBusq && matchTipo;
   });
 
   const hayProductosConStock = productos.some((p) => p.controlaStock);
+  const conAlerta = productos.filter((p) => ["bajo", "agotado"].includes(estadoStock(p)));
 
   const imprimirEtiqueta = (p: Producto) => {
     const html = generarEtiquetasHTML([{ producto: p, cantidad: 1 }], "70x40", tenant.nombreNegocio);
@@ -87,6 +101,14 @@ export default function SandboxInventarioPage() {
         </div>
       )}
 
+      {conAlerta.length > 0 && (
+        <div role="status" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "11px 14px", marginBottom: 16, background: "var(--c-yellow-bg)", border: "1px solid var(--c-yellow-border)", borderRadius: 10, fontFamily: sans, fontSize: 13.5 }}>
+          <b style={{ color: "var(--c-yellow)" }}>{conAlerta.length} producto{conAlerta.length === 1 ? "" : "s"} con stock bajo o agotado:</b>
+          <span style={{ color: "var(--c-text-2)", flex: 1, minWidth: 180 }}>{conAlerta.slice(0, 4).map((p) => p.nombre).join(", ")}{conAlerta.length > 4 ? "…" : ""}</span>
+          <button onClick={() => setFiltroTipo("bajo")} style={{ padding: "6px 12px", background: "var(--c-surface)", border: "1px solid var(--c-yellow-border)", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12.5, color: "var(--c-text-1)", fontFamily: sans }}>Ver solo esos</button>
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
         <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
           <div style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--c-text-4)" }}><Icon name="search" size={14} /></div>
@@ -98,6 +120,7 @@ export default function SandboxInventarioPage() {
           <option value="todos">Todos</option>
           <option value="productos">Solo productos</option>
           <option value="servicios">Solo servicios</option>
+          <option value="bajo">Stock bajo o agotado</option>
         </select>
       </div>
 
@@ -136,11 +159,21 @@ export default function SandboxInventarioPage() {
                   <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 12, color: "var(--c-text-2)" }}>RD$ {fmt(p.precio)}</td>
                   <td style={{ padding: "12px 14px" }}><Badge tipo={p.itbis === 0 ? "success" : "info"}>{p.itbis === 0 ? "Exento" : `${p.itbis * 100}%`}</Badge></td>
                   <td style={{ padding: "12px 14px", fontFamily: mono, fontSize: 12 }}>
-                    {p.controlaStock ? <Badge tipo={(p.stock ?? 0) > 0 ? "info" : "danger"}>{p.stock ?? 0}</Badge> : "—"}
+                    {p.controlaStock ? (
+                      <Badge tipo={estadoStock(p) === "ok" ? "info" : estadoStock(p) === "bajo" ? "warning" : "danger"}>
+                        {p.stock ?? 0}{estadoStock(p) === "bajo" ? " · bajo" : estadoStock(p) === "agotado" ? " · agotado" : ""}
+                      </Badge>
+                    ) : "—"}
                   </td>
                   <td style={{ padding: "12px 14px" }}><Badge tipo={p.activo ? "success" : "neutral"}>{p.activo ? "Activo" : "Inactivo"}</Badge></td>
                   <td style={{ padding: "12px 14px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
+                      {p.controlaStock && (
+                        <>
+                          <button onClick={() => setMovProd(p)} title="Entrada de mercancía, conteo o merma" style={{ padding: "5px 10px", background: "var(--c-brand-bg)", border: "1px solid var(--c-brand-border)", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: sans, color: "var(--c-brand)" }}>Stock</button>
+                          <button onClick={() => setHistProd(p)} title="Ver el historial de movimientos" style={{ padding: "5px 10px", background: "var(--c-surface)", border: "1px solid #CDD1C9", borderRadius: 8, cursor: "pointer", fontSize: 12, fontFamily: sans, color: "var(--c-text-2)" }}>Historial</button>
+                        </>
+                      )}
                       {p.controlaStock && (
                         <button onClick={() => imprimirEtiqueta(p)} title="Imprimir etiqueta con código de barras" style={{ padding: "5px 8px", background: "none", border: "1px solid #bfdbfe", borderRadius: 8, cursor: "pointer", color: "#1d4ed8", fontSize: 11, fontFamily: sans, display: "flex", alignItems: "center", gap: 4 }}>🏷 Etiqueta</button>
                       )}
@@ -162,6 +195,9 @@ export default function SandboxInventarioPage() {
         open={showForm} inicial={editando} onClose={() => { setShowForm(false); setEditando(null); }}
         onSave={async (data) => { if (editando) await actualizar(editando.id, data); else await agregar(data); }}
       />
+
+      <ModalMovimiento open={!!movProd} onClose={() => setMovProd(null)} tenantId={tenantId} producto={movProd ? (productos.find((x) => x.id === movProd.id) ?? movProd) : null} />
+      <ModalHistorial open={!!histProd} onClose={() => setHistProd(null)} tenantId={tenantId} producto={histProd} />
 
       {confirmId && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>

@@ -62,6 +62,8 @@ export interface Producto {
   itbis:         number;
   controlaStock: boolean;
   stock?:        number;
+  // Debajo (o igual) de este número el producto aparece como «stock bajo» en el inventario.
+  stockMinimo?:  number;
   activo:        boolean;
   creadoEn?:     string;
   actualizadoEn?: string;
