@@ -27,6 +27,7 @@ export default function SiteFooter() {
             <Link href="/#como-funciona" style={{ color: "inherit", textDecoration: "none" }}>Cómo funciona</Link>
             <Link href="/#precios" style={{ color: "inherit", textDecoration: "none" }}>Precios</Link>
             <Link href="/#faq" style={{ color: "inherit", textDecoration: "none" }}>Preguntas frecuentes</Link>
+            <Link href="/empresas" style={{ color: "inherit", textDecoration: "none" }}>Para empresas</Link>
           </div>
         </div>
 

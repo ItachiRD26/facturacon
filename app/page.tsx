@@ -37,6 +37,10 @@ const faqs = [
     a: "La certificación como emisor electrónico es completamente gratis. Solo pagas una suscripción mensual, según cuántos comprobantes electrónicos emitas, y únicamente a partir de que ya estés certificado y facturando de verdad — no antes. Ve la sección de Precios arriba.",
   },
   {
+    q: "¿Y si mi empresa emite muchísimos comprobantes?",
+    a: "Si emites 10,000 comprobantes o más al mes, o tienes varias sucursales, armamos un plan adaptado a tu operación y lo acordamos contigo. Escríbenos desde la página de empresas y alguien de nuestro equipo te contacta.",
+  },
+  {
     q: "¿Sirve para mi tipo de negocio?",
     a: "El sistema base funciona para ferreterías, farmacias, colmados, restaurantes, salones, talleres, clínicas, consultoras y la mayoría de negocios que venden productos o servicios. Si tu negocio tiene necesidades muy particulares (ej. hoteles con gestión de reservas) contáctanos para evaluar una solución a medida.",
   },
@@ -84,8 +88,7 @@ export default function LandingPage() {
         <Seccion id="incluye" tono="paper" titulo="Todo lo necesario para facturar sin complicarte"
           lede="La certificación guiada y un sistema completo, en un solo lugar.">
           <BeneficiosStrip />
-          <div style={{ marginTop: 56 }}>
-            <p style={{ fontWeight: 700, fontSize: 17, marginBottom: 16 }}>Funciona para cualquier negocio que venda productos o servicios</p>
+          <div style={{ marginTop: 80 }}>
             <NegociosSection />
           </div>
         </Seccion>

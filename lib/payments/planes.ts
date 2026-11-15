@@ -32,3 +32,7 @@ export const PLANES: Plan[] = [
 export function buscarPlan(id: string): Plan | undefined {
   return PLANES.find((p) => p.id === id);
 }
+
+// Desde este volumen mensual de comprobantes no hay plan de lista: la empresa
+// habla con ventas (/empresas) y se acuerda un plan a la medida.
+export const VOLUMEN_EMPRESA = 10_000;

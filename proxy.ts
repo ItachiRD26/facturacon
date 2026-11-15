@@ -8,7 +8,7 @@ const ROOT_DOMAIN     = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 // Rutas públicas en el dominio raíz (marketing, auth, sesión).
 const PUBLIC_ROOT_PATHS = [
   "/", "/login", "/registro", "/api/auth/session", "/_next", "/favicon.ico",
-  "/demo", "/terminos", "/privacidad", "/api/validate-rnc", "/api/lista-espera", "/robots.txt", "/sitemap.xml",
+  "/demo", "/terminos", "/privacidad", "/api/validate-rnc", "/api/lista-espera", "/empresas", "/api/contacto-comercial", "/robots.txt", "/sitemap.xml",
   // /fe/* en el dominio raíz no tiene empresa: responde 404 en XML en vez de
   // mandar a la DGII a una pantalla de login.
   "/fe",
