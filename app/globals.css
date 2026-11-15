@@ -631,3 +631,13 @@ body {
 @keyframes giro { to { transform: rotate(360deg); } }
 @media (min-width: 900px) { .auth-logo-movil { display: none !important; } }
 @media (prefers-reduced-motion: reduce) { .giro { animation-duration: 1.6s; } .auth-boton { transition: none; } }
+
+/* ── Onboarding: tipos de negocio y validación de RNC ── */
+.onb-tipo { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; min-height: 92px; text-align: left; border: 2px solid var(--c-border); border-radius: 12px; background: var(--c-surface); cursor: pointer; font: 600 14px/1.3 var(--font-sans), system-ui, sans-serif; color: var(--c-text-1); transition: border-color .15s ease, background .15s ease, box-shadow .15s ease; }
+.onb-tipo:hover { border-color: #C4C9C0; }
+.onb-tipo[aria-checked="true"] { border-color: var(--c-brand); background: var(--c-brand-bg); box-shadow: 0 0 0 4px rgba(37,64,217,.08); }
+.onb-tipo:focus-visible, .onb-validar:focus-visible { outline: 3px solid var(--c-brand); outline-offset: 2px; }
+.onb-tipo small { font: 500 12px var(--font-sans), system-ui, sans-serif; color: var(--c-text-4); }
+.onb-validar { height: 46px; padding: 0 20px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid var(--c-brand); border-radius: 10px; background: var(--c-surface); color: var(--c-brand); font: 700 14.5px var(--font-sans), system-ui, sans-serif; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.onb-validar:not(:disabled):hover { background: var(--c-brand); color: #fff; }
+.onb-validar:disabled { opacity: .55; cursor: not-allowed; }
