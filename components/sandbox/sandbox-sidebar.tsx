@@ -104,9 +104,9 @@ export default function SandboxSidebar() {
               <Link key={seg} href={hrefDe(seg)} data-tour={`nav-${seg}`} style={{
                 display: "flex", alignItems: "center", gap: 9, padding: "8px 12px", borderRadius: 4,
                 fontSize: 13, fontWeight: isActive ? 600 : 400,
-                background: isActive ? "#ecfeff" : "transparent",
-                color: isActive ? "#0e7490" : "#6b7280",
-                borderLeft: isActive ? "2px solid #0e7490" : "2px solid transparent",
+                background: isActive ? "#EEF1FE" : "transparent",
+                color: isActive ? "#2540D9" : "#6b7280",
+                borderLeft: isActive ? "2px solid #2540D9" : "2px solid transparent",
                 textDecoration: "none", fontFamily: sans, transition: "all 0.1s",
               }}>
                 <Icon name={icon} size={14} />

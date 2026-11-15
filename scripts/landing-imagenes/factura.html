@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+  body { background: var(--bg); }
+  .stage { gap: 40px; align-items: center; justify-content: center; padding: 34px 60px; }
+  .a4 { width: 500px; height: 692px; background: #fff; border-radius: 4px; box-shadow: 0 30px 60px rgba(15,26,48,.18), 0 2px 6px rgba(15,26,48,.08); padding: 34px 38px; display: flex; flex-direction: column; font-size: 11.5px; }
+  .a4 .cab { display: flex; justify-content: space-between; align-items: flex-start; }
+  .a4 .emp { font-weight: 800; font-size: 17px; letter-spacing: -.02em; }
+  .a4 .emp small { display: block; font-weight: 400; font-size: 11px; color: var(--t3); letter-spacing: 0; margin-top: 3px; line-height: 1.5; }
+  .a4 .tipo { text-align: right; }
+  .a4 .tipo b { display: block; font-size: 12.5px; font-weight: 800; }
+  .a4 .tipo .enc { font-family: "DM Mono", monospace; font-size: 14px; font-weight: 500; margin: 3px 0; }
+  .a4 .tipo small { color: var(--t3); font-size: 10.5px; }
+  .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0 14px; padding: 12px 0; border-top: 1.5px solid var(--t1); border-bottom: 1px solid var(--border); }
+  .meta div { line-height: 1.55; }
+  .meta span { color: var(--t3); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 10.5px; color: var(--t3); font-weight: 600; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  td { padding: 7px 0; border-bottom: 1px solid var(--border-lt); }
+  .r { text-align: right; }
+  .tot { margin: 12px 0 0 auto; width: 210px; line-height: 1.9; }
+  .tot div { display: flex; justify-content: space-between; }
+  .tot .g { border-top: 1.5px solid var(--t1); margin-top: 4px; padding-top: 6px; font-size: 15px; font-weight: 800; }
+  .pie { margin-top: auto; display: flex; gap: 16px; align-items: center; padding-top: 14px; border-top: 1px dashed var(--t4); }
+  .pie .t { font-size: 10.5px; color: var(--t3); line-height: 1.6; }
+  .pie .t b { color: var(--t1); font-family: "DM Mono", monospace; font-weight: 500; }
+  .ticket { width: 262px; background: #fff; padding: 22px 20px 26px; font-family: "DM Mono", monospace; font-size: 11px; line-height: 1.6; box-shadow: 0 24px 48px rgba(15,26,48,.18); position: relative; align-self: flex-start; margin-top: 30px; }
+  .ticket .c { text-align: center; }
+  .ticket hr { border: 0; border-top: 1px dashed var(--t4); margin: 9px 0; }
+  .ticket .f { display: flex; justify-content: space-between; gap: 8px; }
+  .ticket .big { font-size: 14px; font-weight: 500; }
+  .zig { position: absolute; left: 0; right: 0; bottom: -9px; height: 9px; }
+</style></head>
+<body><div class="stage">
+
+  <div class="a4">
+    <div class="cab">
+      <div class="emp">Ferretería El Progreso<small>RNC 1-31-12345-6<br>Av. Duarte #123, Santo Domingo<br>809-555-0142</small></div>
+      <div class="tipo"><b>Factura de Crédito Fiscal Electrónica</b><div class="enc">E310000000214</div><small>Válido hasta: 31-12-2027</small></div>
+    </div>
+    <div class="meta">
+      <div><span>Cliente</span><br><b>Constructora Vargas SRL</b><br>RNC 1-30-98765-4</div>
+      <div><span>Fecha de emisión</span> 15-11-2026<br><span>Condición</span> Contado<br><span>Atendido por</span> Marisol R.</div>
+    </div>
+    <table>
+      <tr><th>Descripción</th><th class="r">Cant.</th><th class="r">Precio</th><th class="r">Importe</th></tr>
+      <tr><td>Cemento gris 42.5 kg</td><td class="r">20</td><td class="r">485.00</td><td class="r">9,700.00</td></tr>
+      <tr><td>Varilla corrugada 3/8"</td><td class="r">40</td><td class="r">215.00</td><td class="r">8,600.00</td></tr>
+      <tr><td>Block de 6"</td><td class="r">150</td><td class="r">38.00</td><td class="r">5,700.00</td></tr>
+      <tr><td>Alambre de amarre (lb)</td><td class="r">25</td><td class="r">62.00</td><td class="r">1,550.00</td></tr>
+    </table>
+    <div class="tot">
+      <div><span>Subtotal</span><span>25,550.00</span></div>
+      <div><span>ITBIS 18%</span><span>4,599.00</span></div>
+      <div class="g"><span>Total RD$</span><span>30,149.00</span></div>
+    </div>
+    <div class="pie">
+      <svg id="qr1" width="92" height="92" viewBox="0 0 29 29" shape-rendering="crispEdges"></svg>
+      <div class="t">Código de seguridad: <b>Xa9fK2</b><br>Fecha de firma: <b>15-11-2026 10:42:18</b><br>Escanea el código para verificar este comprobante en la DGII.</div>
+    </div>
+  </div>
+
+  <div class="ticket">
+    <div class="c big">FERRETERÍA EL PROGRESO</div>
+    <div class="c">RNC 1-31-12345-6</div>
+    <div class="c">Av. Duarte #123</div>
+    <hr>
+    <div class="c">Factura de Crédito Fiscal<br>Electrónica</div>
+    <div class="c big">E310000000214</div>
+    <hr>
+    <div class="f"><span>Cemento 42.5kg</span></div><div class="f"><span>20 x 485.00</span><span>9,700.00</span></div>
+    <div class="f"><span>Varilla 3/8"</span></div><div class="f"><span>40 x 215.00</span><span>8,600.00</span></div>
+    <div class="f"><span>Block 6"</span></div><div class="f"><span>150 x 38.00</span><span>5,700.00</span></div>
+    <div class="f"><span>Alambre (lb)</span></div><div class="f"><span>25 x 62.00</span><span>1,550.00</span></div>
+    <hr>
+    <div class="f"><span>Subtotal</span><span>25,550.00</span></div>
+    <div class="f"><span>ITBIS 18%</span><span>4,599.00</span></div>
+    <div class="f big"><span>TOTAL</span><span>30,149.00</span></div>
+    <hr>
+    <div class="c"><svg id="qr2" width="96" height="96" viewBox="0 0 29 29" shape-rendering="crispEdges"></svg></div>
+    <div class="c">Código de seguridad: Xa9fK2</div>
+    <div class="c">15-11-2026 10:42:18</div>
+    <svg class="zig" viewBox="0 0 262 9" preserveAspectRatio="none"><path id="zz" fill="#fff"/></svg>
+  </div>
+
+</div>
+<script>
+  // QR decorativo determinístico (3 buscadores + módulos pseudoaleatorios con semilla fija). No es escaneable.
+  function qr(id){
+    const N=29; let s=20261115; const rnd=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296};
+    let out=''; const fin=(x,y)=>{out+=`<rect x="${x}" y="${y}" width="7" height="7" fill="#0F1A30"/><rect x="${x+1}" y="${y+1}" width="5" height="5" fill="#fff"/><rect x="${x+2}" y="${y+2}" width="3" height="3" fill="#0F1A30"/>`};
+    const inFin=(x,y)=>(x<8&&y<8)||(x>N-9&&y<8)||(x<8&&y>N-9);
+    for(let y=0;y<N;y++)for(let x=0;x<N;x++){ if(inFin(x,y))continue; if(rnd()>0.52) out+=`<rect x="${x}" y="${y}" width="1" height="1" fill="#0F1A30"/>`}
+    fin(0,0);fin(N-7,0);fin(0,N-7);
+    document.getElementById(id).innerHTML=out;
+  }
+  qr('qr1');qr('qr2');
+  let d='M0 0H262';for(let i=21;i>0;i--)d+=`L${i*12.5-6.25} 9L${(i-1)*12.5} 0`;document.getElementById('zz').setAttribute('d',d+'Z');
+</script></body></html>

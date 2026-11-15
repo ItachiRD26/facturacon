@@ -45,7 +45,21 @@ export default function FacturasPage() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [imprimiendo,  setImprimiendo]  = useState<Factura | null>(null);
   const [busqueda,     setBusqueda]     = useState("");
+  const [reintentando, setReintentando] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<EstadoFactura | "todos">("todos");
+
+  // Reenvía a la DGII un comprobante que quedó pendiente (mismo e-NCF y mismo XML firmado).
+  async function reintentarEnvio(f: Factura) {
+    setReintentando(f.id);
+    try {
+      const res = await fetch("/api/facturas/reintentar", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantId: tenant.tenantId, facturaId: f.id }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) window.alert(data?.error ?? "No se pudo reenviar el comprobante.");
+    } finally { setReintentando(null); }
+  }
 
   const clientePor = (id: string) => clientes.find((c) => c.id === id);
   // El cajero solo ve sus propias facturas (siempre él mismo), así que la
@@ -148,12 +162,17 @@ export default function FacturasPage() {
                     )}
                     <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "var(--c-text-1)" }}>RD$ {fmt(calcTotales(f.items).total)}</td>
                     <td style={{ padding: "11px 14px" }}><Badge estado={f.estado} /></td>
-                    <td style={{ padding: "11px 14px" }}>{f.estadoDGII === "Aceptado" ? <Badge tipo="success">Aceptado</Badge> : f.estadoDGII === "Rechazado" ? <Badge tipo="danger">Rechazado</Badge> : <Badge tipo="neutral">{f.estadoDGII ?? "—"}</Badge>}</td>
+                    <td style={{ padding: "11px 14px" }}>{f.estadoDGII === "Aceptado" ? <Badge tipo="success">Aceptado</Badge> : f.estadoDGII === "Rechazado" ? <Badge tipo="danger">Rechazado</Badge> : f.estadoDGII === "pendiente" ? <Badge tipo="danger">Sin enviar</Badge> : <Badge tipo="neutral">{f.estadoDGII ?? "—"}</Badge>}</td>
                     <td style={{ padding: "11px 14px" }}>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={() => setImprimiendo(f)} style={{ padding: "5px 10px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 6, cursor: "pointer", color: "var(--c-text-2)", display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontFamily: sans }}>
                           <Icon name="print" size={12} /> Imprimir
                         </button>
+                        {f.estadoDGII === "pendiente" && f.xmlFirmado && (
+                          <button onClick={() => reintentarEnvio(f)} disabled={reintentando === f.id} style={{ padding: "5px 10px", background: "var(--c-brand)", border: "none", borderRadius: 6, cursor: "pointer", color: "#fff", fontSize: 12, fontFamily: sans }}>
+                            {reintentando === f.id ? "Enviando…" : "Reintentar envío"}
+                          </button>
+                        )}
                         {f.estado !== "anulada" && (
                           <button onClick={() => cambiarEstado(f.id, "anulada")} style={{ padding: "5px 10px", background: "#fff", border: "1px solid var(--c-red-border)", borderRadius: 6, cursor: "pointer", color: "var(--c-red)", fontSize: 12, fontFamily: sans }}>
                             Anular
@@ -172,6 +191,7 @@ export default function FacturasPage() {
       <ModalNuevaFactura
         open={modalAbierto} onClose={() => setModalAbierto(false)} tenantId={tenant.tenantId}
         clientes={clientes} productos={productos} modo="produccion"
+        bloqueo={tenant.puedeEmitir ? undefined : "Tu plan de pago no está activo, así que todavía no puedes emitir comprobantes reales. Actívalo desde el aviso de arriba."}
         nombreEmisor={tenant.nombreNegocio} rncEmisor={tenant.rnc}
         logoA4Url={personalizacion?.logoA4Url} logoTermicoUrl={personalizacion?.logoTermicoUrl}
         onSave={onSave}

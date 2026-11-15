@@ -20,6 +20,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No puedes eliminarte a ti mismo." }, { status: 400 });
   }
 
+  if (objetivo.rol === "admin" && verif.rol !== "owner") {
+    return NextResponse.json({ error: "Solo el dueño de la cuenta puede quitar a un administrador." }, { status: 403 });
+  }
+
   await deleteMembership(body.uid, body.tenantId);
   return NextResponse.json({ ok: true });
 }

@@ -86,3 +86,25 @@ export async function requireOwnerOAdmin(tenantId: string): Promise<Verificacion
   }
   return { ok: true, uid, tenant, rol: membership.rol };
 }
+
+// Para pantallas/rutas de lectura del panel de cuenta que no exigen un rol
+// fijo (ej. contabilidad: dueño, administrador y contador). No pide que el
+// tenant esté certificado — el panel se usa desde el sandbox también.
+export async function requireRolEnTenant(
+  tenantId: string,
+  roles: RolMembership[],
+): Promise<VerificacionOk | VerificacionError> {
+  const uid = await getSessionUid();
+  if (!uid) {
+    return { ok: false, response: NextResponse.json({ error: "Sesión requerida" }, { status: 401 }) };
+  }
+  const membership = await getMembership(uid, tenantId);
+  if (!membership || !roles.includes(membership.rol)) {
+    return { ok: false, response: NextResponse.json({ error: "No tienes permiso para esta acción" }, { status: 403 }) };
+  }
+  const tenant = await getTenantById(tenantId);
+  if (!tenant) {
+    return { ok: false, response: NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 }) };
+  }
+  return { ok: true, uid, tenant, rol: membership.rol };
+}

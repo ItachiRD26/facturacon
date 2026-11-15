@@ -91,6 +91,8 @@ export async function POST(req: NextRequest) {
     estado: "pendiente",
     ...( ["E33", "E34"].includes(tipoECF) ? {
       eCFRef: String(body.eCFRef).trim().toUpperCase(),
+      // Fecha del comprobante modificado: sale de la fila del set que referencia.
+      fechaECFRef: filasPaso2.find((x) => x.encf === String(body.eCFRef).trim().toUpperCase())?.fechaEmision,
       motivoNota: String(body?.motivoNota ?? "Ajuste de prueba de certificación"),
       codigoModificacion: String(body?.codigoModificacion ?? "1"),
     } : {}),

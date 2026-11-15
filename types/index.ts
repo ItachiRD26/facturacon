@@ -124,6 +124,7 @@ export interface Factura {
   clienteId:             string;
   cotizacionRef?:        string;
   eCFRef?:               string;
+  fechaECFRef?:          string;   // fecha (YYYY-MM-DD) del comprobante que modifica una nota E33/E34
   motivoNota?:           string;
   codigoModificacion?:   string;
   esConsumidorFinal?:    boolean;

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+  .body { padding: 18px 24px; display: grid; grid-template-columns: 1fr 250px; gap: 16px; min-height: 0; flex: 1; }
+  .tools { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .search { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-size: 13px; color: var(--t4); }
+  .btn { padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; border: 1px solid var(--border); background: #fff; }
+  .btn.p { background: var(--brand); color: #fff; border-color: var(--brand); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; font-weight: 600; color: var(--t3); padding: 9px 14px; font-size: 11.5px; background: #FAFAF8; }
+  td { padding: 10px 14px; border-top: 1px solid var(--border-lt); }
+  td.m { font-family: "DM Mono", monospace; font-size: 11.5px; color: var(--t3); }
+  .r { text-align: right; }
+  .sel td { background: var(--brand-bg); }
+  .lab { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .lab h3 { font-size: 13.5px; font-weight: 700; }
+  .etq { border: 1px dashed var(--t4); border-radius: 6px; padding: 12px 10px 8px; text-align: center; background: #fff; }
+  .etq .n { font-size: 12px; font-weight: 700; }
+  .etq .p { font-size: 17px; font-weight: 800; margin: 2px 0 6px; letter-spacing: -.02em; }
+  .etq .c { font-family: "DM Mono", monospace; font-size: 10.5px; margin-top: 3px; letter-spacing: .12em; }
+  .scan { display: flex; align-items: center; gap: 9px; padding: 10px 12px; background: var(--green-bg); border: 1px solid var(--green-border); border-radius: 8px; color: var(--green); font-size: 12px; font-weight: 600; line-height: 1.4; }
+</style></head>
+<body><div class="stage"><div class="win">
+  <div class="chrome"><i style="background:#f87171"></i><i style="background:#fbbf24"></i><i style="background:#34d399"></i><span class="url">ferreteriaprogreso.facturacon.com.do</span></div>
+  <div class="app">
+    <aside class="side">
+      <div class="brand"><svg width="26" height="26" viewBox="0 0 96 96"><path d="M16 12Q16 8 20 8H76Q80 8 80 12V82L72 76L64 82L56 76L48 82L40 76L32 82L24 76L16 82Z" fill="#0F1A30"/><rect x="26" y="21" width="34" height="5" rx="2.5" fill="#fff"/><rect x="26" y="33" width="44" height="5" rx="2.5" fill="#fff" opacity=".55"/><rect x="26" y="45" width="26" height="5" rx="2.5" fill="#fff" opacity=".55"/><circle cx="68" cy="64" r="20" fill="#D92D3A" stroke="#fff" stroke-width="4"/><path d="M59 64.5l6.5 6.5L78 57" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>facturacon</div>
+      <div class="it"><b></b>Dashboard</div><div class="it"><b></b>Facturas</div><div class="it"><b></b>Cotizaciones</div><div class="it"><b></b>Clientes</div>
+      <div class="it on"><b></b>Inventario</div>
+      <div class="grupo">Cobranza</div><div class="it"><b></b>Cuentas por cobrar</div><div class="it"><b></b>Facturas recibidas</div>
+      <div class="estado">Certificado ante la DGII</div>
+    </aside>
+    <div class="main">
+      <div class="top"><h1>Inventario</h1><div class="quien"><span>Ferretería El Progreso</span><span class="av">MR</span></div></div>
+      <div class="body">
+        <div>
+          <div class="tools"><div class="search">Buscar por nombre o código de barras…</div><div class="btn">Imprimir etiquetas</div><div class="btn p">Nuevo producto</div></div>
+          <div class="card" style="overflow:hidden">
+            <table>
+              <tr><th>Código</th><th>Producto</th><th class="r">Stock</th><th class="r">Precio</th><th>Estado</th></tr>
+              <tr class="sel"><td class="m">7461234500012</td><td><b>Cemento gris 42.5 kg</b></td><td class="r">184</td><td class="r">485.00</td><td><span class="pill ok">En stock</span></td></tr>
+              <tr><td class="m">7461234500029</td><td>Varilla corrugada 3/8"</td><td class="r">96</td><td class="r">215.00</td><td><span class="pill ok">En stock</span></td></tr>
+              <tr><td class="m">7461234500036</td><td>Block de 6"</td><td class="r">1,240</td><td class="r">38.00</td><td><span class="pill ok">En stock</span></td></tr>
+              <tr><td class="m">7461234500043</td><td>Pintura acrílica blanca 1 gal</td><td class="r">12</td><td class="r">1,350.00</td><td><span class="pill warn">Quedan pocos</span></td></tr>
+              <tr><td class="m">7461234500050</td><td>Alambre de amarre (lb)</td><td class="r">310</td><td class="r">62.00</td><td><span class="pill ok">En stock</span></td></tr>
+              <tr><td class="m">7461234500067</td><td>Tubo PVC 1/2" x 20 pies</td><td class="r">4</td><td class="r">395.00</td><td><span class="pill bad">Stock bajo</span></td></tr>
+              <tr><td class="m">7461234500074</td><td>Brocha 3 pulgadas</td><td class="r">58</td><td class="r">145.00</td><td><span class="pill ok">En stock</span></td></tr>
+              <tr><td class="m">7461234500081</td><td>Candado 50 mm</td><td class="r">27</td><td class="r">420.00</td><td><span class="pill ok">En stock</span></td></tr>
+              <tr><td class="m">7461234500098</td><td>Cinta métrica 5 m</td><td class="r">41</td><td class="r">180.00</td><td><span class="pill ok">En stock</span></td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="card lab">
+          <h3>Etiqueta del producto</h3>
+          <div class="etq">
+            <div class="n">Cemento gris 42.5 kg</div><div class="p">RD$ 485.00</div>
+            <svg id="bc" width="100%" height="54" viewBox="0 0 200 54" preserveAspectRatio="none"></svg>
+            <div class="c">7461234500012</div>
+          </div>
+          <div class="scan">Escanea con tu lector USB y el producto se agrega solo a la factura.</div>
+          <div class="btn" style="text-align:center">Imprimir etiqueta</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+<script>
+  // Código de barras decorativo determinístico.
+  let s=7461234,x=4,out='';const rnd=()=>{s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff};
+  while(x<196){const w=1+Math.floor(rnd()*3);out+=`<rect x="${x}" y="0" width="${w}" height="54" fill="#0F1A30"/>`;x+=w+1+Math.floor(rnd()*3)}
+  document.getElementById('bc').innerHTML=out;
+</script></body></html>

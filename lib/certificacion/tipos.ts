@@ -26,6 +26,7 @@ export interface FilaSetPrueba {
   items:              ItemFilaPrueba[];
   // Solo para E33/E34 — la nota modifica un eNCF previo del mismo set.
   eCFRef?:            string;
+  fechaECFRef?:       string;   // YYYY-MM-DD, fecha del eNCF que modifica
   motivoNota?:        string;
   codigoModificacion?: string;
   // Estado de envío a DGII, actualizado por /api/certificacion/enviar.

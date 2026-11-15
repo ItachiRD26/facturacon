@@ -1,281 +1,178 @@
-import {
-  contarActividadSandbox, contarComprobantesEsteMes, contarMetodosPago,
-  obtenerComprobantesPorMes, obtenerDesglosePorEstado,
-} from "@/lib/tenant/estadisticas";
-import { getTenantById } from "@/lib/tenant/resolve-tenant";
-import Badge from "@/components/ui/badge";
+import Link from "next/link";
+import { requerirRolPanel } from "@/lib/tenant/panel-acceso";
+import { calcularJornada } from "@/lib/tenant/jornada";
+import { cupoUsuarios } from "@/lib/tenant/limite-usuarios";
+import { obtenerSuscripcion } from "@/lib/payments/suscripcion";
+import { buscarPlan } from "@/lib/payments/planes";
+import { resumenContable, mesValido } from "@/lib/tenant/contabilidad";
+import { contarActividadSandbox, contarComprobantesEsteMes, obtenerComprobantesPorMes } from "@/lib/tenant/estadisticas";
+import { fmt } from "@/types";
 import BarChart from "@/components/ui/bar-chart";
+import { Button, Card, CardTitle, PageHeader, Pill, ProgressBar, StatCard, th, td, tablaWrap } from "@/components/ui/kit";
+import JornadaProgreso from "@/components/panel/jornada-progreso";
 
-const ESTADO_LABEL: Record<string, string> = {
-  demo:                     "Entorno de prueba",
-  pendiente_certificacion:  "Pendiente de certificación",
-  certificando:             "Certificando ante la DGII",
-  activo:                   "Activo",
-  suspendido:               "Suspendido",
-};
-
-const PASOS_ESTADO: { estado: string; t: string }[] = [
-  { estado: "demo",                    t: "Probar el sistema" },
-  { estado: "pendiente_certificacion", t: "Subir certificado y cédula" },
-  { estado: "certificando",            t: "Certificarte ante la DGII" },
-  { estado: "activo",                  t: "Facturar de verdad" },
-];
-
-function ProgresoEstado({ estado }: { estado: string }) {
-  const idx = PASOS_ESTADO.findIndex((p) => p.estado === estado);
-  if (idx === -1) return null;
-  return (
-    <div style={{ display: "flex", alignItems: "center", marginBottom: 24 }}>
-      {PASOS_ESTADO.map((p, i) => (
-        <div key={p.estado} style={{ display: "flex", alignItems: "center", flex: i < PASOS_ESTADO.length - 1 ? 1 : "0 0 auto" }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <div style={{
-              width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 11, fontWeight: 700,
-              background: i <= idx ? "var(--c-brand)" : "var(--c-bg)",
-              color: i <= idx ? "#fff" : "var(--c-text-4)",
-              border: i <= idx ? "none" : "1px solid var(--c-border)",
-            }}>
-              {i < idx ? "✓" : i + 1}
-            </div>
-            <div style={{ fontSize: 10, color: i <= idx ? "var(--c-text-2)" : "var(--c-text-4)", fontWeight: i === idx ? 700 : 500, textAlign: "center", maxWidth: 92 }}>
-              {p.t}
-            </div>
-          </div>
-          {i < PASOS_ESTADO.length - 1 && (
-            <div style={{ flex: 1, height: 2, background: i < idx ? "var(--c-brand)" : "var(--c-border)", margin: "0 6px", marginBottom: 18 }} />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const ESTADO_FACTURA_LABEL: Record<string, string> = {
-  pagada: "Pagadas", pendiente: "Pendientes", anulada: "Anuladas",
-};
-const ESTADO_FACTURA_COLOR: Record<string, string> = {
-  pagada: "#166534", pendiente: "#92400e", anulada: "#991b1b",
-};
+const TODOS = ["owner", "admin", "vendedor", "contador", "viewer"] as const;
 
 export default async function CuentaResumenPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const { tenantId } = await params;
+  const { tenant, rol } = await requerirRolPanel(tenantId, [...TODOS]);
 
-  const tenant = await getTenantById(tenantId);
-  if (!tenant) return null;
-
-  // Las facturas del entorno de prueba viven en la misma colección que las
-  // reales (para que el sandbox se vea/comporte igual), pero son simuladas
-  // y no deben contarse como actividad real de negocio en el resumen de
-  // cuenta — solo se calculan estas métricas una vez el tenant está activo.
   const esActivo = tenant.estado === "activo";
-  const [comprobantesEsteMes, metodosPago, porMes, desglose, actividadSandbox] = await Promise.all([
-    esActivo ? contarComprobantesEsteMes(tenantId) : Promise.resolve(0),
-    contarMetodosPago(tenantId),
-    esActivo ? obtenerComprobantesPorMes(tenantId) : Promise.resolve([]),
-    esActivo ? obtenerDesglosePorEstado(tenantId) : Promise.resolve([]),
-    !esActivo ? contarActividadSandbox(tenantId) : Promise.resolve(null),
+  const esAdmin = rol === "owner" || rol === "admin";
+  const veContabilidad = esAdmin || rol === "contador";
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+
+  const [suscripcion, cupo, contab, usoMes, porMes, sandbox] = await Promise.all([
+    esAdmin ? obtenerSuscripcion(tenantId) : Promise.resolve(null),
+    esAdmin ? cupoUsuarios(tenantId) : Promise.resolve(null),
+    esActivo && veContabilidad ? resumenContable(tenantId, mesValido(undefined), false) : Promise.resolve(null),
+    esActivo && esAdmin ? contarComprobantesEsteMes(tenantId) : Promise.resolve(0),
+    esActivo && veContabilidad ? obtenerComprobantesPorMes(tenantId) : Promise.resolve([]),
+    !esActivo && veContabilidad ? contarActividadSandbox(tenantId) : Promise.resolve(null),
   ]);
 
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
-  const esCertificado = esActivo && !!tenant.slug;
-  const totalFacturas = desglose.reduce((acc, d) => acc + d.cantidad, 0);
+  const jornada = calcularJornada({
+    tenantId, estado: tenant.estado, suscripcion: suscripcion?.estado ?? null,
+    urlSistema: tenant.slug ? `https://${tenant.slug}.${rootDomain}` : undefined,
+  });
+  const plan = suscripcion?.estado === "activa" ? buscarPlan(suscripcion.planId) : undefined;
+  const { accion } = jornada;
+  const variacion = contab && contab.totalMesAnterior > 0
+    ? ((contab.total - contab.totalMesAnterior) / contab.totalMesAnterior) * 100 : null;
 
   return (
-    <div style={{ maxWidth: 980, margin: "0 auto", fontFamily: "var(--font-sans)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.5rem" }}>Resumen de cuenta</h1>
-        <Badge tipo={esCertificado ? "success" : "warning"}>{ESTADO_LABEL[tenant.estado] ?? tenant.estado}</Badge>
-      </div>
+    <div style={{ maxWidth: 1040, margin: "0 auto", fontFamily: "var(--font-sans)" }}>
+      <PageHeader
+        titulo={tenant.nombreNegocio}
+        descripcion={esAdmin ? "Estado de tu cuenta, tu avance y lo más importante de tu negocio." : "Resumen de la empresa."}
+      />
 
-      {!esActivo && <ProgresoEstado estado={tenant.estado} />}
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 20 }}>
-        <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "16px 18px", background: "var(--c-surface)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: "var(--c-text-3)", textTransform: "uppercase", marginBottom: 8 }}>
-            Plan
+      {esAdmin && (
+        <Card padding={0} style={{ marginBottom: 20, overflow: "hidden" }}>
+          <div style={{ padding: "22px 24px 8px" }}>
+            <JornadaProgreso etapas={jornada.etapas} />
           </div>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>
-            {tenant.estado === "demo" ? "Prueba gratuita" : "Por definir"}
-          </div>
-          <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 4 }}>
-            {tenant.estado === "demo"
-              ? "Sin costo mientras pruebas el sistema."
-              : "Los planes de suscripción se activan al completar la certificación."}
-          </div>
-        </div>
-
-        <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "16px 18px", background: "var(--c-surface)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: "var(--c-text-3)", textTransform: "uppercase", marginBottom: 8 }}>
-            Comprobantes este mes
-          </div>
-          <div style={{ fontSize: 22, fontWeight: 700 }}>{esActivo ? comprobantesEsteMes : "—"}</div>
-          <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 4 }}>
-            {esActivo
-              ? "Comprobantes electrónicos reales emitidos a la DGII."
-              : "Se activa cuando tu cuenta esté certificada. Lo que emitas en el entorno de prueba no cuenta aquí."}
-          </div>
-        </div>
-
-        <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "16px 18px", background: "var(--c-surface)" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: "var(--c-text-3)", textTransform: "uppercase", marginBottom: 8 }}>
-            Desglose de costos
-          </div>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>RD$ 0.00</div>
-          <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 4 }}>
-            Aún no se han generado cargos. Verás el detalle aquí una vez tu cuenta esté certificada y activa.
-          </div>
-        </div>
-
-        <a href={`/panel/${tenantId}/metodos-pago`} style={{
-          border: "1px solid var(--c-border)", borderRadius: 8, padding: "16px 18px",
-          background: "var(--c-surface)", textDecoration: "none", color: "inherit", display: "block",
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", color: "var(--c-text-3)", textTransform: "uppercase", marginBottom: 8 }}>
-            Métodos de pago
-          </div>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>
-            {metodosPago === 0 ? "Ninguno configurado" : `${metodosPago} guardado${metodosPago > 1 ? "s" : ""}`}
-          </div>
-          <div style={{ fontSize: 12, color: "var(--c-brand)", marginTop: 4, fontWeight: 600 }}>
-            Administrar →
-          </div>
-        </a>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14, marginBottom: 20 }}>
-        <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "18px 20px", background: "var(--c-surface)" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Comprobantes emitidos — últimos 6 meses</div>
-          {esActivo ? <BarChart data={porMes} /> : (
-            <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>
-              Esta gráfica se activa cuando tu cuenta esté certificada.
+          <div style={{
+            margin: "14px 0 0", padding: "20px 24px", display: "flex", justifyContent: "space-between",
+            alignItems: "center", gap: 20, flexWrap: "wrap",
+            background: jornada.problemaDePago ? "var(--c-red-bg)" : jornada.completa ? "var(--c-green-bg)" : "var(--c-brand-bg)",
+            borderTop: "1px solid var(--c-border)",
+          }}>
+            <div style={{ flex: "1 1 360px", minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{accion.titulo}</div>
+              <p style={{ fontSize: 13, color: "var(--c-text-2)", lineHeight: 1.55 }}>{accion.detalle}</p>
             </div>
-          )}
-        </div>
-
-        <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: "18px 20px", background: "var(--c-surface)" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>
-            {esActivo ? "Estado de tus facturas" : "Tu actividad en el entorno de prueba"}
-          </div>
-          {!esActivo && actividadSandbox ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-              {[
-                { l: "Clientes", v: actividadSandbox.clientes },
-                { l: "Productos", v: actividadSandbox.productos },
-                { l: "Facturas de prueba", v: actividadSandbox.facturas },
-                { l: "Cotizaciones", v: actividadSandbox.cotizaciones },
-              ].map((s) => (
-                <div key={s.l}>
-                  <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "var(--font-serif)" }}>{s.v}</div>
-                  <div style={{ fontSize: 11, color: "var(--c-text-3)" }}>{s.l}</div>
-                </div>
-              ))}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {accion.secundaria && <Button variante="secondary" href={accion.secundaria.href}>{accion.secundaria.cta}</Button>}
+              <Button href={accion.href} tamano="lg">{accion.cta} →</Button>
             </div>
-          ) : totalFacturas === 0 ? (
-            <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>Aún no has emitido facturas.</div>
+          </div>
+        </Card>
+      )}
+
+      {/* ── Cifras ── */}
+      {esActivo && contab ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14, marginBottom: 20 }}>
+          <StatCard
+            etiqueta={`Facturado en ${contab.etiquetaMes.split(" ")[0]}`}
+            valor={`RD$ ${fmt(contab.total)}`}
+            nota={variacion === null ? "Primer mes con movimiento" : `${variacion >= 0 ? "▲" : "▼"} ${Math.abs(variacion).toFixed(0)}% vs. mes anterior`}
+            tono={variacion !== null && variacion < 0 ? "warning" : "success"}
+            href={`/panel/${tenantId}/contabilidad`}
+          />
+          <StatCard etiqueta="Por cobrar" valor={`RD$ ${fmt(contab.porCobrar)}`} nota="Facturas a crédito pendientes" href={`/panel/${tenantId}/contabilidad`} />
+          {esAdmin && plan ? (
+            <Card padding={18}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--c-text-3)", marginBottom: 10 }}>
+                Uso del plan
+              </div>
+              <div className="num" style={{ fontSize: 24, fontWeight: 700, marginBottom: 10 }}>
+                {usoMes.toLocaleString("es-DO")} <span style={{ fontSize: 13, fontWeight: 500, color: "var(--c-text-3)" }}>/ {plan.facturas.toLocaleString("es-DO")}</span>
+              </div>
+              <ProgressBar valor={usoMes} maximo={plan.facturas} />
+            </Card>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {desglose.map((d) => (
-                <div key={d.estado}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                    <span style={{ color: "var(--c-text-3)" }}>{ESTADO_FACTURA_LABEL[d.estado]}</span>
-                    <span style={{ fontWeight: 600 }}>{d.cantidad}</span>
-                  </div>
-                  <div style={{ height: 6, background: "var(--c-bg)", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{
-                      height: "100%", borderRadius: 3,
-                      width: `${totalFacturas ? (d.cantidad / totalFacturas) * 100 : 0}%`,
-                      background: ESTADO_FACTURA_COLOR[d.estado],
-                    }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <StatCard etiqueta="Comprobantes del mes" valor={contab.comprobantes.toLocaleString("es-DO")} nota={contab.anulados ? `${contab.anulados} anulados` : "Sin anulaciones"} />
+          )}
+          {esAdmin && cupo && (
+            <StatCard
+              etiqueta="Equipo" href={`/panel/${tenantId}/equipo`}
+              valor={cupo.incluidos ? `${cupo.usados} / ${cupo.incluidos}` : cupo.usados}
+              nota="Personas con acceso a tu sistema"
+            />
           )}
         </div>
-      </div>
-
-      <div style={{
-        display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
-        border: "1px solid var(--c-border)", borderRadius: 8, padding: "16px 18px", marginBottom: 16,
-      }}>
-        <div style={{ fontSize: 13 }}>
-          {esCertificado
-            ? "Tu sistema de facturación electrónica está listo."
-            : "Mientras completas la certificación, puedes seguir explorando el sistema con datos de ejemplo."}
-        </div>
-        {esCertificado ? (
-          <a href={`https://${tenant.slug}.${rootDomain}`} style={{
-            fontSize: 13, fontWeight: 700, color: "#fff", background: "var(--c-brand)",
-            padding: "8px 16px", borderRadius: 6, textDecoration: "none", flexShrink: 0,
-          }}>
-            Abrir mi sistema →
-          </a>
-        ) : (
-          <a href={`/onboarding/sandbox/dashboard?t=${tenantId}`} style={{
-            fontSize: 13, fontWeight: 700, color: "#fff", background: "var(--c-brand)",
-            padding: "8px 16px", borderRadius: 6, textDecoration: "none", flexShrink: 0,
-          }}>
-            Seguir probando →
-          </a>
-        )}
-      </div>
-
-      {tenant.estado === "demo" && (
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
-          padding: "14px 16px", background: "var(--c-yellow-bg)",
-          border: "1px solid var(--c-yellow-border)", borderRadius: 8, fontSize: 13,
-        }}>
-          <div>
-            <strong>Próximo paso: certificación ante la DGII.</strong> Sube tu certificado de firma
-            digital y verifica tu cédula para empezar.
+      ) : sandbox ? (
+        <Card style={{ marginBottom: 20 }}>
+          <CardTitle extra={<Pill tono="warning">Datos de prueba</Pill>}>Lo que has probado hasta ahora</CardTitle>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 16 }}>
+            {[
+              { l: "Clientes", v: sandbox.clientes },
+              { l: "Productos", v: sandbox.productos },
+              { l: "Facturas de prueba", v: sandbox.facturas },
+              { l: "Cotizaciones", v: sandbox.cotizaciones },
+            ].map((s) => (
+              <div key={s.l}>
+                <div className="num" style={{ fontSize: 24, fontWeight: 700 }}>{s.v}</div>
+                <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>{s.l}</div>
+              </div>
+            ))}
           </div>
-          <a href={`/onboarding/requisitos?t=${tenantId}`} style={{
-            fontSize: 13, fontWeight: 700, color: "#fff", background: "var(--c-brand)",
-            padding: "8px 16px", borderRadius: 6, textDecoration: "none", flexShrink: 0,
-          }}>
-            Comenzar certificación →
-          </a>
+          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 14 }}>
+            Nada de esto se envía a la DGII. Cuando estés certificado, tus cifras reales aparecerán aquí.
+          </p>
+        </Card>
+      ) : null}
+
+      {/* ── Actividad ── */}
+      {esActivo && contab && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14 }}>
+          <Card>
+            <CardTitle>Comprobantes emitidos · últimos 6 meses</CardTitle>
+            <BarChart data={porMes} />
+          </Card>
+          <Card padding={0}>
+            <div style={{ padding: "18px 20px 12px" }}>
+              <CardTitle extra={<Link href={`/panel/${tenantId}/contabilidad`} style={{ color: "var(--c-brand)", fontWeight: 600, textDecoration: "none" }}>Ver contabilidad →</Link>}>
+                Últimos comprobantes
+              </CardTitle>
+            </div>
+            {contab.ultimas.length === 0 ? (
+              <p style={{ fontSize: 12, color: "var(--c-text-3)", padding: "0 20px 20px" }}>Todavía no has emitido comprobantes este mes.</p>
+            ) : (
+              <div style={{ ...tablaWrap, border: "none", borderRadius: 0 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead><tr><th style={th}>e-CF</th><th style={th}>Fecha</th><th style={{ ...th, textAlign: "right" }}>Total</th></tr></thead>
+                  <tbody>
+                    {contab.ultimas.slice(0, 5).map((f) => (
+                      <tr key={f.id}>
+                        <td style={{ ...td, fontFamily: "var(--font-mono)", fontSize: 12 }}>{f.eCF}</td>
+                        <td style={{ ...td, color: "var(--c-text-3)" }}>{f.fecha}</td>
+                        <td className="num" style={{ ...td, textAlign: "right", fontWeight: 600 }}>RD$ {fmt(f.total)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
         </div>
       )}
 
-      {tenant.estado === "pendiente_certificacion" && (
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
-          padding: "14px 16px", background: "var(--c-yellow-bg)",
-          border: "1px solid var(--c-yellow-border)", borderRadius: 8, fontSize: 13,
-        }}>
-          <div>
-            <strong>Certificado y cédula verificados ✓</strong> Sigue con el asistente de
-            certificación técnica ante la DGII — son varios pasos, puedes pausar y volver cuando
-            quieras.
+      {/* ── Accesos directos para quien no es dueño/administrador ── */}
+      {!esAdmin && (
+        <Card>
+          <CardTitle>Tu acceso</CardTitle>
+          <p style={{ fontSize: 13, color: "var(--c-text-3)", lineHeight: 1.55, marginBottom: 14 }}>
+            {rol === "contador"
+              ? "Como contador puedes consultar la contabilidad y descargar los comprobantes de cada mes."
+              : "Tu trabajo diario está en el sistema de la empresa."}
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {veContabilidad && <Button href={`/panel/${tenantId}/contabilidad`}>Ir a contabilidad</Button>}
+            {tenant.slug && rol !== "contador" && <Button variante="secondary" href={`https://${tenant.slug}.${rootDomain}`}>Abrir el sistema</Button>}
           </div>
-          <a href={`/panel/${tenantId}/certificacion`} style={{
-            fontSize: 13, fontWeight: 700, color: "#fff", background: "var(--c-brand)",
-            padding: "8px 16px", borderRadius: 6, textDecoration: "none", flexShrink: 0,
-          }}>
-            Ir al asistente →
-          </a>
-        </div>
-      )}
-
-      {tenant.estado === "certificando" && (
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
-          padding: "14px 16px", background: "var(--c-brand-bg)",
-          border: "1px solid var(--c-brand-border)", borderRadius: 8, fontSize: 13,
-        }}>
-          <div>
-            <strong>Certificación en proceso.</strong> Continúa el asistente donde lo dejaste.
-          </div>
-          <a href={`/panel/${tenantId}/certificacion`} style={{
-            fontSize: 13, fontWeight: 700, color: "#fff", background: "var(--c-brand)",
-            padding: "8px 16px", borderRadius: 6, textDecoration: "none", flexShrink: 0,
-          }}>
-            Continuar →
-          </a>
-        </div>
+        </Card>
       )}
     </div>
   );

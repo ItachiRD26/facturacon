@@ -20,6 +20,10 @@ interface TenantContextValue {
   // vive en su propio subdominio, así que "cambiar" es navegar, no un
   // simple cambio de estado local.
   otrasEmpresas: TenantSummary[];
+  // Estado del cobro recurrente: sin plan activo no se pueden emitir comprobantes
+  // reales. `motivoSinPlan` distingue "nunca activó", "pago fallido" y "cancelado".
+  puedeEmitir:   boolean;
+  motivoSinPlan: "sin_plan" | "pago_fallido" | "cancelado" | null;
 }
 
 const TenantContext = createContext<TenantContextValue | null>(null);

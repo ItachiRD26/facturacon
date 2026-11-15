@@ -5,25 +5,53 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Icon from "@/components/ui/icon";
 import Logo from "@/components/ui/logo";
+import { Avatar } from "@/components/ui/kit";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebarCtx } from "@/contexts/SidebarUIContext";
-import type { Tenant } from "@/types/tenant";
+import { ROL_LABEL } from "@/lib/tenant/roles";
+import type { RolMembership, Tenant } from "@/types/tenant";
 
-const NAV = [
-  { seg: "",              label: "Resumen",              icon: "dashboard" },
-  { seg: "empleados",     label: "Empleados",            icon: "user"      },
-  { seg: "usuarios",      label: "Usuarios administrativos", icon: "settings" },
-  { seg: "metodos-pago",  label: "Métodos de pago",       icon: "invoice"   },
-  { seg: "soporte",       label: "Soporte",               icon: "alert"     },
+interface ItemNav { seg: string; label: string; icon: string; roles?: RolMembership[]; solo?: Tenant["estado"][] }
+
+// Qué ve cada persona en el panel de cuenta. Los cajeros y el rol de solo
+// lectura entran por el sistema de la empresa, no por aquí; el contador ve
+// únicamente lo suyo (contabilidad). Las pantallas validan el rol de nuevo en
+// el servidor — ocultar el enlace es comodidad, no seguridad.
+const GRUPOS: { titulo?: string; items: ItemNav[] }[] = [
+  {
+    items: [
+      { seg: "", label: "Resumen", icon: "dashboard" },
+      { seg: "certificacion", label: "Certificación DGII", icon: "scan", roles: ["owner", "admin"], solo: ["pendiente_certificacion", "certificando"] },
+    ],
+  },
+  {
+    titulo: "Mi negocio",
+    items: [
+      { seg: "equipo", label: "Equipo y accesos", icon: "user", roles: ["owner", "admin"] },
+      { seg: "contabilidad", label: "Contabilidad", icon: "chart", roles: ["owner", "admin", "contador"] },
+      { seg: "secuencias", label: "Secuencias fiscales", icon: "invoice", roles: ["owner", "admin"], solo: ["activo", "suspendido"] },
+    ],
+  },
+  {
+    titulo: "Cuenta",
+    items: [
+      { seg: "plan", label: "Plan y facturación", icon: "invoice", roles: ["owner", "admin"] },
+      { seg: "soporte", label: "Ayuda y soporte", icon: "alert" },
+    ],
+  },
 ];
 
-const serif = "var(--font-serif)";
-const sans  = "var(--font-sans)";
-const mono  = "var(--font-mono)";
+const ESTADO_PILL: Record<Tenant["estado"], { texto: string; color: string; bg: string }> = {
+  demo:                    { texto: "Entorno de prueba",   color: "var(--c-yellow)", bg: "var(--c-yellow-bg)" },
+  pendiente_certificacion: { texto: "Por certificar",      color: "var(--c-yellow)", bg: "var(--c-yellow-bg)" },
+  certificando:            { texto: "Certificando",        color: "var(--c-blue)",   bg: "var(--c-blue-bg)" },
+  activo:                  { texto: "Activo",              color: "var(--c-green)",  bg: "var(--c-green-bg)" },
+  suspendido:              { texto: "Pago pendiente",      color: "var(--c-red)",    bg: "var(--c-red-bg)" },
+};
 
 export default function CuentaSidebar({
-  tenant, tenantId, multiplesEmpresas,
-}: { tenant: Tenant; tenantId: string; multiplesEmpresas: boolean }) {
+  tenant, tenantId, multiplesEmpresas, rol,
+}: { tenant: Tenant; tenantId: string; multiplesEmpresas: boolean; rol: RolMembership }) {
   const pathname          = usePathname();
   const { logout }        = useAuth();
   const { open, setOpen }  = useSidebarCtx();
@@ -35,13 +63,12 @@ export default function CuentaSidebar({
   const active = (seg: string) => seg ? pathname.startsWith(`${base}/${seg}`) : pathname === base;
 
   const enSandbox = tenant.estado !== "activo" || !tenant.slug;
+  const pill = ESTADO_PILL[tenant.estado];
 
   // Arma la URL del subdominio a partir de dónde se está viendo el panel
   // ahora mismo, no de NEXT_PUBLIC_ROOT_DOMAIN a secas — esa env var queda
-  // fija en facturacon.com.do incluso en local (necesario para producción),
-  // así que usarla directo sacaría a quien prueba en localhost hacia el
-  // sitio real. `window` no existe en el render de servidor; el fallback ahí
-  // no importa porque ese render nunca es el que el usuario llega a clickear.
+  // fija en facturacon.com.do incluso en local, así que usarla directo
+  // sacaría a quien prueba en localhost hacia el sitio real.
   const urlSistema = () => {
     if (typeof window === "undefined") return `https://${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`;
     const { hostname, port, protocol } = window.location;
@@ -50,81 +77,107 @@ export default function CuentaSidebar({
     return `${esLocal ? "http" : protocol.replace(":", "")}://${host}`;
   };
 
+  const visibles = (items: ItemNav[]) =>
+    items.filter((i) => (!i.roles || i.roles.includes(rol)) && (!i.solo || i.solo.includes(tenant.estado)));
+
+  const puedeOperar = rol === "owner" || rol === "admin" || rol === "vendedor";
+
   return (
     <>
       <div className={`sidebar-overlay ${open ? "open" : ""}`} onClick={() => setOpen(false)} />
       <aside
         className={`sidebar-responsive ${open ? "open" : ""}`}
         style={{
-          width: 224, background: "#fff", borderRight: "1px solid #e5e7eb",
+          width: 236, background: "var(--c-surface)", borderRight: "1px solid var(--c-border)",
           display: "flex", flexDirection: "column", height: "100vh", flexShrink: 0,
         }}
       >
-        <div style={{ padding: "20px 18px 16px", borderBottom: "1px solid #e5e7eb" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <Logo variant="icon" size={32} />
+        <div style={{ padding: "18px 16px 14px", borderBottom: "1px solid var(--c-border)" }}>
+          <Logo size={24} />
+          <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10 }}>
+            <Avatar nombre={tenant.nombreNegocio} tamano={36} />
             <div style={{ minWidth: 0 }}>
               <div style={{
-                fontFamily: serif, fontSize: 13, fontWeight: 700, color: "#111", lineHeight: 1.2,
+                fontSize: 13, fontWeight: 700, color: "var(--c-text-1)", lineHeight: 1.25,
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
               }}>
                 {tenant.nombreNegocio}
               </div>
-              <div style={{ fontSize: 10, color: "#9ca3af", fontFamily: mono }}>Mi cuenta</div>
+              <div className="num" style={{ fontSize: 11, color: "var(--c-text-4)", fontFamily: "var(--font-mono)" }}>RNC {tenant.rnc}</div>
             </div>
           </div>
-          <div style={{ fontSize: 10, color: "#9ca3af", fontFamily: mono }}>RNC {tenant.rnc}</div>
+          <span style={{
+            display: "inline-block", marginTop: 12, fontSize: 11, fontWeight: 700, padding: "3px 10px",
+            borderRadius: 999, color: pill.color, background: pill.bg,
+          }}>
+            {pill.texto}
+          </span>
         </div>
 
-        <nav style={{ flex: 1, padding: 10, display: "flex", flexDirection: "column", gap: 1, overflowY: "auto" }}>
-          {NAV.map(({ seg, label, icon }) => {
-            const isActive = active(seg);
+        <nav style={{ flex: 1, padding: "12px 10px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
+          {GRUPOS.map((g, gi) => {
+            const items = visibles(g.items);
+            if (items.length === 0) return null;
             return (
-              <Link key={seg || "resumen"} href={hrefDe(seg)} style={{
-                display: "flex", alignItems: "center", gap: 9, padding: "8px 12px", borderRadius: 4,
-                fontSize: 13, fontWeight: isActive ? 600 : 400,
-                background: isActive ? "#ecfeff" : "transparent",
-                color: isActive ? "#0e7490" : "#6b7280",
-                borderLeft: isActive ? "2px solid #0e7490" : "2px solid transparent",
-                textDecoration: "none", fontFamily: sans, transition: "all 0.1s",
-              }}>
-                <Icon name={icon} size={14} />
-                {label}
-              </Link>
+              <div key={gi} style={{ marginBottom: 10 }}>
+                {g.titulo && (
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                    color: "var(--c-text-4)", padding: "10px 12px 6px",
+                  }}>
+                    {g.titulo}
+                  </div>
+                )}
+                {items.map(({ seg, label, icon }) => {
+                  const isActive = active(seg);
+                  return (
+                    <Link key={seg || "resumen"} href={hrefDe(seg)} aria-current={isActive ? "page" : undefined} style={{
+                      display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: "var(--radius-md)",
+                      fontSize: 13, fontWeight: isActive ? 700 : 500,
+                      background: isActive ? "var(--c-brand-bg)" : "transparent",
+                      color: isActive ? "var(--c-brand-dark)" : "var(--c-text-3)",
+                      textDecoration: "none", fontFamily: "var(--font-sans)",
+                    }}>
+                      <Icon name={icon} size={15} />
+                      {label}
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
+        </nav>
 
-          <div style={{ height: 1, background: "#e5e7eb", margin: "10px 4px" }} />
-
-          <Link href={enSandbox ? `/onboarding/sandbox/dashboard?t=${tenantId}` : urlSistema()} style={{
-            display: "flex", alignItems: "center", gap: 9, padding: "8px 12px", borderRadius: 4,
-            fontSize: 13, color: "#0e7490", fontWeight: 600, textDecoration: "none", fontFamily: sans,
-          }}>
-            <Icon name="eye" size={14} />
-            {enSandbox ? "Seguir probando" : "Abrir mi sistema"}
-          </Link>
-
+        <div style={{ padding: 12, borderTop: "1px solid var(--c-border)", display: "flex", flexDirection: "column", gap: 8 }}>
+          {puedeOperar && (
+            <Link href={enSandbox ? `/onboarding/sandbox/dashboard?t=${tenantId}` : urlSistema()} style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 12px",
+              borderRadius: "var(--radius-md)", background: "var(--c-brand)", color: "#fff", fontSize: 13,
+              fontWeight: 700, textDecoration: "none",
+            }}>
+              <Icon name="eye" size={14} />
+              {enSandbox ? "Seguir probando" : "Abrir mi sistema"}
+            </Link>
+          )}
           {multiplesEmpresas && (
             <Link href="/panel" style={{
-              display: "flex", alignItems: "center", gap: 9, padding: "8px 12px", borderRadius: 4,
-              fontSize: 13, color: "#6b7280", textDecoration: "none", fontFamily: sans,
+              display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", fontSize: 12,
+              color: "var(--c-text-3)", textDecoration: "none",
             }}>
-              <Icon name="convert" size={14} />
+              <Icon name="convert" size={13} />
               Cambiar de empresa
             </Link>
           )}
-        </nav>
-
-        <div style={{ padding: "14px 16px", borderTop: "1px solid #e5e7eb" }}>
-          <button
-            onClick={logout}
-            style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "7px 10px", background: "none", border: "1px solid #e5e7eb", borderRadius: 4, cursor: "pointer", fontSize: 12, color: "#6b7280", fontFamily: sans }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "#991b1b"; e.currentTarget.style.borderColor = "#fecaca"; e.currentTarget.style.background = "#fef2f2"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "#6b7280"; e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "none"; }}
-          >
-            <Icon name="logout" size={13} />
-            Cerrar Sesión
-          </button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "2px 4px" }}>
+            <span style={{ fontSize: 11, color: "var(--c-text-4)" }}>{ROL_LABEL[rol]}</span>
+            <button onClick={logout} style={{
+              display: "flex", alignItems: "center", gap: 5, padding: "5px 8px", background: "none", border: "none",
+              cursor: "pointer", fontSize: 12, color: "var(--c-text-3)", fontFamily: "var(--font-sans)",
+            }}>
+              <Icon name="logout" size={13} />
+              Salir
+            </button>
+          </div>
         </div>
       </aside>
     </>

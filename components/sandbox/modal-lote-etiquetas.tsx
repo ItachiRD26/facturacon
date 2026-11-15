@@ -49,8 +49,8 @@ export default function ModalLoteEtiquetas({
               <button key={s.id} type="button" onClick={() => setLabelSize(s.id)} style={{
                 padding: "4px 10px", borderRadius: 4, cursor: "pointer",
                 fontSize: 11, fontFamily: sans, fontWeight: 500,
-                border: `1.5px solid ${labelSize === s.id ? "#0e7490" : "#e5e7eb"}`,
-                background: labelSize === s.id ? "#0e7490" : "#fff",
+                border: `1.5px solid ${labelSize === s.id ? "#2540D9" : "#e5e7eb"}`,
+                background: labelSize === s.id ? "#2540D9" : "#fff",
                 color: labelSize === s.id ? "#fff" : "#374151",
               }}>
                 {s.label}

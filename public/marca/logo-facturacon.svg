@@ -1,0 +1,14 @@
+<svg width="560" height="120" viewBox="0 0 560 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="facturacon">
+  <!-- Logo de trabajo: comprobante térmico + sello de verificado. Para usar en
+       documentos; el wordmark usa Schibsted Grotesk ExtraBold (si no está
+       instalada, convertir el texto a curvas antes de enviar a imprenta). -->
+  <g transform="translate(8,12)">
+    <path d="M16 12Q16 8 20 8H76Q80 8 80 12V82L72 76L64 82L56 76L48 82L40 76L32 82L24 76L16 82Z" fill="#0F1A30"/>
+    <rect x="26" y="21" width="34" height="5" rx="2.5" fill="#fff"/>
+    <rect x="26" y="33" width="44" height="5" rx="2.5" fill="#fff" opacity="0.55"/>
+    <rect x="26" y="45" width="26" height="5" rx="2.5" fill="#fff" opacity="0.55"/>
+    <circle cx="68" cy="64" r="20" fill="#D92D3A" stroke="#F3F4F1" stroke-width="4"/>
+    <path d="M59 64.5l6.5 6.5L78 57" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="118" y="84" font-family="'Schibsted Grotesk', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="76" letter-spacing="-2.6" fill="#0F1A30">facturacon</text>
+</svg>

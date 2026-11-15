@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Cliente, Factura, LineaServicio, Producto, TipoECF } from "@/types";
 import { calcTotales, fmt, genECF, localDate, resolverECFConfig, today, PLAZOS_CREDITO, TIPOS_ECF } from "@/types";
 import { nextSecuencia } from "@/hooks/use-secuencias";
 import { construirFacturaSimulada } from "@/lib/sandbox/emitir-factura";
-import { construirFacturaReal } from "@/lib/produccion/emitir-factura";
+import { construirFacturaReal, ErrorRedEmision } from "@/lib/produccion/emitir-factura";
 import Modal from "./modal";
 import TablaItems from "./tabla-items";
 import { Boton, Campo, Input, Select } from "@/components/sandbox/ui";
@@ -18,7 +18,7 @@ const LIMITE_IDENTIFICACION = 250_000;
 
 export default function ModalNuevaFactura({
   open, onClose, onSave, tenantId, clientes, productos, nombreEmisor, rncEmisor, rootDomain, modo = "sandbox",
-  logoA4Url, logoTermicoUrl,
+  logoA4Url, logoTermicoUrl, bloqueo,
 }: {
   open: boolean; onClose: () => void; tenantId: string;
   // En modo "produccion" llega un Factura completa (con id, ya persistida
@@ -32,6 +32,9 @@ export default function ModalNuevaFactura({
   nombreEmisor?: string; rncEmisor?: string; rootDomain?: string;
   logoA4Url?: string; logoTermicoUrl?: string;
   modo?: "sandbox" | "produccion";
+  // Si viene, impide emitir y muestra este mensaje (ej. el plan de pago no está
+  // activo). Evita llegar a un error del servidor DESPUÉS de reservar el e-NCF.
+  bloqueo?: string;
 }) {
   const [esWalkIn, setEsWalkIn] = useState(true);
   const [clienteId, setClienteId] = useState("");
@@ -48,6 +51,9 @@ export default function ModalNuevaFactura({
   const [emitiendo, setEmitiendo] = useState(false);
   const [error, setError] = useState("");
   const [confirmando, setConfirmando] = useState(false);
+  // Llave de idempotencia de la emisión en curso: se conserva si falló la red
+  // (para no duplicar el comprobante al reintentar) y se renueva en cualquier otro caso.
+  const llaveEmision = useRef<string | null>(null);
   const [formatoPreview, setFormatoPreview] = useState<"a4" | "termica">("a4");
 
   useEffect(() => {
@@ -55,7 +61,7 @@ export default function ModalNuevaFactura({
     setEsWalkIn(true); setClienteId(clientes[0]?.id ?? ""); setNombreWalkIn("Consumidor Final");
     setItems([]); setTipoECFManual(null); setTerminos("Contado"); setMetodoPago("Efectivo");
     setReferencia(""); setPlazo(PLAZOS_CREDITO[1]); setRncOcasional(""); setEsExtranjeroOcasional(false);
-    setNotas(""); setError(""); setConfirmando(false);
+    setNotas(""); setError(""); setConfirmando(false); llaveEmision.current = null;
   }, [open, clientes]);
 
   // ── Scanner de pistola de código de barras ───────────────────────
@@ -139,21 +145,26 @@ export default function ModalNuevaFactura({
     notas: notas.trim() || undefined,
   };
 
+  // Solo sandbox: la numeración de prueba se pide al contador de demostración.
+  const datosSandbox = async <T extends object>(d: T) => {
+    const seq = await nextSecuencia(tenantId, tipoECF);
+    const vencimientoECF = (() => { const f = new Date(); f.setFullYear(f.getFullYear() + 1); return localDate(f); })();
+    return { ...d, noFactura: String(seq), eCF: genECF(tipoECF, seq), fecha: today(), vencimientoECF };
+  };
+
   const emitir = async () => {
     if (items.length === 0) return;
     if (!esWalkIn && !clienteId) return;
     setEmitiendo(true); setError("");
     try {
-      const seq = await nextSecuencia(tenantId, tipoECF);
-      const eCF = genECF(tipoECF, seq);
-      const fecha = today();
-      const vencimientoECF = (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return localDate(d); })();
+      // En producción el e-NCF, la fecha y el vencimiento los asigna el servidor
+      // dentro de la secuencia autorizada por la DGII; en el sandbox se simulan.
       const fechaVencimientoPago = terminos === "Crédito"
         ? (() => { const d = new Date(); d.setDate(d.getDate() + parseInt(plazo, 10)); return localDate(d); })()
         : undefined;
 
       const datosComunes = {
-        tipoECF, noFactura: String(seq), eCF, fecha, vencimientoECF,
+        tipoECF,
         terminos, metodoPago: terminos === "Contado" ? metodoPago : undefined,
         clienteId: esWalkIn ? "walk-in" : clienteId, items: items.filter((i) => i.descripcion.trim()),
         esConsumidorFinal: esWalkIn, nombreConsumidor: esWalkIn ? nombreWalkIn : undefined,
@@ -165,11 +176,17 @@ export default function ModalNuevaFactura({
       };
 
       const factura = modo === "produccion"
-        ? await construirFacturaReal({ ...datosComunes, tenantId })
-        : await construirFacturaSimulada({ ...datosComunes, rncEmisor: rncEmisor ?? "", nombreEmisor: nombreEmisor ?? "", rootDomain: rootDomain ?? "" });
+        ? await construirFacturaReal({ ...datosComunes, tenantId, idempotencyKey: (llaveEmision.current ??= crypto.randomUUID()) })
+        : await construirFacturaSimulada({ ...await datosSandbox(datosComunes), rncEmisor: rncEmisor ?? "", nombreEmisor: nombreEmisor ?? "", rootDomain: rootDomain ?? "" });
       await onSave(factura);
+      llaveEmision.current = null;
+      if ("advertencia" in factura && factura.advertencia) {
+        window.alert(`${factura.advertencia}
+El número ${factura.eCF} ya quedó registrado; el envío a la DGII se podrá reintentar desde Facturas.`);
+      }
       onClose();
     } catch (err) {
+      if (!(err instanceof ErrorRedEmision)) llaveEmision.current = null;
       setError(err instanceof Error ? err.message : "No se pudo emitir la factura. Intenta de nuevo.");
     } finally { setEmitiendo(false); }
   };
@@ -287,13 +304,18 @@ export default function ModalNuevaFactura({
           </div>
         )}
 
+        {bloqueo && (
+          <div role="alert" style={{ padding: "10px 12px", fontSize: 12.5, lineHeight: 1.5, borderRadius: 8, background: "var(--c-yellow-bg)", border: "1px solid var(--c-yellow-border)", color: "var(--c-yellow)" }}>
+            {bloqueo}
+          </div>
+        )}
         {error && <div style={{ fontSize: 12, color: "#991b1b" }}>{error}</div>}
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <Boton variant="secondary" onClick={onClose}>Cancelar</Boton>
           <Boton
             onClick={() => setConfirmando(true)}
-            disabled={items.length === 0 || (!esWalkIn && !clienteId) || (necesitaIdentificacion && !rncOcasional.trim() && !esExtranjeroOcasional)}
+            disabled={!!bloqueo || items.length === 0 || (!esWalkIn && !clienteId) || (necesitaIdentificacion && !rncOcasional.trim() && !esExtranjeroOcasional)}
           >
             Revisar y emitir
           </Boton>

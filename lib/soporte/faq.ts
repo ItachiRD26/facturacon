@@ -15,7 +15,7 @@ export const FAQ: PreguntaFrecuente[] = [
   {
     id: "cuando-certificacion",
     pregunta: "¿Cuándo voy a poder certificarme ante la DGII?",
-    respuesta: "Estamos terminando de construir el asistente de certificación (carga de tu certificado digital, validación de cédula y los 15 pasos ante la DGII). Mientras tanto puedes seguir probando el sistema. Te avisamos por correo en cuanto esté disponible.",
+    respuesta: "Estamos terminando de construir el asistente de certificación (carga de tu certificado digital, validación de cédula y los pasos ante la DGII). Mientras tanto puedes seguir probando el sistema. Te avisamos por correo en cuanto esté disponible.",
     palabrasClave: ["certificar", "certificacion", "certificarme", "dgii", "activar", "cuando"],
   },
   {
@@ -39,7 +39,7 @@ export const FAQ: PreguntaFrecuente[] = [
   {
     id: "metodo-pago",
     pregunta: "¿Cómo agrego o cambio mi método de pago?",
-    respuesta: "Desde \"Métodos de pago\" en el menú puedes agregar una tarjeta (solo guardamos la marca, los últimos 4 dígitos y el vencimiento, nunca el número completo). El cobro real se activa cuando tu cuenta quede certificada y tu suscripción inicie.",
+    respuesta: "Desde \"Plan y facturación\" en el menú eliges tu plan y agregas o cambias tu tarjeta (solo guardamos los últimos 4 dígitos, nunca el número completo). La certificación es gratis: el cobro mensual empieza cuando activas tu plan, después de certificarte.",
     palabrasClave: ["pago", "tarjeta", "metodo", "cobro", "facturar"],
   },
   {

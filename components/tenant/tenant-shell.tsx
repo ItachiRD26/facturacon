@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SidebarCtx } from "@/contexts/SidebarUIContext";
 import TenantSidebar from "@/components/tenant/tenant-sidebar";
 import TenantTopbar from "@/components/tenant/tenant-topbar";
+import BannerPlan from "@/components/tenant/banner-plan";
 
 // Shell del sistema real (Fase 7) — mismo armazón que SandboxShell
 // (app/onboarding/sandbox/layout.tsx) pero sin DemoBanner ni TourProvider,
@@ -17,6 +18,7 @@ export default function TenantShell({ children }: { children: React.ReactNode })
         <TenantSidebar />
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
           <TenantTopbar />
+          <BannerPlan />
           <main style={{ flex: 1, overflowY: "auto", padding: 20 }}>
             {children}
           </main>

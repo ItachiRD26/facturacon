@@ -3,6 +3,7 @@ import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { requireOwnerOAdmin } from "@/lib/tenant/auth";
 import { listMembershipsForTenant, createMembership } from "@/lib/tenant/get-memberships";
 import { ROLES_INVITABLES } from "@/lib/tenant/roles";
+import { cupoUsuarios, mensajeCupoLleno } from "@/lib/tenant/limite-usuarios";
 import type { RolMembership, UserPerfil } from "@/types/tenant";
 
 // Lista el equipo del tenant con nombre/correo — no se puede armar esto
@@ -23,7 +24,10 @@ export async function GET(req: NextRequest) {
     };
   }));
 
-  return NextResponse.json({ equipo });
+  // Los cajeros por código (sin correo) también tienen membership; aquí solo
+  // van las cuentas con correo — los cajeros se listan en /api/tenant/empleados.
+  const cupo = await cupoUsuarios(tenantId);
+  return NextResponse.json({ equipo: equipo.filter((m) => m.email), cupo });
 }
 
 interface BodyInvitar { tenantId: string; email: string; rol: RolMembership }
@@ -42,6 +46,9 @@ export async function POST(req: NextRequest) {
   if (!ROLES_INVITABLES.includes(body.rol)) {
     return NextResponse.json({ error: "Rol inválido." }, { status: 400 });
   }
+  if (body.rol === "admin" && verif.rol !== "owner") {
+    return NextResponse.json({ error: "Solo el dueño de la cuenta puede nombrar administradores." }, { status: 403 });
+  }
 
   let usuario;
   try {
@@ -56,6 +63,9 @@ export async function POST(req: NextRequest) {
   if (yaEsMiembro.exists) {
     return NextResponse.json({ error: "Esa persona ya es parte de tu equipo." }, { status: 400 });
   }
+
+  const cupo = await cupoUsuarios(body.tenantId);
+  if (cupo.lleno) return NextResponse.json({ error: mensajeCupoLleno(cupo) }, { status: 403 });
 
   await createMembership(usuario.uid, body.tenantId, body.rol);
   return NextResponse.json({ ok: true });

@@ -58,6 +58,7 @@ export function filaAFactura(fila: FilaSetPrueba): Factura {
     terminos:       fila.terminoPago,
     clienteId:      cliente?.id ?? "",
     eCFRef:             fila.eCFRef,
+    fechaECFRef:        fila.fechaECFRef,
     motivoNota:         fila.motivoNota,
     codigoModificacion: fila.codigoModificacion,
     esConsumidorFinal: !cliente,

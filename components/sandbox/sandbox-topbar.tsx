@@ -55,7 +55,7 @@ export default function SandboxTopbar() {
         {label}
       </div>
       <button onClick={restart} style={{
-        fontSize: 12, color: "#0e7490", fontFamily: "var(--font-sans)", fontWeight: 600,
+        fontSize: 12, color: "#2540D9", fontFamily: "var(--font-sans)", fontWeight: 600,
         background: "none", border: "none", cursor: "pointer", flexShrink: 0,
       }}>
         Ver tutorial de nuevo

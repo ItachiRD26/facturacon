@@ -38,13 +38,17 @@ type Paso = 1 | 2 | 3;
 // escribía — el formulario de pago nunca se podía completar. Ahora el plan
 // se elige aquí mismo, como Paso 1, sin depender de nada externo.
 export default function SuscripcionWizard({
-  open, onClose, tenantId, onActivada, ambienteLive = false, planIdActual,
+  open, onClose, tenantId, onActivada, ambienteLive = false, planIdActual, saltarPlan = false, urlSistema,
 }: {
   open: boolean; onClose: () => void; tenantId: string; onActivada: () => void;
   ambienteLive?: boolean;
   // Si ya hubo una suscripción antes (reactivación tras pago fallido/cancelación),
   // precarga el mismo plan para que el usuario no tenga que volver a elegir.
   planIdActual?: string | null;
+  // El plan ya se eligió afuera (tarjetas de la pantalla de plan): empieza en Datos de pago.
+  saltarPlan?: boolean;
+  // Si se pasa, el mensaje final ofrece abrir el sistema ya listo para facturar.
+  urlSistema?: string;
 }) {
   const [paso, setPaso] = useState<Paso>(1);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -56,8 +60,8 @@ export default function SuscripcionWizard({
 
   useEffect(() => {
     if (!open) return;
-    setPaso(1); setPlanId(planIdActual ?? null); setForm(VACIO); setError(""); setActivada(null);
-  }, [open, planIdActual]);
+    setPaso(saltarPlan && planIdActual ? 2 : 1); setPlanId(planIdActual ?? null); setForm(VACIO); setError(""); setActivada(null);
+  }, [open, planIdActual, saltarPlan]);
 
   const set = <K extends keyof FormTarjeta>(k: K, v: FormTarjeta[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -218,7 +222,10 @@ export default function SuscripcionWizard({
               {activada.ultimos4 ? ` — tarjeta terminada en ${activada.ultimos4}` : ""}.
               Ya puedes emitir comprobantes fiscales reales.
             </p>
-            <Boton onClick={onClose}>Entendido</Boton>
+            <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+              {urlSistema && <a href={urlSistema} style={{ padding: "9px 18px", borderRadius: 6, fontSize: 13, fontWeight: 600, background: "var(--c-brand)", color: "#fff", textDecoration: "none" }}>Abrir mi sistema →</a>}
+              <Boton variant="secondary" onClick={onClose}>{urlSistema ? "Cerrar" : "Entendido"}</Boton>
+            </div>
           </div>
         )}
       </Modal>

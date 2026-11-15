@@ -4,11 +4,11 @@ import { requireTenantEnCertificacion } from "@/lib/certificacion/auth";
 import { generarSlugUnico } from "@/lib/tenant/slug";
 import { sellarDatosSandbox } from "@/lib/tenant/sellar-sandbox";
 
-// Cierra el wizard: pasos 12-15 (subir representaciones impresas, validar en
-// el portal de la DGII) ocurren FUERA de Facturacon — esta ruta solo registra
-// que el usuario confirmó haberlos completado y mueve el tenant a "activo".
-// No hay forma de verificar esos pasos automáticamente: dependemos de la
-// confirmación honesta del usuario, igual que advierte el checklist en la UI.
+// Cierra el wizard: los pasos finales del portal de la DGII (representaciones
+// impresas, registrar las URL de producción, declaración jurada) ocurren FUERA
+// de Facturacon — esta ruta registra que el usuario confirmó haberlos
+// completado y mueve el tenant a "activo". Esos pasos no se pueden verificar
+// por API: dependemos de la confirmación del usuario, igual que advierte la UI.
 //
 // También aquí se asigna el slug del subdominio (no existía un punto previo
 // donde tuviera sentido asignarlo) y se sella todo lo creado en el entorno
@@ -24,11 +24,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Falta confirmar que completaste los pasos finales en el portal de la DGII." }, { status: 400 });
   }
 
+  // Validación del lado del servidor: antes bastaba con marcar la casilla para
+  // activar la cuenta sin haber enviado nada. Lo que SÍ podemos comprobar es
+  // que el set de pruebas (paso 2 de la DGII) se haya enviado completo. Lo que
+  // pasa dentro del portal de la DGII sigue dependiendo de la confirmación.
+  const setSnap = await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("set_paso2").get();
+  const filas = Object.values((setSnap.data()?.filas ?? {}) as Record<string, { estadoEnvio?: string; estadoDGII?: string }>);
+  if (filas.length === 0) {
+    return NextResponse.json({ error: "Aún no has subido el set de pruebas (Paso 2). Súbelo y envíalo antes de cerrar la certificación." }, { status: 400 });
+  }
+  const sinEnviar = filas.filter((f) => f.estadoEnvio !== "enviado" && f.estadoEnvio !== "aceptado").length;
+  if (sinEnviar > 0) {
+    return NextResponse.json({ error: `Te faltan ${sinEnviar} comprobantes del set de pruebas por enviar (Paso 2).` }, { status: 400 });
+  }
+  const rechazados = filas.filter((f) => String(f.estadoDGII ?? "").toLowerCase().includes("rechazad")).length;
+  if (rechazados > 0) {
+    return NextResponse.json({ error: `La DGII rechazó ${rechazados} comprobantes del set de pruebas. Corrígelos y reenvíalos antes de cerrar.` }, { status: 400 });
+  }
+
   await sellarDatosSandbox(tenantId);
 
   const slug = verif.tenant.slug ?? await generarSlugUnico();
 
-  // Asumimos que completar los 15 pasos = la DGII ya habilitó el ambiente de
+  // Asumimos que completar los 13 pasos = la DGII ya habilitó el ambiente de
   // producción ("ecf") para este RNC — es lo que documenta el proceso
   // oficial, pero no hay forma de confirmarlo por API. Si en la práctica la
   // DGII tarda en habilitarlo después del paso 15, los primeros envíos

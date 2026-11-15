@@ -92,7 +92,7 @@ export default function CotizacionesPage() {
           <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans, marginBottom: 8 }}>Vigentes</div>
           <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "#111" }}>{vigentes.length}</div>
         </div>
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderTop: "3px solid #0e7490", borderRadius: 4, padding: "14px 16px" }}>
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderTop: "3px solid #2540D9", borderRadius: 4, padding: "14px 16px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans, marginBottom: 8 }}>Monto en vigor</div>
           <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "#111" }}>RD$ {fmt(montoVigente)}</div>
         </div>
@@ -166,7 +166,7 @@ export default function CotizacionesPage() {
                           <button onClick={() => abrirEdicion(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer", color: "#374151", fontSize: 12, fontFamily: sans }}>
                             <Icon name="edit" size={12} /> Editar
                           </button>
-                          <button onClick={() => setConvirtiendo(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "#fff", border: "1px solid #a5f3fc", borderRadius: 4, cursor: "pointer", color: "#0e7490", fontSize: 12, fontFamily: sans }}>
+                          <button onClick={() => setConvirtiendo(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "#fff", border: "1px solid #C5CEFA", borderRadius: 4, cursor: "pointer", color: "#2540D9", fontSize: 12, fontFamily: sans }}>
                             <Icon name="convert" size={12} /> Convertir
                           </button>
                           <button onClick={() => anular(c)} style={{ padding: "5px 10px", background: "#fff", border: "1px solid #fecaca", borderRadius: 4, cursor: "pointer", color: "#dc2626", fontSize: 12, fontFamily: sans }}>

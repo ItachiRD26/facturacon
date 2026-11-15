@@ -3,7 +3,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import { requireTenantEnCertificacion } from "@/lib/certificacion/auth";
 
 // Mueve el tenant de "pendiente_certificacion" a "certificando" la primera
-// vez que entra al wizard de los 15 pasos (después de guardar los datos de
+// vez que entra al wizard de los 13 pasos (después de guardar los datos de
 // empresa del Paso 0). Es idempotente: si ya está en "certificando" no falla.
 //
 // La certificación es gratis (no hay pago que verificar aquí) — el cobro

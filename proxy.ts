@@ -8,7 +8,10 @@ const ROOT_DOMAIN     = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 // Rutas públicas en el dominio raíz (marketing, auth, sesión).
 const PUBLIC_ROOT_PATHS = [
   "/", "/login", "/registro", "/api/auth/session", "/_next", "/favicon.ico",
-  "/demo", "/terminos", "/privacidad", "/api/validate-rnc",
+  "/demo", "/terminos", "/privacidad", "/api/validate-rnc", "/api/lista-espera", "/robots.txt", "/sitemap.xml",
+  // /fe/* en el dominio raíz no tiene empresa: responde 404 en XML en vez de
+  // mandar a la DGII a una pantalla de login.
+  "/fe",
 ];
 
 // Rutas públicas dentro de un subdominio de tenant. "/api" es crítico: todas
@@ -56,6 +59,16 @@ export function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const slug = getTenantSlugFromHost(host, ROOT_DOMAIN);
   const session = request.cookies.get(SESSION_COOKIE)?.value;
+
+  // /fe/* (servicio receptor que llama la DGII): las rutas de Next.js distinguen
+  // mayúsculas en Linux/Vercel y la DGII documenta URLs como
+  // ".../api/ValidacionCertificado". Se reescribe (nunca redirect: un redirect
+  // convertiría el POST en GET) a minúsculas, que es como están las carpetas.
+  if (pathname.toLowerCase().startsWith("/fe/") && pathname !== pathname.toLowerCase()) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.toLowerCase();
+    return NextResponse.rewrite(url);
+  }
 
   // ── Dominio raíz: marketing + panel de administración/suscripción ──
   if (!slug) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { registroAbierto } from "@/lib/registro";
 
 const SESSION_COOKIE  = "__session";
 const SESSION_MS      = parseInt(process.env.SESSION_DURATION_MS ?? "432000000");
@@ -36,6 +37,15 @@ export async function POST(request: NextRequest) {
     const user = await adminAuth.getUser(decoded.uid);
     if (user.disabled)
       return NextResponse.json({ error: "Cuenta deshabilitada. Contacta al administrador." }, { status: 403 });
+
+    // Registro cerrado: quien ya tiene perfil entra normal; una cuenta de Auth
+    // nueva (correo o Google) no obtiene sesión, así que no llega al panel.
+    if (!registroAbierto()) {
+      const perfil = await adminDb.collection("users").doc(decoded.uid).get();
+      if (!perfil.exists) {
+        return NextResponse.json({ error: "Las cuentas nuevas todavía no están abiertas. Déjanos tu correo en la lista de espera." }, { status: 403 });
+      }
+    }
 
     const sessionCookie = await adminAuth.createSessionCookie(body.idToken, { expiresIn: SESSION_MS });
 

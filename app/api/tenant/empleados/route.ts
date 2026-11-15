@@ -4,6 +4,7 @@ import { requireOwnerOAdmin } from "@/lib/tenant/auth";
 import { createMembership } from "@/lib/tenant/get-memberships";
 import { generarCodigoEmpleado, generarTokenLinkEmpleado, hashCodigo } from "@/lib/tenant/codigo-empleado";
 import { ROLES_INVITABLES } from "@/lib/tenant/roles";
+import { cupoUsuarios, mensajeCupoLleno } from "@/lib/tenant/limite-usuarios";
 import type { Empleado } from "@/types/tenant";
 
 // Lista de empleados del tenant — nunca incluye codigoHash. También devuelve
@@ -27,7 +28,8 @@ export async function GET(req: NextRequest) {
     void _h;
     return resto as Empleado;
   });
-  return NextResponse.json({ empleados, slug: verif.tenant.slug ?? null, linkToken });
+  const cupo = await cupoUsuarios(tenantId);
+  return NextResponse.json({ empleados, slug: verif.tenant.slug ?? null, linkToken, cupo });
 }
 
 // Crea una cuenta de empleado (sin correo/contraseña) + su código de acceso.
@@ -48,6 +50,13 @@ export async function POST(req: NextRequest) {
   if (!ROLES_INVITABLES.includes(rol)) {
     return NextResponse.json({ error: "Rol inválido" }, { status: 400 });
   }
+
+  if (rol === "admin" && verif.rol !== "owner") {
+    return NextResponse.json({ error: "Solo el dueño de la cuenta puede nombrar administradores." }, { status: 403 });
+  }
+
+  const cupo = await cupoUsuarios(tenantId);
+  if (cupo.lleno) return NextResponse.json({ error: mensajeCupoLleno(cupo) }, { status: 403 });
 
   const userRecord = await adminAuth.createUser({ displayName: nombre });
   const uid = userRecord.uid;

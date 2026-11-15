@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TIPOS_NEGOCIO } from "@/lib/onboarding/tipos-negocio";
 import type { TipoNegocio } from "@/types/tenant";
+import JornadaProgreso from "@/components/panel/jornada-progreso";
 
 const sans = "var(--font-sans)";
 const serif = "var(--font-serif)";
@@ -106,14 +107,7 @@ function OnboardingShell() {
 
   return (
     <main style={{ maxWidth: 720, margin: "48px auto", padding: "0 24px", fontFamily: sans }}>
-      <div style={{ display: "flex", gap: 6, marginBottom: 32 }}>
-        {[1, 2].map((n) => (
-          <div key={n} style={{
-            flex: 1, height: 4, borderRadius: 2,
-            background: n <= paso ? "var(--c-brand)" : "var(--c-border)",
-          }} />
-        ))}
-      </div>
+      <div style={{ marginBottom: 32 }}><JornadaProgreso actual="empresa" compacta /></div>
 
       {paso === 1 && (
         <section>

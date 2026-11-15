@@ -4,6 +4,7 @@ import { resolveTenantBySlug, getTenantById } from "@/lib/tenant/resolve-tenant"
 import { getMembership, listMembershipsForUser } from "@/lib/tenant/get-memberships";
 import { TenantProvider, type TenantSummary } from "@/contexts/TenantContext";
 import TenantShell from "@/components/tenant/tenant-shell";
+import { obtenerSuscripcion } from "@/lib/payments/suscripcion";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
@@ -31,6 +32,12 @@ export default async function TenantLayout({
     }))
   ).filter((t): t is TenantSummary => t !== null);
 
+  const suscripcion = await obtenerSuscripcion(tenant.id);
+  const puedeEmitir = tenant.estado === "activo" && suscripcion?.estado === "activa";
+  const motivoSinPlan = puedeEmitir ? null
+    : suscripcion?.estado === "pago_fallido" || tenant.estado === "suspendido" ? "pago_fallido"
+    : suscripcion?.estado === "cancelada" ? "cancelado" : "sin_plan";
+
   return (
     <TenantProvider value={{
       tenantId: tenant.id,
@@ -39,6 +46,8 @@ export default async function TenantLayout({
       rnc: tenant.rnc,
       rol: membership.rol,
       otrasEmpresas,
+      puedeEmitir,
+      motivoSinPlan,
     }}>
       <TenantShell>{children}</TenantShell>
     </TenantProvider>

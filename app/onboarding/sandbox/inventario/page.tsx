@@ -54,7 +54,7 @@ export default function SandboxInventarioPage() {
             </button>
           )}
           <button onClick={() => { setEditando(null); setShowForm(true); }} data-tour="btn-nuevo-producto"
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#0e7490", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 500, fontFamily: sans }}>
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#2540D9", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 500, fontFamily: sans }}>
             <Icon name="plus" size={14} /> Nuevo Producto/Servicio
           </button>
         </div>
@@ -65,7 +65,7 @@ export default function SandboxInventarioPage() {
           <button onClick={() => setShowAyuda((v) => !v)} style={{
             width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
             padding: "10px 14px", background: "none", border: "none", cursor: "pointer",
-            fontSize: 12, fontWeight: 600, color: "#0e7490", fontFamily: sans,
+            fontSize: 12, fontWeight: 600, color: "#2540D9", fontFamily: sans,
           }}>
             🏷 ¿Cómo funcionan los códigos de barra?
             <span>{showAyuda ? "−" : "+"}</span>
@@ -129,7 +129,7 @@ export default function SandboxInventarioPage() {
                     {p.descripcion && <div style={{ fontSize: 11, color: "#9ca3af", fontFamily: sans, marginTop: 2 }}>{p.descripcion}</div>}
                   </td>
                   <td style={{ padding: "12px 14px" }}>
-                    <span style={{ fontSize: 11, padding: "3px 8px", borderRadius: 3, background: "#ecfeff", color: "#0e7490", border: "1px solid #a5f3fc", fontFamily: sans, fontWeight: 600 }}>
+                    <span style={{ fontSize: 11, padding: "3px 8px", borderRadius: 3, background: "#EEF1FE", color: "#2540D9", border: "1px solid #C5CEFA", fontFamily: sans, fontWeight: 600 }}>
                       {p.controlaStock ? "Producto" : "Servicio"}
                     </span>
                   </td>

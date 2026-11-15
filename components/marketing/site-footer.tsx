@@ -13,7 +13,7 @@ export default function SiteFooter() {
       }}>
         <div>
           <div style={{ marginBottom: 10 }}>
-            <Logo tone="white" size={24} />
+            <Logo tone="white" size={28} />
           </div>
           <p style={{ fontSize: 12, lineHeight: 1.5 }}>
             Certificación de emisor electrónico y sistema de facturación para contribuyentes
@@ -22,16 +22,16 @@ export default function SiteFooter() {
         </div>
 
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>Producto</div>
+          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: "rgba(255,255,255,0.5)" }}>Producto</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
-            <a href="/#como-funciona" style={{ color: "inherit", textDecoration: "none" }}>Cómo funciona</a>
-            <a href="/#precios" style={{ color: "inherit", textDecoration: "none" }}>Precios</a>
-            <a href="/#faq" style={{ color: "inherit", textDecoration: "none" }}>Preguntas frecuentes</a>
+            <Link href="/#como-funciona" style={{ color: "inherit", textDecoration: "none" }}>Cómo funciona</Link>
+            <Link href="/#precios" style={{ color: "inherit", textDecoration: "none" }}>Precios</Link>
+            <Link href="/#faq" style={{ color: "inherit", textDecoration: "none" }}>Preguntas frecuentes</Link>
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>Legal</div>
+          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: "rgba(255,255,255,0.5)" }}>Legal</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
             <Link href="/terminos" style={{ color: "inherit", textDecoration: "none" }}>Términos de servicio</Link>
             <Link href="/privacidad" style={{ color: "inherit", textDecoration: "none" }}>Política de privacidad</Link>
@@ -39,7 +39,7 @@ export default function SiteFooter() {
         </div>
 
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>Contacto</div>
+          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: "rgba(255,255,255,0.5)" }}>Contacto</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
             <a href="mailto:contacto@facturacon.com.do" style={{ color: "inherit", textDecoration: "none" }}>
               contacto@facturacon.com.do

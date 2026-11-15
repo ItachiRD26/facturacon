@@ -89,7 +89,7 @@ export default function SandboxDashboardPage() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 24 }}>
-        <KPICard label="Ingresos cobrados"   valor={"RD$ " + fmt(ingresos)}   sub={facturasPeriodo.filter((f) => f.estado === "pagada").length + " facturas pagadas"} accent="#0e7490" icon="invoice"  />
+        <KPICard label="Ingresos cobrados"   valor={"RD$ " + fmt(ingresos)}   sub={facturasPeriodo.filter((f) => f.estado === "pagada").length + " facturas pagadas"} accent="#2540D9" icon="invoice"  />
         <KPICard label="Por cobrar"           valor={"RD$ " + fmt(porCobrar)}  sub={cuentas.length + " cuentas registradas"}                                           accent="#92400e" icon="alert"    />
         <KPICard label="Cotizaciones activas" valor={cotVigentes.length}       sub="Pendientes de convertir"                                                          accent="#1d4ed8" icon="quotes"   />
         <KPICard label="Inventario activo"    valor={productosActivos.length} sub="Productos y servicios"                                                            accent="#166534" icon="products" />

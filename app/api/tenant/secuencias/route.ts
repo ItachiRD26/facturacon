@@ -1,0 +1,28 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireRolEnTenant } from "@/lib/tenant/auth";
+import { ErrorSecuencia, guardarRango, leerSecuencias } from "@/lib/tenant/secuencias-fiscales";
+import type { TipoECF } from "@/types";
+
+// Secuencias fiscales autorizadas por la DGII. Solo dueño/administrador:
+// definen qué números de e-NCF puede emitir la empresa.
+export async function GET(req: NextRequest) {
+  const tenantId = req.nextUrl.searchParams.get("t") ?? "";
+  const v = await requireRolEnTenant(tenantId, ["owner", "admin"]);
+  if (!v.ok) return v.response;
+  return NextResponse.json({ secuencias: await leerSecuencias(tenantId) });
+}
+
+export async function PUT(req: NextRequest) {
+  const body = await req.json().catch(() => null) as { tenantId?: string; tipo?: TipoECF; desde?: number; hasta?: number; vencimiento?: string } | null;
+  const v = await requireRolEnTenant(body?.tenantId ?? "", ["owner", "admin"]);
+  if (!v.ok) return v.response;
+  try {
+    await guardarRango(body!.tenantId!, body!.tipo as TipoECF, {
+      desde: Number(body!.desde), hasta: Number(body!.hasta), vencimiento: String(body!.vencimiento ?? ""),
+    });
+    return NextResponse.json({ ok: true, secuencias: await leerSecuencias(body!.tenantId!) });
+  } catch (e) {
+    if (e instanceof ErrorSecuencia) return NextResponse.json({ error: e.message }, { status: 400 });
+    return NextResponse.json({ error: "No se pudo guardar la secuencia." }, { status: 500 });
+  }
+}

@@ -6,6 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Tenant } from "@/types/tenant";
 import Icon from "@/components/ui/icon";
+import JornadaProgreso from "@/components/panel/jornada-progreso";
 
 const sans = "var(--font-sans)";
 const serif = "var(--font-serif)";
@@ -189,6 +190,7 @@ function CredencialesShell() {
 
   return (
     <main style={{ maxWidth: 520, margin: "48px auto", padding: "0 24px", fontFamily: sans }}>
+      <div style={{ marginBottom: 28 }}><JornadaProgreso actual="preparacion" compacta /></div>
       <a href={`/onboarding/requisitos?t=${tenantId}`} style={{ fontSize: 13, color: "var(--c-text-3)", display: "inline-block", marginBottom: 20 }}>
         ← Atrás
       </a>
