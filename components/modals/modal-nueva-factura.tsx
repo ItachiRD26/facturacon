@@ -197,12 +197,12 @@ El número ${factura.eCF} ya quedó registrado; el envío a la DGII se podrá re
         <Campo label="Cliente">
           <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
             <button type="button" onClick={() => setEsWalkIn(true)} style={{
-              flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+              flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 10, cursor: "pointer",
               border: `1px solid ${esWalkIn ? "var(--c-brand)" : "var(--c-border)"}`,
               background: esWalkIn ? "var(--c-brand-bg)" : "var(--c-surface)",
             }}>Consumidor final (sin registrar)</button>
             <button type="button" onClick={() => setEsWalkIn(false)} disabled={clientes.length === 0} style={{
-              flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 6,
+              flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 10,
               cursor: clientes.length === 0 ? "not-allowed" : "pointer",
               border: `1px solid ${!esWalkIn ? "var(--c-brand)" : "var(--c-border)"}`,
               background: !esWalkIn ? "var(--c-brand-bg)" : "var(--c-surface)",
@@ -246,7 +246,7 @@ El número ${factura.eCF} ya quedó registrado; el envío a la DGII se podrá re
             <div style={{ display: "flex", gap: 6 }}>
               {(["Contado", "Crédito"] as const).map((t) => (
                 <button key={t} type="button" onClick={() => setTerminos(t)} style={{
-                  flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+                  flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 10, cursor: "pointer",
                   border: `1px solid ${terminos === t ? "var(--c-brand)" : "var(--c-border)"}`,
                   background: terminos === t ? "var(--c-brand-bg)" : "var(--c-surface)",
                 }}>{t}</button>
@@ -277,7 +277,7 @@ El número ${factura.eCF} ya quedó registrado; el envío a la DGII se podrá re
         )}
 
         {necesitaIdentificacion && (
-          <div style={{ padding: 12, background: "var(--c-yellow-bg)", border: "1px solid var(--c-yellow-border)", borderRadius: 6 }}>
+          <div style={{ padding: 12, background: "var(--c-yellow-bg)", border: "1px solid var(--c-yellow-border)", borderRadius: 10 }}>
             <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
               Venta ≥ RD$ {fmt(LIMITE_IDENTIFICACION)} — la DGII exige identificar al comprador
             </div>
@@ -293,7 +293,7 @@ El número ${factura.eCF} ya quedó registrado; el envío a la DGII se podrá re
 
         <Campo label="Notas (opcional)">
           <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2}
-            style={{ width: "100%", padding: "9px 11px", border: "1px solid #d1d5db", borderRadius: 5, fontSize: 13 }} />
+            style={{ width: "100%", padding: "9px 11px", border: "1px solid #CDD1C9", borderRadius: 5, fontSize: 13 }} />
         </Campo>
 
         {items.length > 0 && (
@@ -342,12 +342,12 @@ El número ${factura.eCF} ya quedó registrado; el envío a la DGII se podrá re
               </p>
               <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
                 <button type="button" onClick={() => setFormatoPreview("a4")} style={{
-                  padding: "6px 12px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+                  padding: "6px 12px", fontSize: 12, fontWeight: 600, borderRadius: 10, cursor: "pointer",
                   border: `1px solid ${formatoPreview === "a4" ? "var(--c-brand)" : "var(--c-border)"}`,
                   background: formatoPreview === "a4" ? "var(--c-brand-bg)" : "transparent",
                 }}>Formato A4</button>
                 <button type="button" onClick={() => setFormatoPreview("termica")} style={{
-                  padding: "6px 12px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+                  padding: "6px 12px", fontSize: 12, fontWeight: 600, borderRadius: 10, cursor: "pointer",
                   border: `1px solid ${formatoPreview === "termica" ? "var(--c-brand)" : "var(--c-border)"}`,
                   background: formatoPreview === "termica" ? "var(--c-brand-bg)" : "transparent",
                 }}>Térmica 80mm</button>

@@ -39,8 +39,8 @@ export default function ModalDetalleCuenta({
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
           {[["Total", cuenta.monto], ["Cobrado", cuenta.pagado], ["Pendiente", pendiente]].map(([label, val]) => (
-            <div key={label as string} style={{ border: "1px solid var(--c-border)", borderRadius: 6, padding: 10, textAlign: "center" }}>
-              <div style={{ fontSize: 10, color: "var(--c-text-3)", textTransform: "uppercase" }}>{label as string}</div>
+            <div key={label as string} style={{ border: "1px solid var(--c-border)", borderRadius: 12, boxShadow: "var(--shadow-sm)", padding: 10, textAlign: "center" }}>
+              <div style={{ fontSize: 10, color: "var(--c-text-3)" }}>{label as string}</div>
               <div style={{ fontSize: 14, fontWeight: 700 }}>RD$ {fmt(val as number)}</div>
             </div>
           ))}

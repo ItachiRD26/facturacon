@@ -61,7 +61,7 @@ export default function ModalConvertirCotizacion({
           <div style={{ display: "flex", gap: 6 }}>
             {(["Contado", "Crédito"] as const).map((t) => (
               <button key={t} type="button" onClick={() => setTerminos(t)} style={{
-                flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+                flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 10, cursor: "pointer",
                 border: `1px solid ${terminos === t ? "var(--c-brand)" : "var(--c-border)"}`,
                 background: terminos === t ? "var(--c-brand-bg)" : "var(--c-surface)",
               }}>{t}</button>

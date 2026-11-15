@@ -1,11 +1,12 @@
 type TipoBadge = "success" | "warning" | "danger" | "info" | "neutral";
 
-const TIPO_STYLES: Record<TipoBadge, { bg: string; color: string; border: string }> = {
-  success: { bg: "#f0faf4", color: "#166534", border: "#bbf7d0" },
-  warning: { bg: "#fffbeb", color: "#92400e", border: "#fde68a" },
-  danger:  { bg: "#fef2f2", color: "#991b1b", border: "#fecaca" },
-  info:    { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" },
-  neutral: { bg: "#f3f4f6", color: "#374151", border: "#d1d5db" },
+// Etiqueta de estado: pastilla con punto, igual que en las vistas de la landing.
+const TIPO_STYLES: Record<TipoBadge, { bg: string; color: string }> = {
+  success: { bg: "#f0faf4", color: "#166534" },
+  warning: { bg: "#fffbeb", color: "#92400e" },
+  danger:  { bg: "#fef2f2", color: "#991b1b" },
+  info:    { bg: "var(--c-brand-bg)", color: "var(--c-brand)" },
+  neutral: { bg: "var(--c-border-lt)", color: "var(--c-text-2)" },
 };
 
 interface BadgeProps {
@@ -25,28 +26,25 @@ const ESTADO_MAP: Record<string, TipoBadge> = {
   inactivo:   "neutral",
 };
 
+const ETIQUETA: Record<string, string> = {
+  pagada: "Pagada", pendiente: "Pendiente", anulada: "Anulada", vigente: "Vigente",
+  vencida: "Vencida", convertida: "Convertida", activo: "Activo", inactivo: "Inactivo",
+};
+
 export default function Badge({ tipo, estado, children }: BadgeProps) {
   const resolvedTipo: TipoBadge =
     tipo ?? (estado ? (ESTADO_MAP[estado] ?? "neutral") : "neutral");
 
   const s = TIPO_STYLES[resolvedTipo];
-  const label = children ?? estado ?? "";
+  const label = children ?? (estado ? (ETIQUETA[estado] ?? estado) : "");
 
   return (
     <span style={{
-      background:    s.bg,
-      color:         s.color,
-      border:        `1px solid ${s.border}`,
-      padding:       "2px 10px",
-      borderRadius:  4,
-      fontSize:      11,
-      fontWeight:    600,
-      letterSpacing: "0.04em",
-      textTransform: "uppercase",
-      fontFamily:    "var(--font-sans)",
-      whiteSpace:    "nowrap",
-      display:       "inline-block",
+      display: "inline-flex", alignItems: "center", gap: 6, background: s.bg, color: s.color,
+      padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600,
+      fontFamily: "var(--font-sans)", whiteSpace: "nowrap",
     }}>
+      <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor" }} />
       {label}
     </span>
   );

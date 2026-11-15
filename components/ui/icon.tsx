@@ -9,7 +9,7 @@
 import {
   SquaresFour, Receipt, UsersThree, Package, ClipboardText, GearSix, Plus, Eye, Check, X,
   Trash, Printer, DownloadSimple, UploadSimple, Warning, MagnifyingGlass, ArrowsLeftRight,
-  PencilSimple, SignOut, User, ChartBar, CaretDown, Barcode, SealCheck, List, Wallet,
+  PencilSimple, SignOut, User, ChartBar, CaretDown, Barcode, SealCheck, List, Wallet, Tray,
 } from "@phosphor-icons/react/dist/ssr";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
@@ -40,6 +40,7 @@ const ICONOS: Record<string, PhosphorIcon> = {
   sello: SealCheck,
   menu: List,
   wallet: Wallet,
+  tray: Tray,
 };
 
 interface IconProps {

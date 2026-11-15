@@ -74,37 +74,37 @@ export default function SandboxCotizacionesPage() {
     <div className="fade-in" data-tour="page-cotizaciones">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 2 }}>Cotizaciones</h1>
-          <div style={{ fontSize: 13, color: "#6b7280", fontFamily: sans }}>Cotizaciones de prueba — convierte una en factura cuando el cliente acepte</div>
+          <h1 style={{ fontFamily: serif, fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--c-text-1)", marginBottom: 2 }}>Cotizaciones</h1>
+          <div style={{ fontSize: 13, color: "var(--c-text-3)", fontFamily: sans }}>Cotizaciones de prueba — convierte una en factura cuando el cliente acepte</div>
         </div>
         <button onClick={() => setModalAbierto(true)} disabled={clientes.length === 0 || productos.length === 0} data-tour="btn-nueva-cotizacion"
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: (clientes.length === 0 || productos.length === 0) ? "#9ca3af" : "#111", color: "#fff", border: "none", borderRadius: 4, cursor: (clientes.length === 0 || productos.length === 0) ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 500, fontFamily: sans }}>
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: (clientes.length === 0 || productos.length === 0) ? "var(--c-text-4)" : "var(--c-text-1)", color: "#fff", border: "none", borderRadius: 8, cursor: (clientes.length === 0 || productos.length === 0) ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 500, fontFamily: sans }}>
           <Icon name="plus" size={14} /> Nueva Cotización
         </button>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 20 }}>
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderTop: "3px solid #1d4ed8", borderRadius: 4, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans, marginBottom: 8 }}>Vigentes</div>
-          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "#111" }}>{vigentes.length}</div>
+        <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, boxShadow: "var(--shadow-sm)", padding: "14px 16px" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-3)", fontFamily: sans, marginBottom: 8 }}>Vigentes</div>
+          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "var(--c-text-1)" }}>{vigentes.length}</div>
         </div>
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderTop: "3px solid #2540D9", borderRadius: 4, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans, marginBottom: 8 }}>Monto en vigor</div>
-          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "#111" }}>RD$ {fmt(montoVigente)}</div>
+        <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, boxShadow: "var(--shadow-sm)", padding: "14px 16px" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-3)", fontFamily: sans, marginBottom: 8 }}>Monto en vigor</div>
+          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "var(--c-text-1)" }}>RD$ {fmt(montoVigente)}</div>
         </div>
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderTop: "3px solid #166534", borderRadius: 4, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans, marginBottom: 8 }}>Convertidas</div>
-          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "#111" }}>{convertidas}</div>
+        <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, boxShadow: "var(--shadow-sm)", padding: "14px 16px" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-3)", fontFamily: sans, marginBottom: 8 }}>Convertidas</div>
+          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "var(--c-text-1)" }}>{convertidas}</div>
         </div>
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
         <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
-          <div style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }}><Icon name="search" size={14} /></div>
-          <input style={{ width: "100%", padding: "8px 12px 8px 32px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13, fontFamily: sans, outline: "none" }}
+          <div style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--c-text-4)" }}><Icon name="search" size={14} /></div>
+          <input style={{ width: "100%", padding: "8px 12px 8px 32px", border: "1px solid #CDD1C9", borderRadius: 8, fontSize: 13, fontFamily: sans, outline: "none" }}
             placeholder="Buscar por número o cliente..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
         </div>
-        <select style={{ padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13, fontFamily: sans, outline: "none" }}
+        <select style={{ padding: "8px 12px", border: "1px solid #CDD1C9", borderRadius: 8, fontSize: 13, fontFamily: sans, outline: "none" }}
           value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value as EstadoCotizacion | "todos")}>
           <option value="todos">Todos los estados</option>
           <option value="vigente">Vigentes</option>
@@ -115,57 +115,57 @@ export default function SandboxCotizacionesPage() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "#9ca3af", fontFamily: sans }}>Cargando cotizaciones...</div>
+        <div style={{ textAlign: "center", padding: "60px 0", color: "var(--c-text-4)", fontFamily: sans }}>Cargando cotizaciones...</div>
       ) : filtradas.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 0", fontFamily: sans }}>
-          <div style={{ fontSize: 16, color: "#374151", fontWeight: 600, marginBottom: 6 }}>{cotizaciones.length === 0 ? "No hay cotizaciones aún" : "Sin resultados"}</div>
-          <div style={{ fontSize: 13, color: "#9ca3af" }}>{cotizaciones.length === 0 ? "Crea una cotización de prueba" : "Ajusta los filtros"}</div>
+          <div style={{ fontSize: 16, color: "var(--c-text-2)", fontWeight: 600, marginBottom: 6 }}>{cotizaciones.length === 0 ? "No hay cotizaciones aún" : "Sin resultados"}</div>
+          <div style={{ fontSize: 13, color: "var(--c-text-4)" }}>{cotizaciones.length === 0 ? "Crea una cotización de prueba" : "Ajusta los filtros"}</div>
         </div>
       ) : (
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 6, overflow: "hidden" }}>
+        <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 10, overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+              <tr style={{ background: "#FAFAF8", borderBottom: "2px solid var(--c-border)" }}>
                 {["No. Cotización", "Cliente", "Fecha", "Vence", "Total", "Estado", ""].map((h) => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans, whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "var(--c-text-3)", fontFamily: sans, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtradas.map((c) => (
-                <tr key={c.id} style={{ borderBottom: "1px solid #f3f4f6" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                <tr key={c.id} style={{ borderBottom: "1px solid var(--c-border-lt)" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#FAFAF8")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "")}>
-                  <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 12, fontWeight: 700, color: "#111" }}>
+                  <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 12, fontWeight: 700, color: "var(--c-text-1)" }}>
                     {c.noCotizacion}
                     {!!c.historial?.length && (
                       <span
                         title={c.historial.map((h) => `${h.accion} — ${h.nombre} (${new Date(h.fecha).toLocaleString("es-DO")})`).join("\n")}
-                        style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: "#9ca3af", fontFamily: sans, cursor: "help" }}
+                        style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: "var(--c-text-4)", fontFamily: sans, cursor: "help" }}
                       >
                         ✎ {c.historial.length}
                       </span>
                     )}
                   </td>
-                  <td style={{ padding: "11px 14px", fontSize: 13, color: "#374151", fontFamily: sans }}>{clientePor(c.clienteId)?.nombre ?? "—"}</td>
-                  <td style={{ padding: "11px 14px", fontSize: 12, color: "#6b7280", fontFamily: sans }}>{fmtDate(c.fecha)}</td>
-                  <td style={{ padding: "11px 14px", fontSize: 12, color: "#6b7280", fontFamily: sans }}>{fmtDate(c.vencimiento)}</td>
-                  <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#111" }}>RD$ {fmt(calcTotales(c.items).total)}</td>
+                  <td style={{ padding: "11px 14px", fontSize: 13, color: "var(--c-text-2)", fontFamily: sans }}>{clientePor(c.clienteId)?.nombre ?? "—"}</td>
+                  <td style={{ padding: "11px 14px", fontSize: 12, color: "var(--c-text-3)", fontFamily: sans }}>{fmtDate(c.fecha)}</td>
+                  <td style={{ padding: "11px 14px", fontSize: 12, color: "var(--c-text-3)", fontFamily: sans }}>{fmtDate(c.vencimiento)}</td>
+                  <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "var(--c-text-1)" }}>RD$ {fmt(calcTotales(c.items).total)}</td>
                   <td style={{ padding: "11px 14px" }}><Badge estado={c.estado} /></td>
                   <td style={{ padding: "11px 14px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={() => setImprimiendo(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer", color: "#374151", fontSize: 12, fontFamily: sans }}>
+                      <button onClick={() => setImprimiendo(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "var(--c-surface)", border: "1px solid #CDD1C9", borderRadius: 8, cursor: "pointer", color: "var(--c-text-2)", fontSize: 12, fontFamily: sans }}>
                         <Icon name="print" size={12} /> Ver
                       </button>
                       {c.estado === "vigente" && (
                         <>
-                          <button onClick={() => abrirEdicion(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer", color: "#374151", fontSize: 12, fontFamily: sans }}>
+                          <button onClick={() => abrirEdicion(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "var(--c-surface)", border: "1px solid #CDD1C9", borderRadius: 8, cursor: "pointer", color: "var(--c-text-2)", fontSize: 12, fontFamily: sans }}>
                             <Icon name="edit" size={12} /> Editar
                           </button>
-                          <button onClick={() => setConvirtiendo(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "#fff", border: "1px solid #C5CEFA", borderRadius: 4, cursor: "pointer", color: "#2540D9", fontSize: 12, fontFamily: sans }}>
+                          <button onClick={() => setConvirtiendo(c)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: "var(--c-surface)", border: "1px solid #C5CEFA", borderRadius: 8, cursor: "pointer", color: "#2540D9", fontSize: 12, fontFamily: sans }}>
                             <Icon name="convert" size={12} /> Convertir
                           </button>
-                          <button onClick={() => anular(c)} style={{ padding: "5px 10px", background: "#fff", border: "1px solid #fecaca", borderRadius: 4, cursor: "pointer", color: "#dc2626", fontSize: 12, fontFamily: sans }}>
+                          <button onClick={() => anular(c)} style={{ padding: "5px 10px", background: "var(--c-surface)", border: "1px solid #fecaca", borderRadius: 8, cursor: "pointer", color: "#dc2626", fontSize: 12, fontFamily: sans }}>
                             Anular
                           </button>
                         </>

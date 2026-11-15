@@ -28,39 +28,39 @@ export default function CuentasPorCobrarPage() {
   return (
     <div className="fade-in">
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontFamily: serif, fontSize: 22, fontWeight: 700, color: "#111", marginBottom: 2 }}>Cuentas por Cobrar</h1>
-        <div style={{ fontSize: 13, color: "#6b7280", fontFamily: sans }}>Se crean automáticamente al emitir una factura a crédito</div>
+        <h1 style={{ fontFamily: serif, fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--c-text-1)", marginBottom: 2 }}>Cuentas por Cobrar</h1>
+        <div style={{ fontSize: 13, color: "var(--c-text-3)", fontFamily: sans }}>Se crean automáticamente al emitir una factura a crédito</div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 20 }}>
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderTop: "3px solid #1d4ed8", borderRadius: 4, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans, marginBottom: 8 }}>Vigentes</div>
-          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "#111" }}>{vigentes}</div>
+        <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, boxShadow: "var(--shadow-sm)", padding: "14px 16px" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-3)", fontFamily: sans, marginBottom: 8 }}>Vigentes</div>
+          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "var(--c-text-1)" }}>{vigentes}</div>
         </div>
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderTop: "3px solid #92400e", borderRadius: 4, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans, marginBottom: 8 }}>Pendiente por cobrar</div>
-          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "#111" }}>RD$ {fmt(porCobrar)}</div>
+        <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, boxShadow: "var(--shadow-sm)", padding: "14px 16px" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-3)", fontFamily: sans, marginBottom: 8 }}>Pendiente por cobrar</div>
+          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "var(--c-text-1)" }}>RD$ {fmt(porCobrar)}</div>
         </div>
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderTop: "3px solid #166534", borderRadius: 4, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans, marginBottom: 8 }}>Pagadas</div>
-          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "#111" }}>{pagadas}</div>
+        <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12, boxShadow: "var(--shadow-sm)", padding: "14px 16px" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-3)", fontFamily: sans, marginBottom: 8 }}>Pagadas</div>
+          <div style={{ fontFamily: mono, fontSize: 19, fontWeight: 700, color: "var(--c-text-1)" }}>{pagadas}</div>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "#9ca3af", fontFamily: sans }}>Cargando cuentas...</div>
+        <div style={{ textAlign: "center", padding: "60px 0", color: "var(--c-text-4)", fontFamily: sans }}>Cargando cuentas...</div>
       ) : cuentas.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 0", fontFamily: sans }}>
-          <div style={{ fontSize: 16, color: "#374151", fontWeight: 600, marginBottom: 6 }}>No hay cuentas por cobrar aún</div>
-          <div style={{ fontSize: 13, color: "#9ca3af" }}>Emite una factura a crédito desde Facturas para ver una aquí</div>
+          <div style={{ fontSize: 16, color: "var(--c-text-2)", fontWeight: 600, marginBottom: 6 }}>No hay cuentas por cobrar aún</div>
+          <div style={{ fontSize: 13, color: "var(--c-text-4)" }}>Emite una factura a crédito desde Facturas para ver una aquí</div>
         </div>
       ) : (
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 6, overflow: "hidden" }}>
+        <div style={{ background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 10, overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+              <tr style={{ background: "#FAFAF8", borderBottom: "2px solid var(--c-border)" }}>
                 {["Factura", "Cliente", "Fecha", "Vence", "Total", "Pendiente", "Estado"].map((h) => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans, whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "var(--c-text-3)", fontFamily: sans, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -69,15 +69,15 @@ export default function CuentasPorCobrarPage() {
                 const pendiente = calcPendiente(c);
                 const vencida   = pendiente > 0 && new Date(c.fechaVencimiento + "T12:00:00") < new Date();
                 return (
-                  <tr key={c.id} onClick={() => setViendo(c)} style={{ borderBottom: "1px solid #f3f4f6", cursor: "pointer", background: vencida ? "#fef2f2" : "" }}
-                    onMouseEnter={(e) => { if (!vencida) e.currentTarget.style.background = "#f9fafb"; }}
+                  <tr key={c.id} onClick={() => setViendo(c)} style={{ borderBottom: "1px solid var(--c-border-lt)", cursor: "pointer", background: vencida ? "#fef2f2" : "" }}
+                    onMouseEnter={(e) => { if (!vencida) e.currentTarget.style.background = "#FAFAF8"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = vencida ? "#fef2f2" : ""; }}>
-                    <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 12, fontWeight: 700, color: "#111" }}>{c.numeroFactura}</td>
-                    <td style={{ padding: "11px 14px", fontSize: 13, color: "#374151", fontFamily: sans }}>{clientePor(c.clienteId)?.nombre ?? "—"}</td>
-                    <td style={{ padding: "11px 14px", fontSize: 12, color: "#6b7280", fontFamily: sans }}>{fmtDate(c.fecha)}</td>
-                    <td style={{ padding: "11px 14px", fontSize: 12, color: "#6b7280", fontFamily: sans }}>{fmtDate(c.fechaVencimiento)}</td>
-                    <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 12, color: "#374151" }}>RD$ {fmt(c.monto)}</td>
-                    <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "#111" }}>RD$ {fmt(pendiente)}</td>
+                    <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 12, fontWeight: 700, color: "var(--c-text-1)" }}>{c.numeroFactura}</td>
+                    <td style={{ padding: "11px 14px", fontSize: 13, color: "var(--c-text-2)", fontFamily: sans }}>{clientePor(c.clienteId)?.nombre ?? "—"}</td>
+                    <td style={{ padding: "11px 14px", fontSize: 12, color: "var(--c-text-3)", fontFamily: sans }}>{fmtDate(c.fecha)}</td>
+                    <td style={{ padding: "11px 14px", fontSize: 12, color: "var(--c-text-3)", fontFamily: sans }}>{fmtDate(c.fechaVencimiento)}</td>
+                    <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 12, color: "var(--c-text-2)" }}>RD$ {fmt(c.monto)}</td>
+                    <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "var(--c-text-1)" }}>RD$ {fmt(pendiente)}</td>
                     <td style={{ padding: "11px 14px" }}><Badge estado={vencida ? "vencida" : c.estado} /></td>
                   </tr>
                 );

@@ -31,8 +31,6 @@ export default function AppSidebar({
     ? { bg: "var(--c-green-bg)", fg: "var(--c-green)", bd: "var(--c-green-border)" }
     : { bg: "var(--c-yellow-bg)", fg: "var(--c-yellow)", bd: "var(--c-yellow-border)" };
 
-  let grupoAnterior: string | undefined;
-
   return (
     <>
       <div className={`sidebar-overlay ${abierto ? "open" : ""}`} onClick={onCerrar} />
@@ -44,7 +42,8 @@ export default function AppSidebar({
           <div style={{ marginBottom: 14, paddingLeft: 2 }}><Logo size={26} /></div>
           <div style={{ background: "var(--c-bg)", border: "1px solid var(--c-border-lt)", borderRadius: "var(--radius-md)", padding: "10px 12px" }}>
             <div style={{ fontWeight: 700, fontSize: 13.5, lineHeight: 1.25, color: "var(--c-text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nombre}</div>
-            <div style={{ fontSize: 11.5, color: "var(--c-text-3)", marginTop: 2 }}>{sub} · RNC {rnc}</div>
+            <div style={{ fontSize: 11.5, color: "var(--c-text-3)", marginTop: 2 }}>{sub}</div>
+            <div style={{ fontSize: 11.5, color: "var(--c-text-3)" }}>RNC {rnc}</div>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 5, marginTop: 8, padding: "3px 9px", borderRadius: 999,
               background: ink.bg, color: ink.fg, border: `1px solid ${ink.bd}`, fontSize: 11, fontWeight: 700,
@@ -57,9 +56,8 @@ export default function AppSidebar({
         {selector && <div style={{ padding: "0 16px 6px" }}>{selector}</div>}
 
         <nav style={{ flex: 1, padding: "4px 12px 12px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
-          {items.map((it) => {
-            const mostrarGrupo = it.grupo !== grupoAnterior && it.grupo;
-            grupoAnterior = it.grupo;
+          {items.map((it, i) => {
+            const mostrarGrupo = !!it.grupo && it.grupo !== items[i - 1]?.grupo;
             return (
               <div key={it.seg}>
                 {mostrarGrupo && (

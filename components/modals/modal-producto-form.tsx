@@ -62,7 +62,7 @@ export default function ModalProductoForm({
           <div style={{ display: "flex", gap: 6 }}>
             {[["Producto (inventario)", false], ["Servicio", true]].map(([label, val]) => (
               <button key={label as string} type="button" onClick={() => setEsServicio(val as boolean)} style={{
-                flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+                flex: 1, padding: "8px 6px", fontSize: 12, fontWeight: 600, borderRadius: 10, cursor: "pointer",
                 border: `1px solid ${esServicio === val ? "var(--c-brand)" : "var(--c-border)"}`,
                 background: esServicio === val ? "var(--c-brand-bg)" : "var(--c-surface)",
               }}>{label as string}</button>
