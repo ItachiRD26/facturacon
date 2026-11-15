@@ -31,30 +31,22 @@ const items = [
   },
 ];
 
-// Franja de confianza: ocupa el lugar que en muchas landings de software de
-// facturación lleva una barra de estadísticas ("+50,000 empresas...") o
-// testimonios. Facturacon todavía no tiene esos datos, así que en su lugar
-// se muestran garantías verificables sobre seguridad y cumplimiento — nada
-// que no se pueda sostener hoy mismo.
+// Garantías verificables sobre seguridad y cumplimiento (en lugar de cifras de
+// clientes o testimonios, que todavía no existen). Sin envoltorio de sección.
 export default function TrustStrip() {
   return (
-    <section style={{ padding: "0 24px 64px", maxWidth: 960, margin: "0 auto" }}>
-      <div style={{
-        display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24,
-        padding: "32px 28px", background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 14,
-      }}>
-        {items.map((it) => (
-          <div key={it.t} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-            <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="var(--c-brand)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
-              {it.icon}
-            </svg>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 4 }}>{it.t}</div>
-              <div style={{ fontSize: 12.5, color: "var(--c-text-3)", lineHeight: 1.55 }}>{it.d}</div>
-            </div>
+    <div className="cols-3">
+      {items.map((it) => (
+        <div key={it.t} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+          <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="var(--c-brand)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true">
+            {it.icon}
+          </svg>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{it.t}</div>
+            <div style={{ fontSize: 14.5, color: "var(--c-text-2)", lineHeight: 1.6 }}>{it.d}</div>
           </div>
-        ))}
-      </div>
-    </section>
+        </div>
+      ))}
+    </div>
   );
 }

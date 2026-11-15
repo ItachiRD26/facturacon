@@ -8,7 +8,7 @@ export default function SiteFooter() {
       fontFamily: "var(--font-sans)", padding: "40px 24px 28px",
     }}>
       <div style={{
-        maxWidth: 1080, margin: "0 auto", display: "grid",
+        maxWidth: "var(--container)", margin: "0 auto", display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 28, marginBottom: 28,
       }}>
         <div>
@@ -49,7 +49,7 @@ export default function SiteFooter() {
       </div>
 
       <div style={{
-        maxWidth: 1080, margin: "0 auto", borderTop: "1px solid rgba(255,255,255,0.12)",
+        maxWidth: "var(--container)", margin: "0 auto", borderTop: "1px solid rgba(255,255,255,0.12)",
         paddingTop: 16, fontSize: 12,
       }}>
         © {new Date().getFullYear()} Facturacon. República Dominicana.

@@ -213,3 +213,49 @@ body {
 @media (max-width: 640px) {
   .nav-secundaria { display: none; }
 }
+
+/* ── Sistema de secciones de la landing ──────────────────────────────
+   Un solo contenedor, un solo espacio vertical y un solo encabezado para
+   todas las secciones; lo único que cambia es el tono de fondo. Los tonos
+   se alternan (papel / blanco / tinta) y las blancas llevan filete arriba y
+   abajo, así se distingue dónde empieza y termina cada una. */
+:root {
+  --header-h: 68px;
+  --container: 1120px;
+  --sec-y: clamp(64px, 8vw, 112px);
+}
+.sec { scroll-margin-top: var(--header-h); }
+.sec-paper { background: var(--c-bg); }
+.sec-white { background: var(--c-surface); border-block: 1px solid var(--c-border); }
+.sec-ink   { background: var(--c-navy); color: #fff; }
+.sec-inner { max-width: var(--container); margin: 0 auto; padding: var(--sec-y) 24px; }
+.sec-head  { max-width: 640px; margin-bottom: clamp(36px, 5vw, 56px); }
+.sec-h2    { font-weight: 800; font-size: clamp(1.9rem, 3.6vw, 2.75rem); line-height: 1.08; letter-spacing: -0.03em; }
+.sec-lede  { margin-top: 14px; font-size: 17px; line-height: 1.6; color: var(--c-text-2); }
+.sec-ink .sec-lede { color: rgba(255,255,255,0.7); }
+
+/* Rejillas de contenido: mismas columnas y mismo hueco en toda la página. */
+.cols-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+.cols-5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px; }
+.cols-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.split  { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(32px, 6vw, 80px); align-items: start; }
+@media (max-width: 960px) {
+  .cols-4, .cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cols-3 { grid-template-columns: 1fr; }
+  .split { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .cols-4, .cols-5 { grid-template-columns: 1fr; }
+  .sec-inner { padding-inline: 20px; }
+}
+
+/* Hero: ocupa justo la pantalla (descontado el header fijo) para que la
+   siguiente sección no asome cortada al cargar. dvh respeta la barra del
+   navegador en móvil. */
+.hero {
+  min-height: 560px;
+  min-height: clamp(560px, calc(100vh - var(--header-h)), 940px);
+  min-height: clamp(560px, calc(100dvh - var(--header-h)), 940px);
+  display: flex; align-items: center;
+}
+.hero > .sec-inner { width: 100%; padding-block: clamp(40px, 6vh, 88px); }

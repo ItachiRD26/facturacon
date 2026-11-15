@@ -9,7 +9,7 @@ export default function SiteHeader() {
       borderBottom: "1px solid var(--c-border)", fontFamily: "var(--font-sans)",
     }}>
       <div style={{
-        maxWidth: 1080, margin: "0 auto", padding: "14px 24px",
+        maxWidth: "var(--container)", margin: "0 auto", padding: "0 24px", height: "var(--header-h)",
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
       }}>
         <Link href="/" style={{ textDecoration: "none", display: "flex" }}>

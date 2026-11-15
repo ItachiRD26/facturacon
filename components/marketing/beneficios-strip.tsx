@@ -18,7 +18,7 @@ const beneficios = [
   },
   {
     t: "Sistema de facturación completo",
-    d: "Clientes, inventario, cotizaciones, facturas e impresión — todo en un solo lugar.",
+    d: "Clientes, inventario, cotizaciones, facturas e impresión en un solo lugar.",
     icon: (
       <>
         <rect x="3" y="4" width="7" height="7" rx="1.2" />
@@ -40,32 +40,28 @@ const beneficios = [
   },
 ];
 
-// Franja de 4 beneficios justo debajo del hero/mockup — mismo patrón que la
-// fila de iconos al inicio de una landing típica de software de facturación
-// (ver referencia de Alegra RD), pero solo con lo que Facturacon realmente
-// hace hoy, sin sumar funciones que el producto no tiene (banca, nómina, etc).
+// Los cuatro beneficios, solo con lo que Facturacon realmente hace hoy.
+// Sin envoltorio de sección: lo pone <Seccion> en app/page.tsx.
 export default function BeneficiosStrip() {
   return (
-    <section style={{ padding: "0 24px 56px", maxWidth: 1040, margin: "0 auto" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 18 }}>
-        {beneficios.map((b) => (
-          <div key={b.t} style={{
-            display: "flex", flexDirection: "column", gap: 12, padding: "20px 18px",
-            background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 12,
+    <div className="cols-4">
+      {beneficios.map((b) => (
+        <div key={b.t} style={{
+          display: "flex", flexDirection: "column", gap: 14, padding: 24,
+          background: "var(--c-bg)", border: "1px solid var(--c-border-lt)", borderRadius: "var(--radius-lg)",
+        }}>
+          <div style={{
+            width: 42, height: 42, borderRadius: 10, background: "var(--c-brand-bg)",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
           }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: 9, background: "var(--c-brand-bg)",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="var(--c-brand)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                {b.icon}
-              </svg>
-            </div>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>{b.t}</div>
-            <div style={{ fontSize: 12.5, color: "var(--c-text-3)", lineHeight: 1.55 }}>{b.d}</div>
+            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--c-brand)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {b.icon}
+            </svg>
           </div>
-        ))}
-      </div>
-    </section>
+          <div style={{ fontWeight: 700, fontSize: 17, letterSpacing: "-0.01em" }}>{b.t}</div>
+          <div style={{ fontSize: 14.5, color: "var(--c-text-2)", lineHeight: 1.6 }}>{b.d}</div>
+        </div>
+      ))}
+    </div>
   );
 }

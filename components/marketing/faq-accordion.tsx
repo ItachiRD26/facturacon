@@ -15,27 +15,27 @@ export default function FaqAccordion({ faqs }: { faqs: Faq[] }) {
         const isOpen = open === i;
         return (
           <div key={f.q} style={{
-            border: "1px solid var(--c-border)", borderRadius: 10, overflow: "hidden", background: "var(--c-surface)",
+            border: "1px solid var(--c-border)", borderRadius: "var(--radius-lg)", overflow: "hidden", background: "var(--c-bg)",
           }}>
             <button
               onClick={() => setOpen(isOpen ? null : i)}
               style={{
                 width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
-                padding: "16px 18px", background: "transparent", border: "none", cursor: "pointer",
-                textAlign: "left", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 700, color: "var(--c-text-1)",
+                padding: "18px 20px", background: "transparent", border: "none", cursor: "pointer",
+                textAlign: "left", fontFamily: "var(--font-sans)", fontSize: 16, fontWeight: 700, color: "var(--c-text-1)",
               }}
             >
               {f.q}
               <span style={{
                 flexShrink: 0, width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                background: "var(--c-brand-bg)", color: "var(--c-brand)", fontSize: 16, lineHeight: 1,
+                background: "var(--c-surface)", color: "var(--c-brand)", fontSize: 16, lineHeight: 1,
                 transform: isOpen ? "rotate(45deg)" : "none", transition: "transform 0.15s ease",
               }}>
                 +
               </span>
             </button>
             {isOpen && (
-              <div style={{ padding: "0 18px 16px", fontSize: 13, color: "var(--c-text-3)", lineHeight: 1.6 }}>
+              <div style={{ padding: "0 20px 18px", fontSize: 15, color: "var(--c-text-2)", lineHeight: 1.65 }}>
                 {f.a}
               </div>
             )}

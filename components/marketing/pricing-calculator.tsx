@@ -21,12 +21,12 @@ export default function PricingCalculator() {
   const pct = ((Math.min(facturas, MAX) - MIN) / (MAX - MIN)) * 100;
 
   return (
-    <div style={{ maxWidth: 560, margin: "0 auto" }}>
+    <div>
       <div style={{
         background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 16,
-        padding: "36px 32px", textAlign: "center",
+        padding: "36px 32px", textAlign: "center", boxShadow: "var(--shadow-md)",
       }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--c-text-3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 12 }}>
           ¿Cuántos comprobantes emites al mes?
         </div>
 
@@ -65,7 +65,7 @@ export default function PricingCalculator() {
                 Más de {MAX.toLocaleString("es-DO")} comprobantes/mes — hablemos de lo que necesitas.
               </div>
               <a href="mailto:contacto@facturacon.com.do" style={{
-                display: "inline-block", padding: "12px 28px", borderRadius: "var(--radius)",
+                display: "inline-block", padding: "12px 28px", borderRadius: "var(--radius-md)",
                 background: "var(--c-brand)", color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none",
               }}>
                 Escríbenos
@@ -81,7 +81,7 @@ export default function PricingCalculator() {
                 Hasta {plan.facturas.toLocaleString("es-DO")} comprobantes/mes · {plan.usuarios} usuarios incluidos
               </div>
               <Link href={`/registro?plan=${plan.id}`} style={{
-                display: "inline-block", padding: "12px 28px", borderRadius: "var(--radius)",
+                display: "inline-block", padding: "12px 28px", borderRadius: "var(--radius-md)",
                 background: "var(--c-brand)", color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none",
               }}>
                 Empezar con este plan →
@@ -91,7 +91,7 @@ export default function PricingCalculator() {
         </div>
       </div>
 
-      <p style={{ fontSize: 12, color: "var(--c-text-4)", marginTop: 20 }}>
+      <p style={{ fontSize: 13, color: "var(--c-text-3)", marginTop: 18, lineHeight: 1.55 }}>
         Cifras de referencia mientras confirmamos los montos finales — no son precios cerrados
         todavía. Te avisaremos antes de que se active cualquier cobro.
       </p>
