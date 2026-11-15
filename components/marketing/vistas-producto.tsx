@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { SquaresFour, Receipt, Package } from "@phosphor-icons/react/dist/ssr";
 import FacturaDemo from "./factura-demo";
+import VentanaEscalada from "./ventana-escalada";
+import { DashboardDemo, InventarioDemo } from "./sistema-demo";
 
 // Vistas del sistema con datos de ejemplo. Pestañas con icono que rotan solas
 // (con barra de progreso; se detienen al pasar el cursor, al enfocar o con
 // "reducir movimiento") sobre un escenario con resplandor. La factura no es una
 // imagen: es el componente FacturaDemo, con la hoja A4 y el ticket por separado.
 const VISTAS = [
-  { id: "dashboard", pestana: "Tu negocio de un vistazo", Icono: SquaresFour, descripcion: "Lo facturado, lo que te deben y cuántos comprobantes llevas del plan, sin armar reportes.", src: "/landing/dashboard.png", alt: "Dashboard de Facturacon con facturado del mes, por cobrar, comprobantes emitidos, gráfico diario y últimos comprobantes aceptados por la DGII" },
-  { id: "factura", pestana: "Factura A4 y ticket", Icono: Receipt, descripcion: "Comprobante fiscal electrónico firmado, con código QR, para imprimir en hoja A4 o en ticket térmico.", src: "", alt: "" },
-  { id: "inventario", pestana: "Inventario y códigos de barra", Icono: Package, descripcion: "Productos con control de stock, etiquetas para imprimir y escaneo directo en la factura.", src: "/landing/inventario.png", alt: "Lista de inventario con códigos de barra, stock y etiqueta imprimible del producto seleccionado" },
+  { id: "dashboard", pestana: "Tu negocio de un vistazo", Icono: SquaresFour, descripcion: "Lo facturado, lo que te deben y cuántos comprobantes llevas del plan, sin armar reportes." },
+  { id: "factura", pestana: "Factura A4 y ticket", Icono: Receipt, descripcion: "Comprobante fiscal electrónico firmado, con código QR, para imprimir en hoja A4 o en ticket térmico." },
+  { id: "inventario", pestana: "Inventario y códigos de barra", Icono: Package, descripcion: "Productos con control de stock, etiquetas para imprimir y escaneo directo en la factura." },
 ];
 const SEGUNDOS = 7;
 
@@ -60,8 +61,7 @@ export default function VistasProducto() {
       <div className="stage-vistas" id="panel-vista" role="tabpanel" aria-labelledby={`tab-${v.id}`}>
         <div className="stage-in" key={v.id}>
           {v.id === "factura" ? <FacturaDemo /> : (
-            <Image src={v.src} alt={v.alt} width={2400} height={1520} sizes="(max-width: 1120px) 100vw, 1072px"
-              priority={idx === 0} style={{ width: "100%", height: "auto", display: "block" }} />
+            <VentanaEscalada>{v.id === "dashboard" ? <DashboardDemo /> : <InventarioDemo />}</VentanaEscalada>
           )}
         </div>
       </div>

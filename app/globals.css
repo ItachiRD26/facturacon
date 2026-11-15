@@ -432,3 +432,69 @@ body {
 
 /* Header público en teléfonos chicos: solo el icono del logo, para que quepan Iniciar sesión y el botón. */
 @media (max-width: 480px) { .site-header .logo-wordmark { display: none; } }
+
+/* ── Dashboard e inventario de ejemplo (components/marketing/sistema-demo.tsx) ──
+   Diseñados a 1112 x 690 px; <VentanaEscalada> los escala al ancho disponible. */
+.vt-win { width: 1112px; height: 690px; background: #fff; border: 1px solid #DADDD5; border-radius: 14px; box-shadow: 0 30px 60px rgba(0,0,0,.4); overflow: hidden; display: flex; flex-direction: column; font-family: var(--font-sans), system-ui, sans-serif; color: #0F1A30; text-align: left; line-height: 1.4; }
+.vt-win * { box-sizing: border-box; }
+.vt-chrome { display: flex; align-items: center; gap: 7px; padding: 11px 16px; background: #EEF0EC; border-bottom: 1px solid #DADDD5; }
+.vt-chrome i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+.vt-url { margin-left: 12px; font-family: var(--font-mono), monospace; font-size: 12px; color: #5B657D; background: #fff; border: 1px solid #DADDD5; border-radius: 5px; padding: 3px 12px; }
+.vt-app { flex: 1; display: flex; min-height: 0; }
+.vt-side { width: 208px; background: #fff; border-right: 1px solid #DADDD5; padding: 18px 14px; display: flex; flex-direction: column; gap: 3px; }
+.vt-brand { display: flex; align-items: center; gap: 8px; font-weight: 800; letter-spacing: -.035em; font-size: 19px; padding: 2px 6px 16px; }
+.vt-it { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13.5px; font-weight: 500; color: #2F3A55; }
+.vt-it.on { background: #EEF1FE; color: #2540D9; font-weight: 700; }
+.vt-grupo { font-size: 11.5px; color: #8A93A6; font-weight: 600; padding: 14px 10px 4px; }
+.vt-estado { margin-top: auto; display: flex; align-items: center; gap: 7px; padding: 10px 12px; border-radius: 8px; background: #f0faf4; border: 1px solid #bbf7d0; color: #166534; font-size: 12px; font-weight: 600; }
+.vt-main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #F3F4F1; }
+.vt-top { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; background: #fff; border-bottom: 1px solid #DADDD5; }
+.vt-top h3 { font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+.vt-quien { font-size: 12.5px; color: #5B657D; display: flex; align-items: center; gap: 10px; }
+.vt-av { width: 28px; height: 28px; border-radius: 50%; background: #0F1A30; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.vt-pill { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.vt-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.vt-pill.ok { background: #f0faf4; color: #166534; } .vt-pill.warn { background: #fffbeb; color: #92400e; } .vt-pill.bad { background: #fef2f2; color: #991b1b; }
+.vt-card { background: #fff; border: 1px solid #DADDD5; border-radius: 12px; box-shadow: 0 1px 2px rgba(15,26,48,.05); }
+.vt-win table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.vt-win th { text-align: left; font-weight: 600; color: #5B657D; padding: 8px 16px; font-size: 11.5px; }
+.vt-win td { padding: 9px 16px; border-top: 1px solid #ECEEE8; }
+.vt-win .m { font-family: var(--font-mono), monospace; font-size: 12px; }
+.vt-win .r { text-align: right; } .vt-win th.r { text-align: right; }
+.dd-ultimos th:last-child { text-align: right; }
+.num-sans { font-variant-numeric: normal; }
+
+/* Dashboard */
+.dd-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; min-height: 0; flex: 1; }
+.dd-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.dd-kpi { padding: 14px 16px; }
+.dd-kpi .l { font-size: 12.5px; color: #5B657D; font-weight: 500; }
+.dd-kpi .v { font-size: 24px; font-weight: 800; letter-spacing: -.03em; margin: 4px 0 2px; }
+.dd-kpi .n { font-size: 12px; color: #5B657D; } .dd-kpi .n.up { color: #166534; font-weight: 600; }
+.dd-row { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; flex: 1; min-height: 0; }
+.dd-chart, .dd-ultimos { display: flex; flex-direction: column; padding-bottom: 12px; }
+.dd-row h4 { font-size: 13.5px; font-weight: 700; padding: 14px 16px 0; }
+.dd-row .sub { font-size: 12px; color: #5B657D; padding: 2px 16px 0; }
+.dd-barras { flex: 1; display: flex; align-items: flex-end; gap: 4px; padding: 14px 16px 0; min-height: 0; }
+.dd-barras span { flex: 1; background: #C5CEFA; border-radius: 2.5px 2.5px 0 0; transform-origin: bottom; animation: crece .7s var(--ease-out) both; animation-delay: calc(.25s + var(--i) * 28ms); }
+.dd-barras span.hoy { background: #2540D9; }
+@keyframes crece { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.dd-fila { animation: filaIn .45s var(--ease-out) both; animation-delay: calc(.3s + var(--i) * 90ms); }
+@keyframes filaIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+.dd-ultimos .pie { padding: 10px 16px 0; margin-top: auto; }
+
+/* Inventario */
+.iv-body { padding: 18px 24px; display: grid; grid-template-columns: 1fr 250px; gap: 16px; min-height: 0; flex: 1; }
+.iv-tools { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+.iv-search { flex: 1; padding: 9px 12px; border: 1px solid #DADDD5; border-radius: 8px; background: #fff; font-size: 13px; color: #8A93A6; }
+.iv-btn { padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; border: 1px solid #DADDD5; background: #fff; white-space: nowrap; }
+.iv-btn.p { background: #2540D9; color: #fff; border-color: #2540D9; }
+.iv-tabla th { background: #FAFAF8; padding: 9px 14px; } .iv-tabla td { padding: 10px 14px; }
+.iv-tabla .m { color: #5B657D; } .iv-tabla tr.sel td { background: #EEF1FE; }
+.iv-lab { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.iv-lab h4 { font-size: 13.5px; font-weight: 700; }
+.iv-etq { border: 1px dashed #8A93A6; border-radius: 6px; padding: 12px 10px 8px; text-align: center; background: #fff; animation: imprime 1.2s cubic-bezier(.3,.6,.2,1) .5s both; }
+.iv-etq .n { font-size: 12px; font-weight: 700; } .iv-etq .p { font-size: 17px; font-weight: 800; margin: 2px 0 6px; letter-spacing: -.02em; }
+.iv-etq .c { font-family: var(--font-mono), monospace; font-size: 10.5px; margin-top: 3px; letter-spacing: .12em; }
+.iv-scan { padding: 10px 12px; background: #f0faf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #166534; font-size: 12px; font-weight: 600; line-height: 1.4; }
+@media (prefers-reduced-motion: reduce) { .dd-barras span, .dd-fila, .iv-etq { animation: none !important; } }
