@@ -12,6 +12,10 @@ const PUBLIC_ROOT_PATHS = [
   // /fe/* en el dominio raíz no tiene empresa: responde 404 en XML en vez de
   // mandar a la DGII a una pantalla de login.
   "/fe",
+  // Estas dos rutas no llevan sesión de usuario y se protegen solas: el cron exige su
+  // CRON_SECRET (Vercel lo manda en la cabecera) y el webhook de Pagadito rechaza todo lo que
+  // no traiga una firma válida. Sin esto el proxy las mandaba al login (307) y nunca se ejecutaban.
+  "/api/cron", "/api/payments/webhook",
 ];
 
 // Rutas públicas dentro de un subdominio de tenant. "/api" es crítico: todas
