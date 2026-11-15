@@ -9,7 +9,7 @@ import BeneficiosStrip from "@/components/marketing/beneficios-strip";
 import TrustStrip from "@/components/marketing/trust-strip";
 import VistasProducto from "@/components/marketing/vistas-producto";
 import FaqAccordion from "@/components/marketing/faq-accordion";
-import PricingCalculator from "@/components/marketing/pricing-calculator";
+import PlanesGrid from "@/components/marketing/planes-grid";
 import TicketHero from "@/components/marketing/ticket-hero";
 import { PLANES } from "@/lib/payments/planes";
 import { ETAPAS } from "@/lib/tenant/jornada";
@@ -120,22 +120,20 @@ export default function LandingPage() {
           {hayVideo && <div style={{ marginTop: 64 }}><VideoTutorial /></div>}
         </Seccion>
 
-        {/* Precios: el único momento en cobalto. Título a la izquierda y la
-            calculadora a la derecha. */}
-        <Seccion id="precios" tono="brand">
-          <div className="split">
-            <div>
-              <h2 className="sec-h2">Desde RD$ {PLANES[0].montoRD.toLocaleString("es-DO")} al mes</h2>
-              <p className="sec-lede">
-                La certificación como emisor electrónico es gratis. Pagas una sola suscripción
-                mensual según cuántos comprobantes emitas, y solo empieza a cobrarse una vez que
-                estés certificado y facturando de verdad.
-              </p>
-              <p className="destacado" style={{ marginTop: 28 }}>La mensualidad empieza cuando ya estés certificado.</p>
-              <div style={{ marginTop: 24 }}><PagaditoBadge /></div>
-            </div>
-            <PricingCalculator />
+        {/* Precios: el único momento en cobalto. Todos los planes a la vista (sin
+            slider) y sin botón por plan: el plan se elige después de certificarse. */}
+        <Seccion id="precios" tono="brand" titulo={<>Desde RD$ {PLANES[0].montoRD.toLocaleString("es-DO")} al mes</>}
+          lede="La certificación como emisor electrónico es gratis. Pagas una sola suscripción mensual según cuántos comprobantes emitas, y eliges tu plan cuando ya estés certificado.">
+          <p className="destacado">La mensualidad empieza cuando ya estés certificado.</p>
+          <PlanesGrid />
+          <div style={{ marginTop: 36, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 20 }}>
+            <Link href="/registro" className="btn-l btn-ticket">{cta}</Link>
+            <PagaditoBadge />
           </div>
+          <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.72)", marginTop: 24, lineHeight: 1.55, maxWidth: 640 }}>
+            Cifras de referencia mientras confirmamos los montos finales; no son precios cerrados
+            todavía. Te avisaremos antes de que se active cualquier cobro.
+          </p>
         </Seccion>
 
         <Seccion id="faq" tono="paper">

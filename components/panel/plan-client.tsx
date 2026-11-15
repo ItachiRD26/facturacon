@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Modal from "@/components/modals/modal";
 import { Button, Card, CardTitle, PageHeader, Pill, ProgressBar } from "@/components/ui/kit";
 import { useSuscripcion } from "@/hooks/use-suscripcion";
-import { PLANES, type Plan } from "@/lib/payments/planes";
+import { PLANES, VOLUMEN_EMPRESA, type Plan } from "@/lib/payments/planes";
 import type { EstadoTenant } from "@/types/tenant";
 import SuscripcionWizard from "./suscripcion-wizard";
 import TutorialButton from "./tutorial-button";
@@ -27,6 +27,19 @@ function TarjetaPlan({ plan, onElegir, destacada, soloVer }: { plan: Plan; onEle
         RD$ {plan.montoRD.toLocaleString("es-DO")}<span style={{ fontSize: 12, fontWeight: 500, color: "var(--c-text-3)" }}> /mes</span>
       </div>
       {!soloVer && <Button variante={destacada ? "primary" : "secondary"} onClick={onElegir} full>Elegir este plan</Button>}
+    </Card>
+  );
+}
+
+// Para volúmenes que ningún plan de lista cubre: se habla con ventas.
+function TarjetaEmpresa() {
+  return (
+    <Card padding={18} style={{ display: "flex", flexDirection: "column", gap: 4, background: "var(--c-navy)", borderColor: "var(--c-navy)", color: "#fff" }}>
+      <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.25 }}>Más de {PLANES[PLANES.length - 1].facturas.toLocaleString("es-DO")} comprobantes</div>
+      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.72)", marginBottom: 14, lineHeight: 1.5 }}>
+        Con {VOLUMEN_EMPRESA.toLocaleString("es-DO")} o más, o varias sucursales, armamos un plan a tu medida.
+      </div>
+      <Button href="/empresas" variante="secondary" full>Hablar con ventas</Button>
     </Card>
   );
 }
@@ -94,6 +107,7 @@ export default function PlanClient({
           </Card>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {PLANES.map((p) => <TarjetaPlan key={p.id} plan={p} soloVer />)}
+            <TarjetaEmpresa />
           </div>
         </>
       )}
@@ -112,6 +126,7 @@ export default function PlanClient({
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {PLANES.map((p) => <TarjetaPlan key={p.id} plan={p} onElegir={() => abrir(p.id, true)} destacada={p.id === suscripcion?.planId} />)}
+            <TarjetaEmpresa />
           </div>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 14, lineHeight: 1.55 }}>
             Se cobra cada mes a tu tarjeta de forma automática hasta que canceles. Tu tarjeta se envía directo a Pagadito, nuestra pasarela de pago; nunca pasa por los servidores de Facturacon.
