@@ -1,14 +1,3 @@
-export type MarcaTarjeta = "visa" | "mastercard" | "amex" | "otra";
-
-export interface MetodoPago {
-  id:             string;
-  marca:          MarcaTarjeta;
-  ultimos4:       string;
-  vencimiento:    string; // "MM/YY"
-  predeterminado: boolean;
-  creadoEn?:      string;
-}
-
 // Suscripción de cobro recurrente mensual (Pagadito Tokenización) — activa el
 // cobro del plan mes a mes una vez el tenant ya está certificado. Vive en
 // tenants/{tenantId}/facturacion/suscripcion, escrita solo por el backend

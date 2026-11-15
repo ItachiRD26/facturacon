@@ -105,6 +105,14 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Cuentas de empleado (login por código, ver lib/tenant/codigo-
+      // empleado.ts) — codigoHash nunca debe ser legible por el cliente, así
+      // que todo el documento queda server-only. El dueño/admin lo gestiona
+      // vía /api/tenant/empleados/*, no por lectura/escritura directa.
+      match /empleados/{uid} {
+        allow read, write: if false;
+      }
+
       // Suscripción de cobro recurrente (Pagadito Tokenización): visible
       // para miembros (para mostrar el estado en el panel), pero
       // payment_token/subscription_code solo los escribe el backend tras
@@ -159,14 +167,6 @@ service cloud.firestore {
       match /facturas_recibidas/{docId} {
         allow read:  if hasMembership(tenantId);
         allow write: if hasMembership(tenantId) && puedeCobranza(tenantId);
-      }
-      // Métodos de pago: solo datos de visualización (marca, últimos 4
-      // dígitos, vencimiento) — nunca el número completo de tarjeta ni CVV,
-      // así que no requiere el mismo aislamiento que /config/certificado.
-      // Es un tema de facturación de la cuenta, no operativo — solo owner/admin.
-      match /metodos_pago/{docId} {
-        allow read:  if hasMembership(tenantId);
-        allow write: if hasMembership(tenantId) && esOwnerOAdmin(tenantId);
       }
     }
   }

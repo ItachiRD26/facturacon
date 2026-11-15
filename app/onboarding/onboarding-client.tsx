@@ -77,7 +77,7 @@ function OnboardingShell() {
       const res = await fetch(`/api/validate-rnc?number=${encodeURIComponent(rnc)}`);
       const data = await res.json();
       if (!data.valid) {
-        setRncError("No encontramos ese RNC en el padrón de la DGII. Verifica el número.");
+        setRncError(data.mensajeDgii || "No encontramos ese RNC en el padrón de la DGII. Verifica el número.");
       } else {
         setRncValidado(data);
         if (!nombreNegocio) setNombreNegocio(data.name);

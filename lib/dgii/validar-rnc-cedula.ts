@@ -8,6 +8,12 @@ export interface ResultadoConsultaDGII {
   estado?: string | null;
   activo?: boolean | null;
   error?: string;
+  // Texto literal que la propia DGII muestra en su portal cuando no
+  // encuentra el RNC/cédula (ej. "El RNC/Cédula consultado no se encuentra
+  // inscrito como Contribuyente.") — capturado del span
+  // #cphMain_lblInformacion, en vez de que nosotros inventemos nuestra
+  // propia redacción del motivo del rechazo.
+  mensajeDgii?: string;
 }
 
 // Consulta el padrón público de la DGII por RNC o cédula (el mismo
@@ -75,7 +81,9 @@ export async function consultarRncODGII(numero: string): Promise<ResultadoConsul
         activo: estado ? estado.toUpperCase().includes("ACTIVO") : null,
       };
     }
-    return { valid: false };
+
+    const mensajeDgii = $("#cphMain_lblInformacion").text().trim() || undefined;
+    return { valid: false, mensajeDgii };
   } catch (error) {
     console.error("❌ Error al consultar DGII:", error);
     return { valid: false, error: "Error al consultar DGII" };

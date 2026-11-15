@@ -7,6 +7,7 @@ import type { EmpresaConfig } from "@/types/tenant";
 import type { FilaSetPrueba, ItemAC, FacturaPrueba } from "@/lib/certificacion/tipos";
 import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder";
 import VideoPlaceholder from "@/components/marketing/video-placeholder";
+import InfoTooltip from "@/components/panel/info-tooltip";
 
 const sans  = "var(--font-sans)";
 const serif = "var(--font-serif)";
@@ -55,17 +56,42 @@ function Boton({ onClick, disabled, children, variante = "primario" }: {
 
 // Botón de subida de archivo con ícono visible — un <input type="file">
 // pelado se confunde con texto normal, esto deja claro que ahí se hace clic.
-function SubidaArchivo({ onFile, cargando, etiqueta, nombreArchivo, accept = ".xlsx,.xls" }: {
-  onFile: (f: File) => void; cargando: boolean; etiqueta: string; nombreArchivo?: string; accept?: string;
+// También acepta arrastrar y soltar el archivo encima. `grande` cambia a una
+// zona más grande y notoria (usada en la postulación, donde subir el XML es
+// obligatorio antes de poder seguir) en vez del botón compacto de siempre
+// (usado en los Excel de los Pasos 2/3, donde es uno más entre varios campos).
+function SubidaArchivo({ onFile, cargando, etiqueta, nombreArchivo, accept = ".xlsx,.xls", grande = false }: {
+  onFile: (f: File) => void; cargando: boolean; etiqueta: string; nombreArchivo?: string; accept?: string; grande?: boolean;
 }) {
+  const [arrastrando, setArrastrando] = useState(false);
+
   return (
-    <label style={{
-      display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 16px",
-      border: "1.5px dashed var(--c-brand)", borderRadius: 8, cursor: cargando ? "not-allowed" : "pointer",
-      background: "var(--c-brand-bg)", fontSize: 13, fontWeight: 600, color: "var(--c-brand)",
-    }}>
-      <span style={{ fontSize: 18 }}>📄</span>
-      {cargando ? "Subiendo…" : nombreArchivo ? `✓ ${nombreArchivo} — cambiar archivo` : etiqueta}
+    <label
+      onDragOver={(e) => { e.preventDefault(); if (!cargando) setArrastrando(true); }}
+      onDragLeave={() => setArrastrando(false)}
+      onDrop={(e) => {
+        e.preventDefault(); setArrastrando(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file && !cargando) onFile(file);
+      }}
+      style={{
+        display: "flex", flexDirection: grande ? "column" : "row", alignItems: "center", justifyContent: "center",
+        gap: grande ? 4 : 10, padding: grande ? "28px 16px" : "10px 16px", textAlign: "center",
+        border: `${grande ? 2 : 1.5}px dashed var(--c-brand)`, borderRadius: 8,
+        cursor: cargando ? "not-allowed" : "pointer",
+        background: arrastrando ? "var(--c-brand)" : "var(--c-brand-bg)",
+        color: arrastrando ? "#fff" : "var(--c-brand)",
+        fontSize: 13, fontWeight: 600, transition: "background 0.12s, color 0.12s",
+        width: grande ? "100%" : "fit-content",
+      }}
+    >
+      <span style={{ fontSize: grande ? 28 : 18 }}>📄</span>
+      <span>
+        {cargando ? "Subiendo…" : nombreArchivo ? `✓ ${nombreArchivo} — cambiar archivo` : arrastrando ? "Suelta el archivo aquí" : etiqueta}
+      </span>
+      {grande && !nombreArchivo && !cargando && !arrastrando && (
+        <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.85 }}>o arrastra y suelta el archivo aquí</span>
+      )}
       <input type="file" accept={accept} disabled={cargando} onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} style={{ display: "none" }} />
     </label>
   );
@@ -93,18 +119,33 @@ function Estado({ estado }: { estado?: string }) {
 
 // Título de cada Paso + insignia con a cuáles de los 15 pasos oficiales de
 // la DGII corresponde — para que el cliente nunca se quede preguntando "¿y
-// esto qué tiene que ver con lo que dice el portal de la DGII?".
-function PasoTitulo({ n, children }: { n: Paso; children: React.ReactNode }) {
+// esto qué tiene que ver con lo que dice el portal de la DGII?". `ayuda`
+// opcional agrega el botón "?" junto al título, para el término técnico más
+// relevante de ese paso (ej. "¿qué es un token?").
+function PasoTitulo({ n, children, ayuda }: { n: Paso; children: React.ReactNode; ayuda?: string }) {
   const info = PASOS.find((p) => p.n === n);
   return (
     <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
       <h2 style={{ fontFamily: serif, fontSize: "1.1rem", margin: 0 }}>{children}</h2>
+      {ayuda && <InfoTooltip texto={ayuda} />}
       {info && (
         <span style={{ fontSize: 10, fontWeight: 700, color: "var(--c-text-3)", background: "var(--c-bg)", padding: "2px 8px", borderRadius: 999, border: "1px solid var(--c-border)" }}>
           DGII: {info.dgii}
         </span>
       )}
     </div>
+  );
+}
+
+// Etiqueta de campo/término con su propio "?" al lado — para explicar una
+// palabra puntual (ej. "e-NCF") sin tener que meter un párrafo entero en el
+// texto general del paso.
+function Etiqueta({ children, ayuda }: { children: React.ReactNode; ayuda: string }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+      {children}
+      <InfoTooltip texto={ayuda} />
+    </span>
   );
 }
 
@@ -181,6 +222,7 @@ export default function CertificacionPage() {
   const [guardandoEmpresa, setGuardandoEmpresa] = useState(false);
   const [ofvIniciada, setOfvIniciada] = useState(false);
   const [slug, setSlug] = useState<string | null>(null);
+  const [urlCopiada, setUrlCopiada] = useState<string | null>(null);
   const [firmandoPostulacion, setFirmandoPostulacion] = useState(false);
   const [nombreArchivoPostulacion, setNombreArchivoPostulacion] = useState("");
   const [errorPostulacion, setErrorPostulacion] = useState("");
@@ -263,6 +305,16 @@ export default function CertificacionPage() {
       alert(e instanceof Error ? e.message : "Error guardando datos de empresa");
     } finally {
       setGuardandoEmpresa(false);
+    }
+  }
+
+  async function copiarUrl(label: string, valor: string) {
+    try {
+      await navigator.clipboard.writeText(valor);
+      setUrlCopiada(label);
+      setTimeout(() => setUrlCopiada((actual) => (actual === label ? null : actual)), 1500);
+    } catch {
+      alert("No se pudo copiar automáticamente — selecciona el texto del campo y cópialo manualmente.");
     }
   }
 
@@ -486,16 +538,63 @@ export default function CertificacionPage() {
   const candidatosRFCE = Object.values(filas).filter((f) => f.tipoECF === "E32" && f.montoTotal < 250000 && (f.estadoEnvio === "enviado" || f.estadoEnvio === "aceptado"));
   const pruebasRFCE = Object.values(pruebas).filter((p) => p.tipoECF === "E32" && p.montoTotal < 250000 && p.estadoEnvio === "enviado");
 
+  // Una sola frase, calculada del progreso real, para que el usuario nunca
+  // tenga que mirar la tabla de pasos y adivinar qué le toca hacer ahora.
+  function proximoPaso(): { texto: string; ir: Paso } {
+    if (!ofvIniciada || !empresa) {
+      return { texto: "Confirma que ya iniciaste tu solicitud en la Oficina Virtual (OFV) de la DGII y completa los datos de tu empresa.", ir: 0 };
+    }
+    if (!tokenValido) {
+      return { texto: "Obtén tu token de autenticación contra la DGII — es un solo clic.", ir: 1 };
+    }
+    if (totalPaso2 === 0) {
+      return { texto: "Sube el Excel con los 25 comprobantes de prueba que te dio la DGII al iniciar tu solicitud.", ir: 2 };
+    }
+    if (enviadosPaso2 < totalPaso2) {
+      return { texto: `Te faltan ${totalPaso2 - enviadosPaso2} de los 25 comprobantes de prueba por enviar — dale clic en "Enviar los 25".`, ir: 2 };
+    }
+    if (Object.keys(acItems).length > 0 && !Object.values(acItems).every((it) => it.enviado)) {
+      return { texto: "Envía las Aprobaciones Comerciales pendientes del Paso 3.", ir: 3 };
+    }
+    if (Object.keys(acItems).length === 0) {
+      return { texto: "Si la DGII ya te habilitó el Excel de Aprobación Comercial en el portal, súbelo en el Paso 3. Si tu certificación no lo requiere, puedes seguir directo al Paso 4.", ir: 3 };
+    }
+    if (Object.keys(pruebas).length === 0) {
+      return { texto: "Crea las pruebas interactivas que la DGII te pida en el Paso 4.", ir: 4 };
+    }
+    if (candidatosRFCE.length > 0 || pruebasRFCE.length > 0) {
+      return { texto: "Descarga los XML pendientes del Paso 5 y súbelos al portal de la DGII.", ir: 5 };
+    }
+    if (!confirmoPortal) {
+      return { texto: "Sube las representaciones impresas y haz la validación final en el portal de la DGII, luego confirma en el Paso 6 para activar tu cuenta.", ir: 6 };
+    }
+    return { texto: "Todo listo — dale clic en \"Finalizar certificación\" en el Paso 6.", ir: 6 };
+  }
+  const siguiente = proximoPaso();
+
   return (
     <main style={{ maxWidth: 880, margin: "0 auto", padding: "32px 24px 80px", fontFamily: sans }}>
       <a href={`/panel/${tenantId}`} style={{ fontSize: 13, color: "var(--c-text-3)", display: "inline-block", marginBottom: 16 }}>
         ← Volver a mi cuenta
       </a>
       <h1 style={{ fontFamily: serif, fontSize: "1.7rem", marginBottom: 6 }}>Asistente de certificación DGII</h1>
-      <p style={{ fontSize: 13, color: "var(--c-text-3)", marginBottom: 24 }}>
+      <p style={{ fontSize: 13, color: "var(--c-text-3)", marginBottom: 16 }}>
         Estos son los pasos técnicos que la DGII exige para certificarte como emisor de e-CF en su
         ambiente de pruebas (certecf). Puedes avanzar a tu ritmo — el progreso se guarda solo.
       </p>
+
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap",
+        padding: "12px 16px", background: "var(--c-brand-bg)", border: "1px solid var(--c-brand-border)",
+        borderRadius: 8, marginBottom: 20,
+      }}>
+        <div style={{ fontSize: 13 }}>
+          <strong>Qué hacer ahora:</strong> {siguiente.texto}
+        </div>
+        {siguiente.ir !== paso && (
+          <Boton onClick={() => setPaso(siguiente.ir)}>Ir ahora →</Boton>
+        )}
+      </div>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 24 }}>
         {PASOS.map((p) => (
@@ -514,7 +613,9 @@ export default function CertificacionPage() {
 
       {paso === 0 && (
         <Card>
-          <PasoTitulo n={0}>Antes de empezar — inicia la solicitud en la OFV</PasoTitulo>
+          <PasoTitulo n={0} ayuda="La Oficina Virtual (OFV) es el portal donde la DGII gestiona tu cuenta como contribuyente — ahí es donde formalmente pides convertirte en Emisor Electrónico. Facturacon no puede hacer este trámite por ti, es directo con la DGII.">
+            Antes de empezar — inicia la solicitud en la OFV
+          </PasoTitulo>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
             Este asistente solo funciona si tu empresa ya inició su solicitud de certificación
             como Emisor Electrónico dentro de la Oficina Virtual (OFV) de la DGII. Si todavía no lo
@@ -522,10 +623,22 @@ export default function CertificacionPage() {
             hecho, la DGII no va a reconocer tu RNC y todo va a fallar.
           </p>
           <TuYNosotros tu="Iniciar la solicitud de certificación dentro de la OFV de tu empresa." nosotros="Todo lo técnico de ahí en adelante: firmar, armar y enviar cada comprobante." />
-          <ScreenshotPlaceholder titulo="Dónde iniciar la solicitud en la OFV" descripcion="Dentro de tu cuenta de la Oficina Virtual de la DGII, en la sección de comprobantes fiscales electrónicos." />
-          <div style={{ marginTop: 12, padding: "10px 14px", background: "var(--c-bg)", border: "1px dashed var(--c-border)", borderRadius: 8, fontSize: 12, color: "var(--c-text-3)" }}>
-            Enlace directo a la OFV — próximamente.
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+          <img
+            src="/certificacion/antes-de-empezar.webp" alt="Dónde iniciar la solicitud en la OFV: Solicitudes → Solicitud para ser Emisor Electrónico"
+            style={{ width: "100%", borderRadius: 10, border: "1px solid var(--c-border)", boxShadow: "0 12px 30px rgba(17,20,57,0.10)" }}
+          />
+          <a
+            href="https://www.dgii.gov.do" target="_blank" rel="noopener noreferrer"
+            style={{
+              marginTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+              padding: "10px 14px", background: "var(--c-bg)", border: "1px solid var(--c-border)",
+              borderRadius: 8, fontSize: 12, textDecoration: "none", color: "var(--c-text-2)",
+            }}
+          >
+            <span>Abrir el sitio de la DGII — busca &quot;Oficina Virtual&quot; para iniciar sesión y hacer la solicitud</span>
+            <span style={{ color: "var(--c-brand)", fontWeight: 700, flexShrink: 0 }}>Abrir →</span>
+          </a>
           <label style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "flex-start", marginTop: 16, marginBottom: 4 }}>
             <input type="checkbox" checked={ofvIniciada} onChange={(e) => setOfvIniciada(e.target.checked)} style={{ marginTop: 2 }} />
             Confirmo que ya inicié la solicitud de certificación en la OFV de mi empresa.
@@ -533,9 +646,12 @@ export default function CertificacionPage() {
 
           <div style={{ height: 1, background: "var(--c-border)", margin: "20px 0" }} />
 
-          <h2 style={{ fontFamily: serif, fontSize: "1.05rem", marginBottom: 4 }}>Datos de tu empresa</h2>
+          <h2 style={{ fontFamily: serif, fontSize: "1.05rem", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+            Datos de tu empresa
+            <InfoTooltip texto="XSD es el formato técnico que define cómo debe verse cada comprobante electrónico — la DGII exige estos datos (dirección, teléfono, actividad económica) dentro de ese formato, y no te los pedimos antes porque no hacían falta para el resto del sistema." />
+          </h2>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
-            El XSD del e-CF exige estos datos del emisor — no se pidieron antes en tu registro.
+            La DGII exige estos datos del emisor en cada comprobante — no se pidieron antes en tu registro.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <label style={{ fontSize: 12 }}>
@@ -551,19 +667,14 @@ export default function CertificacionPage() {
               <input value={actividad} onChange={(e) => setActividad(e.target.value)} placeholder="Ej. Venta al por menor de ferretería" style={{ display: "block", width: "100%", marginTop: 4, padding: "9px 10px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 13 }} />
             </label>
           </div>
-          <div style={{ marginTop: 16 }}>
-            <Boton onClick={guardarEmpresa} disabled={guardandoEmpresa || !direccion.trim() || !actividad.trim() || !ofvIniciada}>
-              {guardandoEmpresa ? "Guardando…" : "Guardar y continuar →"}
-            </Boton>
-            {!ofvIniciada && <p style={{ fontSize: 12, color: "#991b1b", marginTop: 8 }}>Confirma primero que iniciaste la solicitud en la OFV.</p>}
-          </div>
         </Card>
       )}
 
       {paso === 0 && (
         <Card>
-          <h2 style={{ fontFamily: serif, fontSize: "1.05rem", marginBottom: 4 }}>
+          <h2 style={{ fontFamily: serif, fontSize: "1.05rem", marginBottom: 4, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             Formulario de postulación de la OFV: URLs del software y firma del XML
+            <InfoTooltip texto="Al declarar tu software como 'Propio' en la OFV, la DGII te pide registrar dónde viven los servicios de tu sistema (para poder comunicarse con él en el futuro) y un archivo de postulación firmado con tu certificado — para comprobar que de verdad eres tú quien lo está pidiendo." />
           </h2>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
             Dentro de la OFV, al declarar tu software como &quot;Propio&quot;, te van a pedir 3 URLs
@@ -584,7 +695,9 @@ export default function CertificacionPage() {
                     <div style={{ display: "flex", gap: 6 }}>
                       <input readOnly value={valor} onFocus={(e) => e.target.select()}
                         style={{ flex: 1, padding: "8px 10px", border: "1px solid #d1d5db", borderRadius: 4, fontSize: 12, fontFamily: "var(--font-mono)", background: "var(--c-bg)" }} />
-                      <Boton variante="secundario" onClick={() => navigator.clipboard.writeText(valor)}>Copiar</Boton>
+                      <Boton variante="secundario" onClick={() => copiarUrl(u.label, valor)}>
+                        {urlCopiada === u.label ? "✓ Copiado" : "Copiar"}
+                      </Boton>
                     </div>
                   </div>
                 );
@@ -599,22 +712,52 @@ export default function CertificacionPage() {
 
           <div style={{ height: 1, background: "var(--c-border)", margin: "16px 0" }} />
 
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Firmar el archivo de postulación</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>Firmar el archivo de postulación</div>
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: "#991b1b", background: "#fef2f2",
+              border: "1px solid #fecaca", padding: "2px 8px", borderRadius: 999, textTransform: "uppercase",
+            }}>
+              Obligatorio
+            </span>
+          </div>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 12 }}>
-            Descarga el XML de postulación desde la OFV, súbelo aquí para firmarlo con tu certificado
-            ya guardado, y luego sube el archivo firmado que te devolvemos de vuelta a la OFV.
+            Sin este paso la DGII no puede procesar tu postulación — son 3 partes:
           </p>
+          <ol style={{ fontSize: 12, color: "var(--c-text-3)", margin: "0 0 14px", paddingLeft: 18, lineHeight: 1.7 }}>
+            <li><strong style={{ color: "var(--c-text-1)" }}>Descarga</strong> el XML de postulación desde la OFV.</li>
+            <li><strong style={{ color: "var(--c-text-1)" }}>Súbelo abajo</strong> — lo firmamos nosotros con tu certificado, automáticamente.</li>
+            <li><strong style={{ color: "var(--c-text-1)" }}>Descarga el archivo firmado</strong> (se descarga solo al terminar) y súbelo de vuelta a la OFV para que la DGII lo reciba.</li>
+          </ol>
           <SubidaArchivo
-            onFile={firmarPostulacion} cargando={firmandoPostulacion} accept=".xml"
+            onFile={firmarPostulacion} cargando={firmandoPostulacion} accept=".xml" grande
             etiqueta="Subir XML de postulación para firmar" nombreArchivo={nombreArchivoPostulacion}
           />
           {errorPostulacion && <p style={{ fontSize: 12, color: "#991b1b", marginTop: 8 }}>{errorPostulacion}</p>}
+          {nombreArchivoPostulacion && !firmandoPostulacion && !errorPostulacion && (
+            <div style={{ marginTop: 10, padding: "10px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, fontSize: 12, color: "#166534" }}>
+              ✓ Firmado y descargado a tu computadora — el último paso es subir ese archivo firmado a
+              la OFV para que quede enviado a la DGII.
+            </div>
+          )}
+
+          <div style={{ height: 1, background: "var(--c-border)", margin: "20px 0" }} />
+
+          <Boton onClick={guardarEmpresa} disabled={guardandoEmpresa || !direccion.trim() || !actividad.trim() || !ofvIniciada}>
+            {guardandoEmpresa ? "Guardando…" : "Guardar y continuar →"}
+          </Boton>
+          {!ofvIniciada && <p style={{ fontSize: 12, color: "#991b1b", marginTop: 8 }}>Confirma primero que iniciaste la solicitud en la OFV, arriba.</p>}
+          {ofvIniciada && (!direccion.trim() || !actividad.trim()) && (
+            <p style={{ fontSize: 12, color: "#991b1b", marginTop: 8 }}>Completa primero los datos de tu empresa, arriba.</p>
+          )}
         </Card>
       )}
 
       {paso === 1 && (
         <Card>
-          <PasoTitulo n={1}>Paso 1 — Token de autenticación DGII</PasoTitulo>
+          <PasoTitulo n={1} ayuda="Un token es como una 'llave temporal' que te deja hablar con los sistemas de la DGII durante un rato — sin él, ningún envío funciona. Lo pedimos y renovamos nosotros automáticamente, no tienes que hacer nada manual con esto.">
+            Paso 1 — Token de autenticación DGII
+          </PasoTitulo>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
             Firmamos automáticamente con tu certificado .p12 — no necesitas firmar nada a mano. El
             token dura aproximadamente 1 hora; lo renovamos solos cuando haga falta.
@@ -631,12 +774,14 @@ export default function CertificacionPage() {
 
       {paso === 2 && (
         <Card>
-          <PasoTitulo n={2}>Paso 2 — Set de pruebas (25 comprobantes)</PasoTitulo>
+          <PasoTitulo n={2} ayuda="Un e-NCF (o eNCF) es el número único de cada comprobante fiscal electrónico — funciona como el número de factura de siempre, pero validado y registrado por la DGII. Cada uno de los 25 casos del Excel trae el suyo ya asignado.">
+            Paso 2 — Set de pruebas (25 comprobantes)
+          </PasoTitulo>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
             La DGII te asigna un Excel con 25 casos de prueba cuando inicias la solicitud en la
             OFV. Una vez lo tengas, súbelo aquí — nosotros leemos cada fila, firmamos cada
             comprobante con tu certificado y los enviamos en el orden correcto (algunos dependen de
-            que otro se haya Aceptado primero — eso lo manejamos solos, no tienes que esperar
+            que otro se haya <Etiqueta ayuda="DGII recibe el comprobante primero como 'Enviado'; después lo revisa y responde si quedó 'Aceptado' o 'Rechazado'. Solo cuando está Aceptado cuentan los que dependen de él.">Aceptado</Etiqueta> primero — eso lo manejamos solos, no tienes que esperar
             manualmente).
           </p>
           <TuYNosotros tu="Descargar el Excel de 25 casos desde el portal de la DGII y subirlo aquí." nosotros="Firmar y enviar los 25 comprobantes en el orden correcto." />
@@ -682,7 +827,9 @@ export default function CertificacionPage() {
 
       {paso === 3 && (
         <Card>
-          <PasoTitulo n={3}>Paso 3 — Aprobaciones comerciales</PasoTitulo>
+          <PasoTitulo n={3} ayuda="Una Aprobación Comercial es cuando el comprador de una factura confirma o rechaza lo que le llegó (ej. 'sí, recibí esto conforme' o 'no, esto está mal'). Algunos tipos de comprobante exigen simular también ese lado de la conversación como parte de la certificación.">
+            Paso 3 — Aprobaciones comerciales
+          </PasoTitulo>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
             Después de que la DGII acepte tu set de pruebas del Paso 2, te habilita un segundo
             Excel en el portal — el de Aprobación Comercial. Solo E31, E33, E34, E44 y E45
@@ -733,10 +880,13 @@ export default function CertificacionPage() {
 
       {paso === 4 && (
         <Card>
-          <PasoTitulo n={4}>Paso 4 — Pruebas interactivas</PasoTitulo>
+          <PasoTitulo n={4} ayuda="A diferencia del Paso 2 (donde subiste un Excel con casos ya armados por la DGII), aquí tú mismo creas comprobantes de prueba llenando un formulario simple, simulando ventas o compras reales — para que la DGII confirme que tu sistema funciona en distintos escenarios, no solo en el set fijo.">
+            Paso 4 — Pruebas interactivas
+          </PasoTitulo>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
-            La DGII también pide crear comprobantes "a mano" (no del Excel) para simular operación
-            real. Crea los que tu certificación requiera — la DGII te dirá cuántos de cada tipo.
+            La DGII también pide crear comprobantes &quot;a mano&quot; (no del Excel) para simular
+            operación real. Crea los que tu certificación requiera — la DGII te dirá cuántos de
+            cada tipo.
           </p>
           <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
             <select value={tipoPrueba} onChange={(e) => { setTipoPrueba(e.target.value as TipoECF); setFormPrueba({}); }} style={{ fontSize: 13, padding: 8 }}>
@@ -825,7 +975,9 @@ export default function CertificacionPage() {
 
       {paso === 5 && (
         <Card>
-          <PasoTitulo n={5}>Paso 5 — XMLs para subir al portal</PasoTitulo>
+          <PasoTitulo n={5} ayuda="RFCE (Resumen de Factura de Consumo Electrónica) es una versión corta que se envía en vez de la factura completa cuando el monto es menor a RD$250,000 — más rápido para ventas pequeñas del día a día. Aun así, la DGII pide también el XML completo como respaldo, solo para estos casos.">
+            Paso 5 — XMLs para subir al portal
+          </PasoTitulo>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
             Los e-CF de consumo menores a RD$250,000 (E32) se envían como resumen (RFCE) — la DGII
             además te pide subir el XML completo firmado a mano en su portal. Nosotros ya los
@@ -849,7 +1001,9 @@ export default function CertificacionPage() {
 
       {paso === 6 && (
         <Card>
-          <PasoTitulo n={6}>Paso 6 — Cerrar la certificación</PasoTitulo>
+          <PasoTitulo n={6} ayuda="La 'representación impresa' es simplemente cómo se ve tu factura impresa en papel o PDF — DGII pide subir un ejemplo de cada tipo de comprobante para confirmar que coincide exactamente con los datos que ya enviaste por sistema.">
+            Paso 6 — Cerrar la certificación
+          </PasoTitulo>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
             Los últimos 4 pasos del proceso oficial (subir las representaciones impresas y la
             validación final) se hacen directamente en el portal de la DGII — son 100% manuales,

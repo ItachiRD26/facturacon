@@ -78,6 +78,19 @@ export async function activarCobroRecurrente(params: {
     ultimoPagoEn: new Date().toISOString(),
   };
   await refSuscripcion(params.tenantId).set(suscripcion);
+
+  // Si el tenant había quedado "suspendido" por un cobro fallido anterior,
+  // activar una suscripción nueva (con tarjeta nueva o la misma corregida) lo
+  // reactiva de inmediato — no tiene sentido esperarlo hasta el próximo ciclo
+  // de cobro si el cliente ya resolvió el problema ahora mismo.
+  const tenantRef = adminDb.collection("tenants").doc(params.tenantId);
+  await adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(tenantRef);
+    if (snap.exists && snap.data()?.estado === "suspendido") {
+      tx.set(tenantRef, { estado: "activo" }, { merge: true });
+    }
+  });
+
   return suscripcion;
 }
 

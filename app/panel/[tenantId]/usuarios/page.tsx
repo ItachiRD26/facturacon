@@ -1,38 +1,42 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTenant } from "@/contexts/TenantContext";
+import { useParams } from "next/navigation";
 import { ROL_LABEL, ROLES_INVITABLES } from "@/lib/tenant/roles";
 import { Boton, Campo, Input, Select, EmptyState } from "@/components/sandbox/ui";
 import type { RolMembership } from "@/types/tenant";
 
+const sans  = "var(--font-sans)";
+const serif = "var(--font-serif)";
+
 interface MiembroEquipo { uid: string; rol: RolMembership; nombre: string; email: string; creadoEn?: string }
 
-export default function UsuariosPage() {
-  const tenant = useTenant();
-  const esAdmin = tenant.rol === "owner" || tenant.rol === "admin";
+// Para dar acceso administrativo completo a una empresa (ej. el gestor le
+// entrega el control al dueño real del negocio, o trae a un contador con su
+// propia cuenta) — con correo, no con código. Los códigos (ver "Empleados")
+// son para cajeros/staff operativo del día a día; esto es para gente de
+// confianza que necesita su propia cuenta con recuperación normal.
+export default function UsuariosAdministrativosPage() {
+  const params = useParams();
+  const tenantId = String(params.tenantId ?? "");
 
   const [equipo, setEquipo] = useState<MiembroEquipo[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
-  const [rol, setRol] = useState<RolMembership>("vendedor");
+  const [rol, setRol] = useState<RolMembership>("admin");
   const [invitando, setInvitando] = useState(false);
   const [error, setError] = useState("");
 
   const cargar = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/tenant/usuarios?t=${tenant.tenantId}`);
+      const res = await fetch(`/api/tenant/usuarios?t=${tenantId}`);
       const data = await res.json();
       if (res.ok) setEquipo(data.equipo ?? []);
     } finally { setLoading(false); }
-  }, [tenant.tenantId]);
+  }, [tenantId]);
 
-  useEffect(() => { if (esAdmin) cargar(); }, [esAdmin, cargar]);
-
-  if (!esAdmin) {
-    return <EmptyState texto="Esta sección es solo para el dueño o administradores de la cuenta." />;
-  }
+  useEffect(() => { if (tenantId) cargar(); }, [tenantId, cargar]);
 
   const invitar = async () => {
     if (!email.trim()) return;
@@ -40,11 +44,11 @@ export default function UsuariosPage() {
     try {
       const res = await fetch("/api/tenant/usuarios", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenantId: tenant.tenantId, email: email.trim(), rol }),
+        body: JSON.stringify({ tenantId, email: email.trim(), rol }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "No se pudo invitar.");
-      setEmail(""); setRol("vendedor");
+      setEmail(""); setRol("admin");
       await cargar();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
@@ -56,7 +60,7 @@ export default function UsuariosPage() {
     try {
       const res = await fetch("/api/tenant/usuarios/rol", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenantId: tenant.tenantId, uid, rol: nuevoRol }),
+        body: JSON.stringify({ tenantId, uid, rol: nuevoRol }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "No se pudo cambiar el rol.");
@@ -67,12 +71,12 @@ export default function UsuariosPage() {
   };
 
   const eliminar = async (uid: string, nombre: string) => {
-    if (!confirm(`¿Quitar a ${nombre} de tu equipo? Perderá acceso al sistema.`)) return;
+    if (!confirm(`¿Quitar a ${nombre} de esta empresa? Perderá acceso al sistema.`)) return;
     setError("");
     try {
       const res = await fetch("/api/tenant/usuarios/eliminar", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenantId: tenant.tenantId, uid }),
+        body: JSON.stringify({ tenantId, uid }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "No se pudo eliminar.");
@@ -83,24 +87,20 @@ export default function UsuariosPage() {
   };
 
   return (
-    <div className="fade-in">
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 24, fontWeight: 600, color: "var(--c-text-1)", marginBottom: 2 }}>
-          Usuarios
-        </h1>
-        <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>
-          Invita a tu equipo (cajeros, contadores) y controla qué puede ver y hacer cada quien.
-        </div>
-      </div>
+    <div style={{ maxWidth: 980, margin: "0 auto", fontFamily: sans }}>
+      <h1 style={{ fontFamily: serif, fontSize: "1.5rem", marginBottom: 4 }}>Usuarios administrativos</h1>
+      <p style={{ fontSize: 13, color: "var(--c-text-3)", marginBottom: 24 }}>
+        Dale acceso completo a esta empresa a alguien con su propia cuenta de Facturacon — por
+        ejemplo, para entregarle el control al dueño real del negocio, o traer a un contador de
+        confianza. Para cajeros y staff operativo, usa &quot;Empleados&quot; en vez de esto.
+      </p>
 
-      <div style={{
-        border: "1px solid var(--c-border)", borderRadius: 8, padding: 18, background: "var(--c-surface)", marginBottom: 20,
-      }}>
+      <div style={{ border: "1px solid var(--c-border)", borderRadius: 8, padding: 18, background: "var(--c-surface)", marginBottom: 24 }}>
         <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>Invitar a alguien</div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
           <div style={{ flex: "1 1 240px" }}>
             <Campo label="Correo (debe tener cuenta de Facturacon ya creada)">
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="cajero@ejemplo.com" />
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="contador@ejemplo.com" />
             </Campo>
           </div>
           <div style={{ flex: "0 1 180px" }}>
@@ -120,7 +120,7 @@ export default function UsuariosPage() {
       {loading ? (
         <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>Cargando...</div>
       ) : equipo.length === 0 ? (
-        <EmptyState texto="Todavía no hay nadie más en tu equipo." />
+        <EmptyState texto="Todavía no hay nadie más con acceso administrativo a esta empresa." />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {equipo.map((m) => (

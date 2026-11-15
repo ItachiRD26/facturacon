@@ -36,6 +36,10 @@ export interface Tenant {
   estado:        EstadoTenant;
   creadoEn:      string;
   creadoPorUid:  string;
+  // Token opaco para la URL de login de empleados (/empleado/{token}) — ver
+  // lib/tenant/codigo-empleado.ts. Se genera perezosamente la primera vez
+  // que el dueño abre la sección de Empleados.
+  linkEmpleadoToken?: string;
 }
 
 // Configuración del emisor para el motor e-CF (Fase 2) — separada del doc
@@ -77,4 +81,21 @@ export interface UserPerfil {
   telefono?:  string;
   tipoCuenta: TipoCuenta;
   creadoEn:   string;
+}
+
+// tenants/{tenantId}/empleados/{uid} — cuentas creadas por el dueño/admin
+// para su equipo, con login por código en vez de correo/contraseña (ver
+// lib/tenant/codigo-empleado.ts). `codigoHash` nunca sale del servidor —
+// deliberadamente no está en este tipo compartido.
+export interface Empleado {
+  uid:            string;
+  nombre:         string;
+  rol:            RolMembership;
+  horario?:       string;
+  notas?:         string;
+  codigoUltimos4: string;
+  activo:         boolean;
+  creadoEn:       string;
+  creadoPorUid:   string;
+  ultimoAcceso?:  string;
 }

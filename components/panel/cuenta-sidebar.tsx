@@ -10,9 +10,11 @@ import { useSidebarCtx } from "@/contexts/SidebarUIContext";
 import type { Tenant } from "@/types/tenant";
 
 const NAV = [
-  { seg: "",              label: "Resumen",        icon: "dashboard" },
-  { seg: "metodos-pago",  label: "Métodos de pago", icon: "invoice"   },
-  { seg: "soporte",       label: "Soporte",         icon: "alert"     },
+  { seg: "",              label: "Resumen",              icon: "dashboard" },
+  { seg: "empleados",     label: "Empleados",            icon: "user"      },
+  { seg: "usuarios",      label: "Usuarios administrativos", icon: "settings" },
+  { seg: "metodos-pago",  label: "Métodos de pago",       icon: "invoice"   },
+  { seg: "soporte",       label: "Soporte",               icon: "alert"     },
 ];
 
 const serif = "var(--font-serif)";
@@ -33,6 +35,20 @@ export default function CuentaSidebar({
   const active = (seg: string) => seg ? pathname.startsWith(`${base}/${seg}`) : pathname === base;
 
   const enSandbox = tenant.estado !== "activo" || !tenant.slug;
+
+  // Arma la URL del subdominio a partir de dónde se está viendo el panel
+  // ahora mismo, no de NEXT_PUBLIC_ROOT_DOMAIN a secas — esa env var queda
+  // fija en facturacon.com.do incluso en local (necesario para producción),
+  // así que usarla directo sacaría a quien prueba en localhost hacia el
+  // sitio real. `window` no existe en el render de servidor; el fallback ahí
+  // no importa porque ese render nunca es el que el usuario llega a clickear.
+  const urlSistema = () => {
+    if (typeof window === "undefined") return `https://${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`;
+    const { hostname, port, protocol } = window.location;
+    const esLocal = hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".localhost");
+    const host = esLocal ? `${tenant.slug}.localhost${port ? `:${port}` : ""}` : `${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`;
+    return `${esLocal ? "http" : protocol.replace(":", "")}://${host}`;
+  };
 
   return (
     <>
@@ -80,7 +96,7 @@ export default function CuentaSidebar({
 
           <div style={{ height: 1, background: "#e5e7eb", margin: "10px 4px" }} />
 
-          <Link href={enSandbox ? `/onboarding/sandbox/dashboard?t=${tenantId}` : `https://${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`} style={{
+          <Link href={enSandbox ? `/onboarding/sandbox/dashboard?t=${tenantId}` : urlSistema()} style={{
             display: "flex", alignItems: "center", gap: 9, padding: "8px 12px", borderRadius: 4,
             fontSize: 13, color: "#0e7490", fontWeight: 600, textDecoration: "none", fontFamily: sans,
           }}>

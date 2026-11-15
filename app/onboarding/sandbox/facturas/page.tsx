@@ -160,6 +160,7 @@ export default function SandboxFacturasPage() {
       <ModalNuevaFactura
         open={modalAbierto} onClose={() => setModalAbierto(false)} tenantId={tenantId}
         clientes={clientes} productos={productos} nombreEmisor={tenant.nombreNegocio} rncEmisor={tenant.rnc} rootDomain={ROOT_DOMAIN}
+        logoA4Url={personalizacion?.logoA4Url} logoTermicoUrl={personalizacion?.logoTermicoUrl}
         onSave={onSave}
       />
 

@@ -10,21 +10,27 @@ import Modal from "./modal";
 import TablaItems from "./tabla-items";
 import { Boton, Campo, Input, Select } from "@/components/sandbox/ui";
 import Icon from "@/components/ui/icon";
+import FacturaA4 from "@/components/print/factura-a4";
+import FacturaTermica from "@/components/print/factura-termica";
 
 const METODOS = ["Efectivo", "Tarjeta", "Transferencia", "Cheque"];
 const LIMITE_IDENTIFICACION = 250_000;
 
 export default function ModalNuevaFactura({
   open, onClose, onSave, tenantId, clientes, productos, nombreEmisor, rncEmisor, rootDomain, modo = "sandbox",
+  logoA4Url, logoTermicoUrl,
 }: {
   open: boolean; onClose: () => void; tenantId: string;
   // En modo "produccion" llega un Factura completa (con id, ya persistida
   // server-side); en modo "sandbox" llega sin id (la crea onSave).
   onSave: (data: Factura | Omit<Factura, "id">) => Promise<void>;
   clientes: Cliente[]; productos: Producto[];
-  // En modo "produccion" no hacen falta — el backend lee el emisor de
-  // tenants/{tenantId}/config/empresa antes de firmar.
+  // nombreEmisor/rncEmisor: en modo "produccion" el backend igual vuelve a
+  // leer tenants/{tenantId}/config/empresa antes de firmar (estos valores
+  // aquí son solo para la vista previa del lado del cliente, antes de
+  // emitir — no se usan para lo fiscal).
   nombreEmisor?: string; rncEmisor?: string; rootDomain?: string;
+  logoA4Url?: string; logoTermicoUrl?: string;
   modo?: "sandbox" | "produccion";
 }) {
   const [esWalkIn, setEsWalkIn] = useState(true);
@@ -42,6 +48,7 @@ export default function ModalNuevaFactura({
   const [emitiendo, setEmitiendo] = useState(false);
   const [error, setError] = useState("");
   const [confirmando, setConfirmando] = useState(false);
+  const [formatoPreview, setFormatoPreview] = useState<"a4" | "termica">("a4");
 
   useEffect(() => {
     if (!open) return;
@@ -113,6 +120,24 @@ export default function ModalNuevaFactura({
   const tipoECF = ecfConfig.locked ? ecfConfig.tipoDefault : (tipoECFManual ?? ecfConfig.tipoDefault);
   const totales = calcTotales(items);
   const necesitaIdentificacion = tipoECF === "E32" && totales.total >= LIMITE_IDENTIFICACION;
+
+  // Borrador para la vista previa antes de emitir — usa los mismos datos que
+  // se enviarían, pero SIN pedir número de comprobante real todavía
+  // (nextSecuencia() reserva/incrementa el contador, así que solo se llama
+  // en emitir(), nunca aquí, para no gastar un número por solo mirar).
+  const facturaPreview: Factura = {
+    id: "preview", noFactura: "(pendiente)", eCF: `${tipoECF} — se asigna al emitir`,
+    tipoECF, fecha: today(),
+    vencimientoECF: (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return localDate(d); })(),
+    terminos, metodoPago: terminos === "Contado" ? metodoPago : undefined,
+    clienteId: esWalkIn ? "walk-in" : clienteId, items: items.filter((i) => i.descripcion.trim()),
+    esConsumidorFinal: esWalkIn, nombreConsumidor: esWalkIn ? nombreWalkIn : undefined,
+    rncCompradorOcasional: necesitaIdentificacion && rncOcasional.trim() ? rncOcasional.trim() : undefined,
+    esExtranjeroComprador: necesitaIdentificacion && esExtranjeroOcasional ? true : undefined,
+    estado: terminos === "Contado" ? "pagada" : "pendiente",
+    modalidadPago: terminos === "Contado" ? "unico" : "plazo",
+    notas: notas.trim() || undefined,
+  };
 
   const emitir = async () => {
     if (items.length === 0) return;
@@ -281,20 +306,51 @@ export default function ModalNuevaFactura({
           display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
         }}>
           <div onClick={(e) => e.stopPropagation()} style={{
-            background: "var(--c-surface)", borderRadius: 10, padding: 24, maxWidth: 420, width: "100%",
+            background: "var(--c-surface)", borderRadius: 10, maxWidth: formatoPreview === "a4" ? 640 : 420,
+            width: "100%", maxHeight: "92vh", display: "flex", flexDirection: "column", overflow: "hidden",
           }}>
-            <h3 style={{ fontFamily: "var(--font-serif)", fontSize: "1.05rem", marginBottom: 10 }}>
-              Confirmar emisión — {tipoECF}
-            </h3>
-            <p style={{ fontSize: 13, color: "var(--c-text-3)", marginBottom: 16 }}>
-              {modo === "produccion"
-                ? "Esto firma y envía el comprobante a la DGII de verdad. No se puede deshacer."
-                : "Esto generará un comprobante de prueba con QR simulado. En el entorno de prueba no se envía nada a la DGII real."}
-            </p>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 16 }}>Total: RD$ {fmt(totales.total)}</div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <Boton variant="secondary" onClick={() => setConfirmando(false)} disabled={emitiendo}>Atrás</Boton>
-              <Boton onClick={emitir} disabled={emitiendo}>{emitiendo ? "Emitiendo..." : "Emitir factura"}</Boton>
+            <div style={{ padding: "18px 24px 0" }}>
+              <h3 style={{ fontFamily: "var(--font-serif)", fontSize: "1.05rem", marginBottom: 6 }}>
+                Confirmar emisión — {tipoECF}
+              </h3>
+              <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 14 }}>
+                {modo === "produccion"
+                  ? "Esto firma y envía el comprobante a la DGII de verdad. No se puede deshacer."
+                  : "Esto generará un comprobante de prueba con QR simulado. En el entorno de prueba no se envía nada a la DGII real."}
+              </p>
+              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                <button type="button" onClick={() => setFormatoPreview("a4")} style={{
+                  padding: "6px 12px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+                  border: `1px solid ${formatoPreview === "a4" ? "var(--c-brand)" : "var(--c-border)"}`,
+                  background: formatoPreview === "a4" ? "var(--c-brand-bg)" : "transparent",
+                }}>Formato A4</button>
+                <button type="button" onClick={() => setFormatoPreview("termica")} style={{
+                  padding: "6px 12px", fontSize: 12, fontWeight: 600, borderRadius: 6, cursor: "pointer",
+                  border: `1px solid ${formatoPreview === "termica" ? "var(--c-brand)" : "var(--c-border)"}`,
+                  background: formatoPreview === "termica" ? "var(--c-brand-bg)" : "transparent",
+                }}>Térmica 80mm</button>
+              </div>
+            </div>
+
+            <div style={{ overflowY: "auto", padding: "0 24px 20px", display: "flex", justifyContent: "center" }}>
+              {formatoPreview === "a4" ? (
+                <FacturaA4 factura={facturaPreview} cliente={cliente}
+                  empresa={{ nombre: nombreEmisor ?? "", rnc: rncEmisor ?? "", logoA4Url, logoTermicoUrl }}
+                  esMuestra />
+              ) : (
+                <FacturaTermica factura={facturaPreview} cliente={cliente}
+                  empresa={{ nombre: nombreEmisor ?? "", rnc: rncEmisor ?? "", logoA4Url, logoTermicoUrl }}
+                  esMuestra />
+              )}
+            </div>
+
+            <div style={{ padding: "14px 24px", borderTop: "1px solid var(--c-border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>Total: RD$ {fmt(totales.total)}</div>
+              {error && <div style={{ fontSize: 12, color: "#991b1b" }}>{error}</div>}
+              <div style={{ display: "flex", gap: 8 }}>
+                <Boton variant="secondary" onClick={() => setConfirmando(false)} disabled={emitiendo}>Atrás</Boton>
+                <Boton onClick={emitir} disabled={emitiendo}>{emitiendo ? "Emitiendo..." : "Emitir factura"}</Boton>
+              </div>
             </div>
           </div>
         </div>

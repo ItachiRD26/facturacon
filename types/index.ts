@@ -134,6 +134,10 @@ export interface Factura {
   notas?:                string;
   creadoEn?:             string;
   creadoPor?:            string;
+  // Nombre del cajero/empleado que emitió el comprobante — copiado del
+  // perfil al momento de emitir (no se resuelve por join en la UI), para
+  // mostrarlo directo en la lista de facturas sin lecturas extra.
+  creadoPorNombre?:      string;
   modalidadPago?:        "unico" | "plazo";
   fechaVencimientoPago?: string;
   rncCompradorOcasional?:  string;

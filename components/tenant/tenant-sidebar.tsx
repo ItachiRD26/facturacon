@@ -31,7 +31,7 @@ const mono  = "var(--font-mono)";
 // hay query param ?t=, el middleware ya resolvió el tenant por subdominio.
 export default function TenantSidebar() {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, perfil } = useAuth();
   const tenant = useTenant();
   const { open, setOpen } = useSidebarCtx();
   const esAdmin = tenant.rol === "owner" || tenant.rol === "admin";
@@ -126,22 +126,30 @@ export default function TenantSidebar() {
               </Link>
             );
           })}
-          {esAdmin && !rolPreview && (
-            <Link href="/usuarios" style={{
-              display: "flex", alignItems: "center", gap: 9, padding: "8px 12px", borderRadius: 4,
-              fontSize: 13, fontWeight: active("usuarios") ? 600 : 400,
-              background: active("usuarios") ? "var(--c-brand-bg)" : "transparent",
-              color: active("usuarios") ? "var(--c-brand)" : "#6b7280",
-              borderLeft: active("usuarios") ? "2px solid var(--c-brand)" : "2px solid transparent",
-              textDecoration: "none", fontFamily: sans, transition: "all 0.1s",
-            }}>
-              <Icon name="user" size={14} />
-              Usuarios
-            </Link>
-          )}
         </nav>
 
         <div style={{ padding: "14px 16px", borderTop: "1px solid #e5e7eb", display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* Confirma quién es la sesión activa — importante sobre todo para
+              empleados que entran por código (sin correo visible), o en una
+              caja compartida por varios turnos, para saber a simple vista
+              con qué usuario se está trabajando ahora mismo. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#f9fafb", borderRadius: 4 }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: "50%", background: "var(--c-brand)", color: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0,
+            }}>
+              {(perfil?.nombre || "?").trim().charAt(0).toUpperCase()}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{
+                fontSize: 12, fontWeight: 600, color: "#111", lineHeight: 1.2,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>
+                {perfil?.nombre || "Tu cuenta"}
+              </div>
+              <div style={{ fontSize: 10, color: "#9ca3af", fontFamily: sans }}>{ROL_LABEL[tenant.rol]}</div>
+            </div>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#9ca3af", fontFamily: sans }}>
             Con tecnología de <Logo variant="icon" size={13} /> <span style={{ fontWeight: 700, color: "#6b7280" }}>Facturacon</span>
           </div>

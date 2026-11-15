@@ -1,11 +1,20 @@
 // Genera las URLs del Timbre Electrónico DGII
 //
 // El formato es IGUAL en todos los ambientes — solo cambia el prefijo de la URL:
-//   certecf  → ecf.dgii.gov.do/CerteCF/consultatimbre
-//   testecf  → ecf.dgii.gov.do/testecf/consultatimbre
-//   ecf      → ecf.dgii.gov.do/ecf/consultatimbre
+//   certecf  → ecf.dgii.gov.do/CerteCF/ConsultaTimbre
+//   testecf  → ecf.dgii.gov.do/testecf/ConsultaTimbre
+//   ecf      → ecf.dgii.gov.do/ecf/ConsultaTimbre
 //
-// Params: siempre minúsculas
+// Nombres de parámetro: EXACTAMENTE como los documenta "Informe Técnico e-CF
+// v1.0.pdf" (sección 18.2.3) — RncEmisor, RncComprador, ENCF, FechaEmision,
+// MontoTotal, FechaFirma, CodigoSeguridad (NO minúsculas). Esto NUNCA se
+// había confirmado contra el PDF — nada en el flujo de emisión/certificación
+// valida el QR (solo el Paso 5 de certificación de verdad lo hace, al
+// escanearlo), así que con minúsculas la factura se aceptaba igual ante la
+// DGII pero el QR impreso fallaba silenciosamente con "no encontrada" al
+// escanearlo. Confirmado y corregido en una certificación real (Hotel Gil,
+// 2026-09) antes de que esto mordiera aquí también — ver
+// C:\Users\User\Documents\WORK\HOTELGIL\hotelgil\lib\dgii\qr-builder.ts.
 // Fechas:  siempre dd-MM-yyyy (con guiones)
 // CodigoSeguridad: primeros 6 chars del SignatureValue (base64), NO SHA-256
 //
@@ -46,28 +55,28 @@ export function generarURLQR(params: QRParams, ambiente: AmbienteDGII): string {
   const amb    = ambiente.toLowerCase();
 
   if (params.esRFCE) {
-    // E32 < RD$250,000 — URL fc.dgii.gov.do — sin rnccomprador ni fechas
+    // E32 < RD$250,000 — URL fc.dgii.gov.do — sin RncComprador ni fechas
     const base = amb === "ecf"
       ? "https://fc.dgii.gov.do/eCF/ConsultaTimbreFC"
       : `https://fc.dgii.gov.do/${amb}/ConsultaTimbreFC`;
     return `${base}?${buildQS([
-      ["rncemisor",       params.rncEmisor],
-      ["encf",            params.eNCF],
-      ["montototal",      params.montoTotal.toFixed(2)],
-      ["codigoseguridad", codigo],
+      ["RncEmisor",       params.rncEmisor],
+      ["ENCF",            params.eNCF],
+      ["MontoTotal",      params.montoTotal.toFixed(2)],
+      ["CodigoSeguridad", codigo],
     ])}`;
   }
 
   // ECF completo (E31, E32 ≥ 250k, E33, E34, E41-E47)
-  const base = `https://ecf.dgii.gov.do/${amb === "ecf" ? "ecf" : amb}/consultatimbre`;
+  const base = `https://ecf.dgii.gov.do/${amb === "ecf" ? "ecf" : amb}/ConsultaTimbre`;
   return `${base}?${buildQS([
-    ["rncemisor",       params.rncEmisor],
-    ...(params.rncComprador ? [["rnccomprador", params.rncComprador] as [string, string]] : []),
-    ["encf",            params.eNCF],
-    ["fechaemision",    params.fechaEmision],
-    ["montototal",      params.montoTotal.toFixed(2)],
-    ["fechafirma",      params.fechaFirma],
-    ["codigoseguridad", codigo],
+    ["RncEmisor",       params.rncEmisor],
+    ...(params.rncComprador ? [["RncComprador", params.rncComprador] as [string, string]] : []),
+    ["ENCF",            params.eNCF],
+    ["FechaEmision",    params.fechaEmision],
+    ["MontoTotal",      params.montoTotal.toFixed(2)],
+    ["FechaFirma",      params.fechaFirma],
+    ["CodigoSeguridad", codigo],
   ])}`;
 }
 

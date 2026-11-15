@@ -268,6 +268,34 @@ function buildItemsE41(items: LineaServicio[]): string {
   }).join("\n");
 }
 
+// E43/E44 — comprobantes siempre exentos: IndicadorFacturacion=4 fijo, sin
+// importar qué tasa de ITBIS traiga cargada el ítem en el catálogo (buildItems()
+// calcularía 1 o 2 si el producto tiene itbis 0.18/0.16, lo cual es inválido
+// para un tipo que nunca lleva ITBIS).
+function buildItemsExento(items: LineaServicio[]): string {
+  return items.map((item, i) => {
+    const c       = calcLinea(item);
+    const paxDesc = item.pax > 0 ? ` | PAX: ${item.pax}` : "";
+    const cant    = item.modo === "por_persona" ? (item.pax || 1) : Math.max(item.pax, 1);
+    const precioU = item.modo === "por_grupo"
+      ? (c.bruto / Math.max(item.pax, 1))
+      : item.precio;
+    const descLarga = item.descripcion.length > 80 || paxDesc;
+    return `<Item>
+      <NumeroLinea>${i + 1}</NumeroLinea>
+      <IndicadorFacturacion>4</IndicadorFacturacion>
+      <NombreItem>${escapeXml(item.descripcion.substring(0, 80))}</NombreItem>
+      <IndicadorBienoServicio>2</IndicadorBienoServicio>
+      ${descLarga ? `<DescripcionItem>${escapeXml((item.descripcion + paxDesc).substring(0, 1000))}</DescripcionItem>` : ""}
+      <CantidadItem>${fmt(cant)}</CantidadItem>
+      <UnidadMedida>43</UnidadMedida>
+      <PrecioUnitarioItem>${fmt(precioU)}</PrecioUnitarioItem>
+      ${item.descuentoMonto > 0 ? `<DescuentoMonto>${fmt(item.descuentoMonto)}</DescuentoMonto>` : ""}
+      <MontoItem>${fmt(c.sub)}</MontoItem>
+    </Item>`;
+  }).join("\n");
+}
+
 // E46 — Exportaciones: IndicadorFacturacion=3 (tasa 3, 0%)
 function buildItemsE46(items: LineaServicio[]): string {
   return items.map((item, i) => {
@@ -453,8 +481,19 @@ function buildE32(f: Factura, cliente: Cliente | undefined, e: EmpresaConfig, fh
 </ECF>`;
 }
 
+// RNCComprador es obligatorio por regla de negocio en 33/34 aunque el XSD lo
+// marque opcional — la DGII rechaza una nota de crédito/débito sin RNC del
+// comprador. compradorConsumidor() no lo incluye (solo RazonSocialComprador),
+// así que hay que caer en compradorOcasional() cuando no hay un Cliente
+// registrado pero sí un RNC ocasional — mismo fallback que ya usa E32.
+function compradorNotaCredito(f: Factura, c: Cliente | undefined): string {
+  if (c) return compradorB2B(c);
+  if (f.rncCompradorOcasional) return compradorOcasional(f);
+  return compradorConsumidor(f);
+}
+
 function buildE33(f: Factura, c: Cliente | undefined, e: EmpresaConfig, fh: string): string {
-  const comp = c ? compradorB2B(c) : compradorConsumidor(f);
+  const comp = compradorNotaCredito(f, c);
   const hasITBIS = calcTotales(f.items).itbis > 0;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <ECF>
@@ -474,8 +513,15 @@ function buildE33(f: Factura, c: Cliente | undefined, e: EmpresaConfig, fh: stri
 }
 
 function buildE34(f: Factura, c: Cliente | undefined, e: EmpresaConfig, fh: string): string {
-  const comp = c ? compradorB2B(c) : compradorConsumidor(f);
+  const comp = compradorNotaCredito(f, c);
   const hasITBIS = calcTotales(f.items).itbis > 0;
+  const codMod = f.codigoModificacion ?? "1";
+  // CodigoModificacion=2 (Corrige Texto) exige MontoTotal=0 por regla de
+  // negocio de la DGII — el default "1" (Anula el NCF modificado) nunca cae
+  // en esto, pero un caller podría pasar "2" con un monto real.
+  if (codMod === "2" && calcTotales(f.items).total !== 0) {
+    throw new Error("CodigoModificacion=2 (Corrige Texto) requiere MontoTotal=0 en la nota de crédito.");
+  }
   return `<?xml version="1.0" encoding="UTF-8"?>
 <ECF>
   <Encabezado>
@@ -488,7 +534,7 @@ function buildE34(f: Factura, c: Cliente | undefined, e: EmpresaConfig, fh: stri
   <DetallesItems>
     ${buildItems(f.items)}
   </DetallesItems>
-  ${infoRef(f, f.codigoModificacion ?? "1")}
+  ${infoRef(f, codMod)}
   <FechaHoraFirma>${fh}</FechaHoraFirma>
 </ECF>`;
 }
@@ -521,7 +567,7 @@ function buildE43(f: Factura, e: EmpresaConfig, fh: string): string {
     ${totalesE43(f)}
   </Encabezado>
   <DetallesItems>
-    ${buildItems(f.items)}
+    ${buildItemsExento(f.items)}
   </DetallesItems>
   <FechaHoraFirma>${fh}</FechaHoraFirma>
 </ECF>`;
@@ -539,7 +585,7 @@ function buildE44(f: Factura, c: Cliente | undefined, e: EmpresaConfig, fh: stri
     ${totalesE44(f)}
   </Encabezado>
   <DetallesItems>
-    ${buildItems(f.items)}
+    ${buildItemsExento(f.items)}
   </DetallesItems>
   <FechaHoraFirma>${fh}</FechaHoraFirma>
 </ECF>`;

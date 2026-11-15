@@ -1,0 +1,2284 @@
+Developers Documentation
+
+                     2023
+Change log
+
+Version      Date                             Description
+   07    2023-01-26
+   06    2022-10-20  Update of format in parameters of the List of
+   05    2021-06-15  Parameters of REST API.
+   04    2020-10-09
+                     ISO 3166 Code List Update for REST API
+   03    2020-08-13  countries.
+
+   02    2020-05-13  Update of List of Response Codes of REST API.
+   01    2019-09-13
+                     · Adding new services and REST API
+                         o Subscription with Tokenization
+                         o Tokenized Card Subscription
+                         o Refunds
+
+                     · REST API Response Codes List Update.
+                     · Updating of the ISO 3166 Code List for
+
+                         Countries.
+                     · Adding Credit/Debit Cards for testing
+
+                     Description of parameters in REST API.
+
+                     First version finished.
+
+                                                                    2
+Content
+
+Generalities                    6
+
+Goal                            6
+
+Audience                        6
+
+Summary                         6
+
+SandBox                         6
+
+Contact                         6
+
+Payment with Tokenization       7
+
+Description                     7
+
+Use                             7
+
+Steps                           7
+
+Diagram                         8
+
+Code                            8
+
+Generate Device Fingerprint     8
+
+Send payment                    9
+
+Notes                           13
+
+Payment with Tokenized Card     14
+
+Description                     14
+
+Use                             14
+
+Steps                           14
+
+Diagram                         15
+
+Code                            15
+
+Generate Device Fingerprint     15
+
+Send Payment                    16
+
+Notes                           19
+
+Subscription with Tokenization  20
+
+Description                     20
+
+Use                             20
+
+Steps                           20
+
+Diagram                         21
+
+Code                            21
+
+Generate Device Fingerprint     21
+
+                                3
+Send subscription            22
+
+Unsubscribe                  25
+
+Notes                        26
+
+Tokenized Card Subscription  28
+
+Description                  28
+
+Use                          28
+
+Steps                        28
+
+Diagram                      29
+
+Code                         29
+
+Generate Device Fingerprint  29
+
+Send subscription            30
+
+Unsubscribe                  32
+
+Notes                        34
+
+Refund                       35
+
+Description                  35
+
+Use                          35
+
+Steps                        35
+
+Diagram                      35
+
+Code                         36
+
+Refund Payment               36
+
+Notes                        37
+
+Webhooks                     39
+
+Description                  39
+
+Use                          39
+
+Configuration                39
+
+Events                       39
+
+Types                        39
+
+Information                  40
+
+Signature                    41
+
+Code                         42
+
+Read and verify webhook      42
+
+Response                     43
+
+Appendix                     44
+
+                             4
+List of Parameters of REST API                44
+
+List of Returned Values of REST API           50
+
+List of HTTP Status Codes of REST API         52
+
+List of Response Codes of REST API            53
+
+List of ISO 3166 Country Codes                54
+
+List of ISO State Codes of the United States  57
+
+Credit/Debit Cards for test                   60
+
+                                              5
+Generalities
+
+Goal
+
+To give developers a guide for an easy and quick integration with the services Pagadito
+offers with technologies which is compatible.
+
+Audience
+
+Software Developers, Integration Leads, Project Managers, IT Managers.
+
+Summary
+
+This is a Guide of Integration with each of the services Pagadito offers to Developers
+and Merchants. You have a description of each service, steps how it works, an
+integration diagram between your website with Pagadito and example codes for each
+technology with Pagadito is compatible.
+With this guide you will understand how each service works and get an easy and quick
+integration of your website with Pagadito, both its testing platform SandBox and its live
+environment.
+
+SandBox
+
+Pagadito has a testing platform for you to make all the tests you need during the
+integration of your website, app or system with Pagadito. You can go clicking on the link
+https://sandbox.pagadito.com/.
+
+Contact
+
+In any doubt, please contact us to our email developers@pagadito.com.
+
+                                                                                                                              6
+Payment with Tokenization
+
+Description
+
+Consist in processing payments for a Merchant without redirection, where Merchant
+requests to the user his credit/debit card information and send it to Pagadito. Additional
+to the charge, Pagadito generates a token associated with the credit/debit card, to send
+future charges using only this token instead of all the credit/debit card information. This
+service does not require the user to be redirected to a payment screen, that is why your
+website or app is in charge of the complete payment process. Communication with
+Pagadito is through an API REST.
+
+Use
+
+This is a variant of the payment without redirection, ideal for websites or apps that
+receive payments with credit/debit cards which already request this information and
+makes charges to the credit/debit without asking the information again.
+
+Steps
+
+    1. User arrives to your website, picks products or services to buy and enters his
+         credit/debit card information.
+
+    2. Your website sends to Pagadito the information of the payment.
+    3. Pagadito processes the payment.
+    4. Pagadito return the information of the payment including the token associated
+
+         with the credit/debit card.
+    5. Your website shows a confirmation page.
+
+                                                                                                                              7
+Diagram
+
+                       Process of Payment with Tokenization with Pagadito
+
+Code
+
+To connect to the API, your server must support HTTPS connections:
+    · HTTP/1.1
+    · TLS 1.2
+
+The request header:
+    · "Content-Type" must be set to "Application/json;charset=UTF-8".
+    · "Content-Length" must be set to the length in byte of the request parameters.
+
+Generate Device Fingerprint
+Before to send the payment request, you must generate the Device Fingerprint of the
+user. This value is generated based on his navigation information; for this you must
+include the library and add an input in your website form or app with the value
+generated. Pagadito uses in a secure way this information to analyze the risk level of
+the transaction.
+[ JAVASCRIPT ]
+
+<html>
+       <head>
+              <meta charset="ISO-8859-1">
+              <!-- You have to include this library -->
+              <script type="text/javascript" src="cybs_devicefingerprint.js">
+              </script>
+
+                                                                                                                              8
+       </head>
+       <body>
+
+              <script type="text/javascript">
+                     <!-- Add order and payment inputs -->
+
+                     <!-- If your project is live, replace SANDBOX by LIVE -->
+                     document.write('<input type="hidden" name="deviceFingerprintID"
+value="' + cybs_dfprofiler("pagadito", "SANDBOX") + '">');
+              </script>
+       </body>
+</html>
+
+Send payment
+To send a payment request, you have to send the connection credentials of the
+Merchant Account, an identifier of the transaction (ERN), the details (quantity,
+description, price), the credit/debit card information of the user and the navigaion
+information.
+[ REST API ]
+Endpoint
+
+     SandBox -> https://sandbox-api.pagadito.com/v1/customer/
+     Live -> https://api.pagadito.com/v1/customer/
+
+Authentication
+Authentication to the API is performed via HTTP Basic Auth. Provide your UID key as
+the basic username value and WSK key as the basic auth password value.
+
+/* Copy from Technical Configuration -> Integration Parameters */
+Username:USE-YOUR-UID
+Password:USE-YOUR-WSK
+
+Request
+
+{
+     "card":{
+          "number":"5555555555554444",
+          "expirationDate":"01/2022",
+
+                                                                                                                              9
+          "cvv":"123",
+          "cardHolderName":"JOHN SMITH",
+          "firstName":"John",
+          "lastName":"Smith",
+          "billingAddress":{
+
+                "city":"San Salvador",
+                "state":"San Salvador",
+                "zip":"",
+                "countryId":"740",
+                "line1":"7a calle poniente bis",
+                "phone":"+503 7695 4199"
+          },
+          "email":"johnsmith@correo.com"
+     },
+     "transaction":{
+          "merchantTransactionId":"Inv 001-002",
+          "currencyId":"USD",
+          "transactionDetails":[
+                {
+
+                     "quantity":"1",
+                     "description":"Pair of Red Shoes Size 8",
+                     "amount":"40.00"
+                },
+                {
+                     "quantity":"1",
+                     "description":"Pair of Blue Jeans Size 32",
+                     "amount":"30.00"
+                }
+          ]
+     },
+     "browserInfo":{
+          "deviceFingerprintID":"SET-DEVICE-FINGERPRINT-GENERATED",
+          "customerIp":"SET-USER-PUBLIC-IP-ADDRESS"
+     }
+}
+
+Response
+
+{
+     "response_code":"PG200-00",
+     "response_message":"Operation successful",
+
+                                                                                                                             10
+     "request_id":"ffeff36538f2a7bbe82a9b6e4d92dcb3",
+     "customer_reply":{
+
+          "payment_token":"cus_60f1807778bf30c9",
+          "authorization":"4DDC2F64",
+          "merchantTransactionId":"Inv 001-002",
+          "totalAmount":"70.00",
+          "firstName":"John",
+          "lastName":"Smith",
+          "paymentDate":"2019-07-31T12:03:01-06:00"
+     },
+     "request_date":"2019-07-31T12:03:02-06:00"
+}
+
+[ API PHP ]
+
+<?php
+       /* If your project is live, uncomment the following line, and
+       comment the next one */
+       /* define("GATEWAY_URL", "https://api.pagadito.com/v1/"); */
+       define("GATEWAY_URL", "https://sandbox-api.pagadito.com/v1/");
+
+/* Copy from Technical Configuration -> Integration Parameters */
+define("KEY_UID", "USE-YOUR-UID");
+define("KEY_WSK", "USE-YOUR-WSK");
+
+require_once('class.pagadito.php');
+
+$params = array(
+
+/* You have to add the credit card and billing information */
+
+'card' => array(
+
+'number'          => '5555555555554444',
+
+'expirationDate' => '01/2022',
+
+'cvv'             => '123',
+
+'cardHolderName' => 'JOHN SMITH',
+
+'firstName'       => 'John',
+
+'lastName'        => 'Smith',
+
+'billingAddress' => array(
+
+'city'            => 'San Salvador',
+
+'state'           => 'San Salvador',
+
+'zip'             => '',
+
+'countryId' => '740',
+
+                                                                       11
+            'line1'          => '7a calle poniente bis',
+
+            'phone'          => '+503 7777 8888',
+
+        ),
+
+        'email'              => 'johnsmith@correo.com',
+
+    ),
+
+    /* You have to add the transaction information, including the
+
+    details */
+
+    'transaction' => array(
+
+        'merchantTransactionId' => 'Inv 001-002',
+
+        'currencyId'         => 'USD',
+
+        'transactionDetails' => array(
+
+            array(
+
+                 'quantity'  => '1',
+
+                 'description' => 'Pair of Red Shoes Size 8',
+
+                 'amount'    => '40.00',
+
+            ),
+
+            array(
+
+                 'quantity'  => '1',
+
+                 'description' => 'Pair of Blue Jeans Size 32',
+
+                 'amount'    => '30.00',
+
+            )
+
+        ),
+
+    ),
+
+    /* You have to add the navigation information */
+
+    'browserInfo' => array(
+
+        'deviceFingerprintID' => SET-DEVICE-FINGERPRINT-GENERATED,
+
+        'customerIp' => 'SET-USER-PUBLIC-IP-ADDRESS',
+
+    ),
+
+);
+
+/* Now, you send information to Pagadito */
+$Pagadito = new Pagadito(false);
+$res = $Pagadito->createPayment($params);
+
+       /* You may store the information received */
+       print_r($res);
+?>
+
+                                                                    12
+Notes
+
+        To enable "Pay with Tokenization" you have to request it to Technical Team of
+
+       Pagadito, indicating the Merchant Account.
+
+        For this service, payment is only allowed in United States Dollars (USD).
+
+Related topics
+
+Payment with Tokenized Card.
+APPENDIX List of Parameters of REST API.
+APPENDIX List of Returned Values of REST API.
+APPENDIX List of HTTP Status Codes of REST API.
+APPENDIX List of Response Codes of REST API.
+APPENDIX List of ISO 3166 Country Codes.
+APPENDIX List of ISO State Codes for the United States.
+APPENDIX Credit/Debit Cards for test.
+Webhooks.
+
+                                                                                   13
+Payment with Tokenized Card
+
+Description
+
+Consists in processing payments for a Merchant without redirection, using the token
+associated with a credit/debit card processed and tokenized previously. This service
+does not require the user to be redirected to a payment screen, that's why your website
+or app is in charge of the complete payment process. Communication with Pagadito is
+through an API REST.
+
+Use
+
+Ideal for websites or apps that makes charges to the credit/debit card of the user
+without requiring he enters the information again. With this service, your website or app
+will be able to send new charges without being the user present nor he has to enter his
+credit/debit card information again, because when the initial charge is processed, an
+identifier is generated to be reused.
+
+Steps
+
+    1. User arrives to your website, picks products or services to buy and enters his
+         credit/debit card information.
+
+    2. Your website send to Pagadito the information of the payment including the token
+         associated with the card.
+
+    3. Pagadito processes the payment.
+    4. Pagadito return the information of the payment including the token associated
+
+         with the credit/debit card.
+    5. Your website shows a confirmation page.
+
+                                                                                                                             14
+Diagram
+
+                     Process of Payment with Tokenized Card with Pagadito
+
+Code
+
+To connect to the API, your server must support HTTPS connections:
+    · HTTP/1.1
+    · TLS 1.2
+
+The request header:
+    · "Content-Type" must be set to "Application/json;charset=UTF-8"
+    · "Content-Length" must be set to the length in byte of the request parameters.
+
+Generate Device Fingerprint
+Before to send the payment request, you must generate the Device Fingerprint of the
+user. This value is generated based on his navigation information; for this you must
+include the library and add an input in your website form or app with the value
+generated. Pagadito uses in a secure way this information to analyze the risk level of
+the transaction.
+[ JAVASCRIPT ]
+
+<html>
+       <head>
+              <meta charset="ISO-8859-1">
+              <!-- You have to include this library -->
+              <script type="text/javascript" src="cybs_devicefingerprint.js">
+              </script>
+
+                                                                                                                             15
+       </head>
+       <body>
+
+              <script type="text/javascript">
+                     <!-- Add order and payment inputs -->
+
+                     <!-- If your project is live, replace SANDBOX by LIVE -->
+                     document.write('<input type="hidden" name="deviceFingerprintID"
+value="' + cybs_dfprofiler("pagadito", "SANDBOX") + '">');
+              </script>
+       </body>
+</html>
+
+Send Payment
+To send a payment request, you have to send the connection credentials of the
+Merchant Account, an identifier of the transaction (ERN), the details (quantity,
+description, price), the token associated with the credit/debit card of the user and the
+navigation information.
+[ REST API ]
+Endpoint
+
+     SandBox -> https://sandbox-api.pagadito.com/v1/payment/
+     Live -> https://api.pagadito.com/v1/payment/
+
+Authentication
+Authentication to the API is performed via HTTP Basic Auth. Provide your UID key as
+the basic username value and WSK key as the basic auth password value.
+
+/* Copy from Technical Configuration -> Integration Parameters */
+Username:USE-YOUR-UID
+Password:USE-YOUR-WSK
+
+Request
+
+{
+     "payment_token":"SET-CREDIT-CARD-TOKEN",
+     "transaction":{
+          "merchantTransactionId":"Inv 001-003",
+
+                                                                                                                             16
+          "currencyId":"USD",
+          "transactionDetails":[
+
+                {
+                     "quantity":"1",
+                     "description":"Pair of Red Shoes Size 8",
+                     "amount":"40.00"
+
+                },
+                {
+
+                     "quantity":"1",
+                     "description":"Pair of Blue Jeans Size 32",
+                     "amount":"30.00"
+                }
+          ]
+     },
+     "browserInfo":{
+          "deviceFingerprintID":"SET-DEVICE-FINGERPRINT-GENERATED",
+          "customerIp":"SET-USER-PUBLIC-IP-ADDRESS"
+     }
+}
+
+Response
+
+{
+     "response_code":"PG200-00",
+     "response_message":"Operation successful",
+     "request_id":"ea39067690a9662b43b24336f9f6916c",
+     "customer_reply":{
+          "payment_token":"cus_60f1807778bf30c9",
+          "authorization":"10A64EF6",
+          "merchantTransactionId":"Inv 001-003",
+          "totalAmount":"70.00",
+          "firstName":"John",
+          "lastName":"Smith",
+          "paymentDate":"2019-07-31T12:03:01-06:00"
+     },
+     "request_date":"2019-08-06T14:41:07-06:00"
+
+}
+
+[ API PHP ]
+
+                                                                                                                             17
+<?php
+       /* If your project is live, uncomment the following line, and
+       comment the next one */
+       /* define("GATEWAY_URL", "https://api.pagadito.com/v1/"); */
+       define("GATEWAY_URL", "https://sandbox-api.pagadito.com/v1/");
+
+/* Copy from Technical Configuration -> Integration Parameters */
+define("KEY_UID", "USE-YOUR-UID");
+define("KEY_WSK", "USE-YOUR-WSK");
+
+require_once('class.pagadito.php');
+
+$params = array(
+
+    /* You have to add the credit card's token returned by Pagadito
+
+    previously */
+
+    'payment_token' => 'cus_9975e21bc064cd00',
+
+    /* You have to add the transaction information, including the
+
+    details */
+
+    'transaction' => array(
+
+        'merchantTransactionId' => 'Inv 001-003',
+
+        'currencyId'          => 'USD',
+
+        'transactionDetails' => array(
+
+            array(
+
+                  'quantity'  => '1',
+
+                  'description' => 'Pair of Red Shoes Size 8',
+
+                  'amount'    => '40.00',
+
+            ),
+
+            array(
+
+                  'quantity'  => '1',
+
+                  'description' => 'Pair of Blue Jeans Size 32',
+
+                  'amount'    => '30.00',
+
+            )
+
+        ),
+
+    ),
+
+    /* You have to add the navigation information */
+
+    'browserInfo' => array(
+
+        'deviceFingerprintID' => SET-DEVICE-FINGERPRINT-GENERATED,
+
+        'customerIp' => 'SET-USER-PUBLIC-IP-ADDRESS',
+
+    ),
+
+);
+
+                                                                       18
+       /* Now, you send information to Pagadito */
+       $Pagadito = new Pagadito(false);
+       $res = $Pagadito->sendPayment($params);
+
+       /* You may store the information received */
+       print_r($res);
+?>
+
+Notes
+
+        To enable "Pay with Tokenized Card" you have to request it to Technical
+
+       Team of Pagadito, indicating the Merchant Account.
+
+        For this service, payment is only allowed in United States Dollars (USD).
+
+Related Topics
+
+Payment with Tokenization.
+APPENDIX List of Parameters of REST API.
+APPENDIX List of Returned Values of REST API.
+APPENDIX List of HTTP Status Codes of REST API.
+APPENDIX List of Response Codes of REST API.
+APPENDIX List of ISO 3166 Codes for Countries.
+APPENDIX List of ISO Codes for states of the United States.
+APPENDIX Credit/Debit Cards for test.
+Webhooks.
+
+                                                                                   19
+Subscription with Tokenization
+
+Description
+
+It consists of the processing of payments and scheduling of collections to futures for a
+Trade without redirection, the merchant asks the user for the data of his Credit / Debit
+Card and sends them to Pagadito. In addition to the charge to the card, Pagadito
+generates a token associated with the card, to make future charges using only this
+token instead of all the card data. This service does not require the user to be redirected
+to a payment screen, so your website or app is responsible for the entire payment
+process. Communication with Pagadito is through a REST API.
+
+Use
+
+Ideal for websites or applications that offer subscriptions with defined packages, that is,
+the user knows the number of payments that will be charged to his account on a
+periodic basis. With this service, your website or application must request the user's
+credit/debit card information only once, and the card will be charged on the defined dates.
+
+Steps
+
+    1. The user arrives at your website, chooses the products or services to pay and
+         enters the details of his credit / debit card.
+
+    2. Tu sitio web envía a Pagadito los datos del pago.
+    3. Pagadito processes the payment.
+    4. Pagadito returns payment information including subscription code and
+
+         credit/debit card token.
+    5. Your website or app shows a confirmation screen.
+
+                                                                                                                             20
+Diagram
+
+                        Subscription Process with Tokenization with Pagadito
+
+Code
+
+To connect to the API, your server must support HTTPS connections:
+    · HTTP/1.1
+    · TLS 1.2
+
+The request header:
+    · "Content-Type" must be set to "Application/json;charset=UTF-8"
+    · "Content-Length" the length in bytes of the request parameters must be set.
+
+Generate Device Fingerprint
+Before to send the payment request, you must generate the Device Fingerprint of the
+user. This value is generated based on his navigation information; for this you must
+include the library and add an input in your website form or app with the value
+generated. Pagadito uses in a secure way this information to analyze the risk level of
+the transaction.
+[ JAVASCRIPT ]
+
+<html>
+       <head>
+              <meta charset="ISO-8859-1">
+              <!-- You have to include this library -->
+              <script type="text/javascript" src="cybs_devicefingerprint.js">
+              </script>
+
+                                                                                                                             21
+       </head>
+       <body>
+
+              <script type="text/javascript">
+                     <!-- Add order and payment inputs -->
+
+                     <!-- If your project is live, replace SANDBOX by LIVE -->
+                     document.write('<input type="hidden" name="deviceFingerprintID"
+value="' + cybs_dfprofiler("pagadito", "SANDBOX") + '">');
+              </script>
+       </body>
+</html>
+
+Send subscription
+To submit the collection request, you must submit the merchant's account connection
+credentials, a charge identifier (ERN), the details of the collection (quantity, description,
+price), the user's credit/debit card details and navigation data.
+[ REST API ]
+Endpoint
+
+     SandBox -> https://sandbox-api.pagadito.com/v1/subscription/
+     Producción -> https://api.pagadito.com/v1/subscription/
+
+Authentication
+Authentication to the API is done through HTTP Basic Auth. Provide your UID key as
+the basic username value and WSK as the Basic authentication password value.
+
+/* Copy from Technical Configuration -> Integration Parameters */
+Username: USE-YOUR-UID
+Password: USE-YOUR-WSK
+
+Request
+
+{
+      "card": {
+             "number": "5555555555554444",
+             "expirationDate": "12/2030",
+             "cvv": "123",
+             "cardHolderName": "JONH DOE",
+
+                                                                                                                             22
+             "firstName": "John",
+             "lastName": "Doe",
+             "billingAddress": {
+
+                   "city": "Los Angeles",
+                   "state": "CA",
+                   "zip": "90011",
+                   "countryId": "840",
+                   "line1": "Street 1",
+                   "phone": "+1 213 7777777"
+             },
+             "email": "youremail@domain.com"
+      },
+      "recurring": {
+             "interval": "month",
+             "interval_count": 3,
+             "first_interval_free": false,
+             "merchantTransactionId": "SUB-001",
+             "description": "Service info or product data",
+             "interval_amount": "10.00"
+      },
+      "browserInfo": {
+             "deviceFingerprintID": "1234567890123456",
+             "customerIp": "172.217.8.78"
+      }
+}
+
+Response
+
+{
+      "response_code": "PG200-00",
+      "response_message": "Operation successful",
+      "request_id": "e44a0e1d8147048830b764f12b73e298",
+      "customer_reply": {
+             "authorization": "DB3AAD4B",
+             "paymentDate": "2020-10-08T14:17:51-06:00",
+             "recurring": {
+                   "amount": "10.00",
+                   "merchantTransactionId": "SUB-001",
+                   "period": "Monthly",
+                   "subscription_code": "sub_hupszvlr8s",
+                   "client": {
+                          "firstName": "John",
+                          "lastName": "Doe",
+                          "email": "youremail@domain.com"
+                   }
+             },
+
+                                                                                                                             23
+             "payment_token": "cus_ac1990b0bbd32f7b"
+      },
+      "request_date": "2020-10-08T14:17:53-06:00"
+}
+
+[ PHP ]
+
+keys.inc.php
+<?php
+/* Copy from Technical Configuration -> Integration Parameters */
+define("KEY_UID", "CHANGE_ME");
+define("KEY_WSK", "CHANGE_ME");
+
+/* If your project is live, uncomment the following line, and comment the next one */
+// define("GATEWAY_URL", "https://api.pagadito.com/v1/");
+define("GATEWAY_URL", "https://sandbox-api.pagadito.com/v1/");
+
+03_subscription.php
+<?php
+require_once 'keys.inc.php';
+require_once 'lib/class.pagadito.php';
+
+/* You have to add the recurring information, including the details */
+
+$params = array(
+
+'card' => array(
+
+    'number'          => '5555555555554444',
+
+    'expirationDate' => '12/2030',
+
+    'cvv'             => '123',
+
+    'cardHolderName' => 'JONH DOE',
+
+    'firstName'       => 'John',
+
+    'lastName'        => 'Doe',
+
+    'billingAddress' => array(
+
+        'city'        => 'Los Angeles',
+
+        'state'       => 'CA',
+
+        'zip'         => '90011',
+
+        'countryId' => '840',
+
+        'line1'       => 'Street 1',
+
+        'phone'       => '+1 213 7777777',
+
+    ),
+
+    'email'           => 'youremail@domain.com',
+
+),
+
+'recurring' => array(
+
+    'interval'         => 'month',
+
+    'interval_count'   => '3',
+
+    'first_interval_free' => false,
+
+    'merchantTransactionId' => 'SUB-' . rand(),
+
+    'description'      => 'Service info or product data',
+
+    'interval_amount'  => '10.00'
+
+),
+
+                                                                                       24
+      'browserInfo' => array(       => '1234567890123456',
+             'deviceFingerprintID'  => '172.217.8.78',
+             'customerIp'
+
+      ),
+);
+
+/* Now, you send information to Pagadito */
+$pagadito = new Pagadito(false); //Change true to debug
+$res = $pagadito->createSubscription($params);
+
+/* You may store the information received */
+print_r($res);
+echo "\n";
+
+Unsubscribe
+Tocancel a subscription, you must submit your account credentials and subscription
+code.
+[ REST API ]
+Endpoint
+
+     SandBox -> https://sandbox-api.pagadito.com/v1/subscription-cancel/
+     Producción -> https://api.pagadito.com/v1/subscription-cancel/
+
+Authentication
+Authentication to the API is done through HTTP Basic Auth. Provide your UID key as
+the basic user name value and WSK as the Basic authentication password value.
+
+/* Copy from Technical Configuration -> Integration Parameters */
+Username: USE-YOUR-UID
+Password: USE-YOUR-WSK
+
+Request
+
+{
+      "subscription_code": "sub_kvr8m5bw9q"
+
+}
+
+Response
+
+{
+      "response_code": "PG200-00",
+
+                                                            25
+      "response_message": "Operation successful",
+      "request_id": "7ca516ff2d11c10b5f5e87e436e6984e",
+      "subscription_code": "sub_kvr8m5bw9q",
+      "request_date": "2020-10-08T08:58:36-06:00"
+}
+
+[ PHP ]
+
+keys.inc.php
+<?php
+/* Copy from Technical Configuration -> Integration Parameters */
+define("KEY_UID", "CHANGE_ME");
+define("KEY_WSK", "CHANGE_ME");
+
+/* If your project is live, uncomment the following line, and comment the next one */
+// define("GATEWAY_URL", "https://api.pagadito.com/v1/");
+define("GATEWAY_URL", "https://sandbox-api.pagadito.com/v1/");
+
+05_subscription_cancel.php
+<?php
+require_once 'keys.inc.php';
+require_once 'lib/class.pagadito.php';
+
+/* You have to add the subscription code */
+$params = array(
+
+      'subscription_code' => 'sub_21picl7ja4'
+);
+
+/* Now, you send information to Pagadito */
+$pagadito = new Pagadito(false); //Change true to debug
+$res = $pagadito->cancelSubscription($params);
+
+/* You may store the information received */
+print_r($res);
+echo "\n";
+
+Notes
+
+        The authorization of "Subscription with Tokenization" must be requested to the
+
+       Technical Team of Pagadito, indicating which is the account of the Merchant.
+
+        For this service, only the collection in American Dollar (USD) is allowed.
+
+Related topics
+
+                                                                                       26
+Payment with Tokenization.
+Payment by Tokenized Card.
+Tokenized Card Subscription.
+APPENDIX List of Parameters of REST API.
+APPENDIX List of Returned Values of REST API.
+APPENDIX List of HTTP Status Codes of REST API.
+APPENDIX List of Response Codes of REST API.
+APPENDIX List of ISO 3166 Codes for Countries.
+APPENDIX List of ISO Codes for states of the United States.
+APPENDIX Credit/Debit Cards for test.
+Webhooks.
+
+                                                                                                                             27
+Tokenized Card Subscription
+
+Description
+
+It consists of the processing of payments andscheduling of collections to futures for a
+Commerce without redirection, using the token of a credit / debit card previously
+processed and tokenized. This service does not require the user to be redirected to a
+payment screen, so your website or app is responsible for the entire payment process.
+Communication with Pagadito is through a REST API.
+
+Use
+
+Ideal for websites or apps that offer scalable subscriptions or renewal of a completed
+subscription. With this service, your website or application will be able to send new
+charges without the need for the user to be present or for them to re-enter their
+credit/debit card details.
+
+Steps
+
+    1. The user arrives at your website, chooses the products or services to pay and
+         enters the details of his credit / debit card.
+
+    2. Your website sends Pagadito payment details.
+    3. Pagadito processes the payment.
+    4. Pagadito returns payment information including subscription code and
+
+         credit/debit card token.
+    5. Your website or app shows a confirmation screen.
+
+                                                                                                                             28
+Diagram
+
+                      Subscription Process with Tokenized Card with Pagadito
+
+Code
+
+To connect to the API, your server must support HTTPS connections:
+    · HTTP/1.1
+    · TLS 1.2
+
+The request header:
+    · "Content-Type" must be set to "Application/json;charset=UTF-8"
+    · "Content-Length" the length in bytes of the request parameters must be set.
+
+Generate Device Fingerprint
+Before to send the payment request, you must generate the Device Fingerprint of the
+user. This value is generated based on his navigation information; for this you must
+include the library and add an input in your website form or app with the value
+generated. Pagadito uses in a secure way this information to analyze the risk level of
+the transaction.
+[ JAVASCRIPT ]
+
+<html>
+       <head>
+              <meta charset="ISO-8859-1">
+              <!-- You have to include this library -->
+              <script type="text/javascript" src="cybs_devicefingerprint.js">
+              </script>
+
+                                                                                                                             29
+       </head>
+       <body>
+
+              <script type="text/javascript">
+                     <!-- Add order and payment inputs -->
+
+                     <!-- If your project is live, replace SANDBOX by LIVE -->
+                     document.write('<input type="hidden" name="deviceFingerprintID"
+value="' + cybs_dfprofiler("pagadito", "SANDBOX") + '">');
+              </script>
+       </body>
+</html>
+
+Send subscription
+To submit the payment request, you must submit the merchant account connection
+credentials, a charge identifier (ERN), the details of the collection (quantity, description,
+price), the user's card token and navigation data.
+[ REST API ]
+Endpoint
+
+     SandBox -> https://sandbox-api.pagadito.com/v1/subscription-by-token/
+     Producción -> https://api.pagadito.com/v1/subscription-by-token/
+
+Authentication
+Authentication to the API is done through HTTP Basic Auth. Provide your UID key as
+the basic username value and WSK as the Basic authentication password value.
+
+/* Copy from Technical Configuration -> Integration Parameters */
+Username: USE-YOUR-UID
+Password: USE-YOUR-WSK
+
+Request
+
+{
+      "payment_token": "cus_ac1990b0bbd32f7b",
+      "recurring": {
+             "interval": "month",
+             "interval_count": 3,
+             "first_interval_free": false,
+
+                                                                                                                             30
+             "merchantTransactionId": "SUBSCRIPTION-002",
+             "description": "Service info or product data",
+             "interval_amount": "10.00"
+      },
+      "browserInfo": {
+             "deviceFingerprintID": "1234567890123456",
+             "customerIp": "172.217.8.78"
+      }
+}
+
+Response
+
+{
+      "response_code": "PG200-00",
+      "response_message": "Operation successful",
+      "request_id": "d52003a9a59ea1727801ed5c6328af94",
+      "customer_reply": {
+             "authorization": "7DFEC96F",
+             "paymentDate": "2020-10-08T17:29:55-06:00",
+             "recurring": {
+                   "amount": "10.00",
+                   "merchantTransactionId": "SUBSCRIPTION-002",
+                   "period": "Monthly",
+                   "subscription_code": "sub_m7segc9u83",
+                   "client": {
+                          "firstName": "John",
+                          "lastName": "Doe",
+                          "email": "youremail@domain.com"
+                   }
+             },
+             "payment_token": "cus_ac1990b0bbd32f7b"
+      },
+      "request_date": "2020-10-08T17:29:57-06:00"
+
+}
+
+[ PHP ]
+
+keys.inc.php
+<?php
+/* Copy from Technical Configuration -> Integration Parameters */
+define("KEY_UID", "CHANGE_ME");
+define("KEY_WSK", "CHANGE_ME");
+
+/* If your project is live, uncomment the following line, and comment the next one */
+// define("GATEWAY_URL", "https://api.pagadito.com/v1/");
+
+                                                                                                                             31
+define("GATEWAY_URL", "https://sandbox-api.pagadito.com/v1/");
+
+04_subscription_by_token.php
+<?php
+require_once 'keys.inc.php';
+require_once 'lib/class.pagadito.php';
+
+/* You have to add the recurring information, including the details */
+
+$params = array(
+
+    'payment_token' => ' cus_ac1990b0bbd32f7b',
+
+    'recurring' => array(
+
+        'interval'           => 'month',
+
+        'interval_count'     => '3',
+
+        'first_interval_free' => false,
+
+        'merchantTransactionId' => 'SUB-' . rand(),
+
+        'description'        => 'Service info or product data',
+
+        'interval_amount'    => '10.00'
+
+    ),
+
+    'browserInfo' => array(
+
+        'deviceFingerprintID' => '1234567890123456',
+
+        'customerIp'         => '172.217.8.78',
+
+    ),
+
+);
+
+/* Now, you send information to Pagadito */
+$pagadito = new Pagadito(false); //Change true to debug
+$res = $pagadito->createSubscription($params);
+
+/* You may store the information received */
+print_r($res);
+echo "\n";
+
+Unsubscribe
+Tocancel a subscription, you must submit your account credentials and subscription
+code.
+[ REST API ]
+Endpoint
+
+     SandBox -> https://sandbox-api.pagadito.com/v1/subscription-cancel/
+     Producción -> https://api.pagadito.com/v1/subscription-cancel/
+
+Autenticación
+
+                                                                        32
+Authentication to the API is done through HTTP Basic Auth. Provide your UID key as
+the basic user name value and WSK as the Basic authentication password value.
+
+/* Copy from Technical Configuration -> Integration Parameters */
+Username: USE-YOUR-UID
+Password: USE-YOUR-WSK
+
+Request
+
+{
+      "subscription_code": "sub_kvr8m5bw9q"
+
+}
+
+Response
+
+{
+      "response_code": "PG200-00",
+      "response_message": "Operation successful",
+      "request_id": "7ca516ff2d11c10b5f5e87e436e6984e",
+      "subscription_code": "sub_kvr8m5bw9q",
+      "request_date": "2020-10-08T08:58:36-06:00"
+
+}
+
+[ PHP ]
+
+keys.inc.php
+<?php
+/* Copy from Technical Configuration -> Integration Parameters */
+define("KEY_UID", "CHANGE_ME");
+define("KEY_WSK", "CHANGE_ME");
+
+/* If your project is live, uncomment the following line, and comment the next one */
+// define("GATEWAY_URL", "https://api.pagadito.com/v1/");
+define("GATEWAY_URL", "https://sandbox-api.pagadito.com/v1/");
+
+05_subscription_cancel.php
+<?php
+require_once 'keys.inc.php';
+require_once 'lib/class.pagadito.php';
+
+/* You have to add the subscription code */
+$params = array(
+
+      'subscription_code' => 'sub_21picl7ja4'
+);
+
+                                                                                                                             33
+/* Now, you send information to Pagadito */
+$pagadito = new Pagadito(false); //Change true to debug
+$res = $pagadito->cancelSubscription($params);
+
+/* You may store the information received */
+print_r($res);
+echo "\n";
+
+Notes
+
+        The authorization of "Subscription with Tokenization" must be requested to the
+
+       Technical Team of Pagadito, indicating which is the account of the Merchant.
+
+        For this service, only the collection in American Dollar (USD) is allowed.
+
+Related topics
+
+Payment with Tokenization.
+Payment by Tokenized Card.
+Subscription with Tokenization.
+APPENDIX List of Parameters of REST API.
+APPENDIX List of Returned Values of REST API.
+APPENDIX List of HTTP Status Codes of REST API.
+APPENDIX List of Response Codes of REST API.
+APPENDIX List of ISO 3166 Codes for Countries.
+APPENDIX List of ISO Codes for states of the United States.
+APPENDIX Credit/Debit Cards for test.
+Webhooks.
+
+                                                                                     34
+Refund
+
+Description
+
+It consists of the return of a payment already processed by the merchant and that have
+generated an approval of the transaction. Communication with Pagadito is through a
+REST API.
+
+Use
+
+Ideal for merchants that have established within their terms or conditions of use, that
+they will not be charged for associating cards within their platform or to return the
+amount of a transaction to the client. With this service, your website or application will
+be able to request refunds without having to access your Pagadito Comercio account.
+
+Steps
+
+    1. Your app submits to the refund request with the approval number.
+    2. Pagadito processes the refund.
+    3. Pagadito returns the payment information including the transaction approval
+
+         number and the negative amount.
+    4. Your website or app shows a confirmation screen.
+
+Diagram
+
+                                      Refund Process with Pagadito
+
+                                                                                                                             35
+Code
+
+To connect to the API, your server must support HTTPS connections:
+    · HTTP/1.1
+    · TLS 1.2
+
+The request header:
+    · "Content-Type" should be set to "Application/json;charset=UTF-8"
+    · "Content-Length" the length in bytes of the request parameters must be set.
+
+Refund Payment
+To refund payments, you must submit your account credentials and subscription code.
+[ REST API ]
+Endpoint
+
+     SandBox -> https://sandbox-api.pagadito.com/v1/refund/
+     Producción -> https://api.pagadito.com/v1/refund/
+
+Authentication
+Authentication to the API is done through HTTP Basic Auth. provide your uid key as the
+basic user name value and wsk as the basic authentication password value.
+
+/* Copy from Technical Configuration -> Integration Parameters */
+Username: USE-YOUR-UID
+Password: USE-YOUR-WSK
+
+Petition
+
+{
+      "authorization": "EEB20041",
+      "reason": "Refund payment"
+
+}
+
+                                                                                                                             36
+Answer
+
+{
+      "response_code": "PG200-00",
+      "response_message": "Operation successful",
+      "request_id": "f18509aca14c02c907ffbe908fc61b42",
+      "amount": "-10.00",
+      "authorization": "EEB20041",
+      "request_date": "2020-10-08T09:00:40-06:00"
+
+}
+
+[ PHP ]
+
+keys.inc.php
+<?php
+/* Copy from Technical Configuration -> Integration Parameters */
+define("KEY_UID", "CHANGE_ME");
+define("KEY_WSK", "CHANGE_ME");
+
+/* If your project is live, uncomment the following line, and comment the next one */
+// define("GATEWAY_URL", "https://api.pagadito.com/v1/");
+define("GATEWAY_URL", "https://sandbox-api.pagadito.com/v1/");
+
+refund.php
+<?php
+require_once 'keys.inc.php';
+require_once 'lib/class.pagadito.php';
+
+/* You have to add the subscription code */
+
+$params = array(
+
+    'authorization' => '4F5AA50C',
+
+    'reason'      => 'Refund payment'
+
+);
+
+/* Now, you send information to Pagadito */
+$pagadito = new Pagadito(false); //Change true to debug
+$res = $pagadito->sendRefund($params);
+
+/* You may store the information received */
+print_r($res);
+echo "\n";
+
+Notes
+
+        The authorization of "Refund" must be requested from the Technical Team of
+
+              Pagadito, indicating which is the account of the Commerce.
+
+                                                                                       37
+Related topics
+
+ANNEX List of REST API HTTP Status Codes.
+ANEXO List of REST API Response Codes.
+
+                                                                                                                             38
+Webhooks
+
+Description
+
+Webhooks are HTTP callbacks that receive notifications for the event types which are
+configured. They are asynchronous, the order is not guaranteed and when they are sent
+more than one time the result does not change.
+
+Use
+
+Ideal for websites or apps that need an asynchronous confirmation when the status of a
+transaction change. With this service, your website or app will not be without knowing
+the last status per each transaction.
+
+Configuration
+
+From section Technical Configuration -> Webhooks, you have to add the listener URL
+and save the configuration.
+
+Events
+
+They are notifications that are sent to the configured URL, when a trigger is activated,
+for example the change of status of a payment. When an event occurs, Pagadito
+notifies through a POST HTTP request, which contains the details of the event and the
+information of the transaction.
+
+Types
+The types of events are the different triggers that activate the sending of a notification.
+The supported types of events in this moment are the following:
+
+     TRANSACTION.STATUS.CHANGE: This event is triggered when a payment is
+         registered. Also when it changes its status to completed, verifying, revoked or
+         expired.
+
+                                                                                                                             39
+Information
+When an event occurred, Pagadito sends the notification of the event in format JSON
+encode. If the website or app is not available or it takes too long to answer (timeout),
+Pagadito cancels the request and tries again until a maximum of 20 times during the
+following 3 days. The parameter event_type indicates the trigger of the event.
+
+{
+   "id": "0b918943df0962bc7a1824c0555a389347b4febdc7cf9d1254406d80ce44e3f9",
+   "event_create_timestamp": "2019-07-30 14:13:39",
+   "event_type": "TRANSACTION.STATUS.CHANGE",
+   "resource": {
+       "token": "afd7b5af626e37abf008840acfc82daa",
+       "ern": "INV 001-002",
+       "create_timestamp": "2019-07-30 14:12:35",
+       "amount": {
+          "total": "70.00",
+          "currency": "USD"
+       },
+       "description": "Pago de prueba",
+       "update_timestamp": "2019-07-30 14:13:35",
+       "status": "COMPLETED",
+       "reference": "C6CA443B",
+       "items_list": [
+          {
+              "quantity": "1",
+              "price": "40.00",
+              "description": "Pair of Red Shoes Size 8",
+              "url_product": ""
+          },
+          {
+              "quantity": "1",
+              "price": "30.00",
+              "description": "Pair of Blue Jeans Size 32",
+              "url_product": ""
+          }
+       ]
+   }
+
+}
+
+                                                                                                                             40
+Signature
+Each one of the sent messages are signed. It is important to verify that:
+
+     The Webhook event was originated from Pagadito.
+     The Webhook event was not modified during its transmission.
+     The Webhook event goes to the right receiver.
+
+The following headers are used to give information for validation of the signature.
+
+     PAGADITO-SIGNATURE: asymmetric signature generated by Pagadito Base64
+         encoded.
+
+     PAGADITO-AUTH-ALGO: algorithm used to generate and validate the
+         asymmetric signature.
+
+     PAGADITO-CERT-URL: URL address to download the certificate of public key
+         X509 to be used in the verification process.
+
+The signature is generated through the concatenation of five values, using | (vertical
+line) as separator.:
+
+     Notification ID: Unique identifier of the HTTP notification. It is contained in the
+         header PAGADITO-NOTIFICATION-ID.
+
+     Timestamp Notification: Timestamp of the HTTP notification. It is contained in the
+         header PAGADITO-NOTIFICATION-TIMESTAMP.
+
+     Event ID: Identifier of the event. It is included in the event's body.
+     Cyclic Redundancy Check (CRC32): Checksum CRC32 for the body of the HTTP
+
+         request.
+     WSK: Connection credential of the Merchant Account.
+
+The input string to validate the signature would have the following shape:
+
+                   NotificationId|TimestampNotification|EventIdD|CRC32|WSK
+
+The authentication algorithm specified in PAGADITO-AUTH-ALGO uses an asymmetric
+signature algorithm. This allows to Pagadito to use a private key to create the signature
+
+                                                                                                                             41
+in PAGADITO-SIGNATURE, and allows you to use a public key contained in the
+certificate which source is defined in PAGADITO-CERT-URL to verify the Webhook
+event.
+
+Code
+
+Read and verify webhook
+To validate the webhook notification you have to get the headers of the notification, the
+certificate and to validate the signature of the message.
+[ PHP ]
+
+<?php
+       /* Get headers */
+       $headers = getallheaders();
+       $notification_id = $headers['PAGADITO-NOTIFICATION-ID'];
+       $notification_timestamp = $headers['PAGADITO-NOTIFICATION-TIMESTAMP'];
+       $auth_algo = $headers['PAGADITO-AUTH-ALGO'];
+       $cert_url = $headers['PAGADITO-CERT-URL'];
+       $notification_signature = base64_decode($headers['PAGADITO-SIGNATURE']);
+
+       /* Get data */
+       $data = file_get_contents('php://input');
+
+       /* Get Event ID */
+       $array_data = json_decode($data, TRUE);
+       $event_id = $array_data['id'];
+
+       /* Copy from Technical Configuration -> Integration Parameters */
+       $wsk = 'SET-YOUR-WSK';
+
+       /* Generate validation string */
+       $data_signed = $notification_id . '|' . $notification_timestamp . '|' .
+$event_id . '|' . crc32($data) . '|' . $wsk;
+
+       /* Get content of certificate */
+       $http_options = array(
+
+              'http' => array(
+                     'protocol_version' => '1.1',
+                     'method' => 'GET',
+                     'header' => array(
+
+                                                                                                                             42
+                             'Connection: close'
+                     ),
+              )
+       );
+       $cert_stream_context = stream_context_create($http_options);
+       $cert_content = file_get_contents($cert_url, FALSE,
+$cert_stream_context);
+
+       /* Get public key */
+       $pubkeyid = openssl_pkey_get_public($cert_content);
+
+       /* Verify sign */
+       $verification = openssl_verify($data_signed, $notification_signature,
+$pubkeyid, $auth_algo);
+
+       /* Free public key */
+       openssl_free_key($pubkeyid);
+
+       /* Validation */
+       if ($verification == 1) {
+
+              die(`Valid');
+       } elseif ($verification == 0) {
+
+              die(`Invalid');
+       } else {
+
+              die(`Error');
+       }
+?>
+
+Response
+When an app receives the event has to reply with an HTTP status code of level 200. If it
+responds with a different code, Pagadito will try to give the event until a maximum of 20
+times during the following 3 days.
+
+Related Topics
+
+APPENDIX List of Statuses of Transaction.
+
+                                                                                                                             43
+Appendix
+
+List of Parameters of REST API
+
+Definition of the sent parameters when consuming REST API.
+
+Card Object
+Contains card information.
+
+Field Name      Type    Description                         Format
+number
+expirationDate  String  Credit card account                 1234567890123456
+cvv             (16)    number.
+cardHolderName
+                String  Expiration date for the MM/YYYY.
+firstName       (7)     card.
+
+lastName        Number Card security code.                  Three digits for VISA and
+                (4)                                         MasterCard.
+email
+                String  Card Holder Name for                Latin characters are not
+                (26)    the card.                           allowed. Some special
+                                                            characters are allowed:
+                                                            - Dot ( . )
+                                                            - Hyphen ( - )
+                                                            - Apostrophe ( ' )
+                                                            - Single quote ( ' )
+
+                String  First name of the                   Latin characters are allowed.
+                (30)    account holder.                     Some special characters are
+                                                            allowed:
+                                                            - Dot ( . )
+                                                            - Apostrophe ( ' )
+
+                String  Last name of the                    Latin characters are allowed.
+                (30)    account holder.                     Some special characters are
+                                                            allowed:
+                                                            - Dot ( . )
+                                                            - Apostrophe ( ' )
+
+                String  Email for the                       example@example.com
+                (60)    customer
+
+                        Note: Pagadito sends
+                        a confirmation email
+                        in each payment
+
+                                                                                       44
+made.
+                                                                            45
+billingAddress Object
+Contains the billing address of the account holder.
+
+Field Name  Type    Description                      Format
+city        String  City in the billing
+state       (30)    address.                         Latin characters are allowed.
+            String                                   Some special characters are
+zip         (80)    State or province in the         allowed:
+                    billing address.                 - Dot ( . )
+countryId   String                                   - Apostrophe ( ' )
+line1       (15)
+                                                     Alphanumeric.
+            Number                                   Latin characters are allowed.
+            (3)                                      Some special characters are
+            String                                   allowed:
+            (60)                                     - Parenthesis ( )
+                                                     - Hyphen ( - )
+                                                     - Dot ( . )
+                                                     - Apostrophe ( ' )
+
+                                                     Note: For United States, use
+                                                     the List of ISO State Codes of
+                                                     the United States.
+
+                    Postal code of the billing       Numbers.
+                    address.                         Some special characters are
+                                                     allowed:
+                                                     - Dot ( . )
+                                                     - Hyphen ( - )
+
+                    Country in the billing           Required for United States. If
+                    address.                         the billing country is United
+                                                     States, the numeric
+                    Complement the billing           characters are follow these
+                    address (e.g. street)            formats:
+
+                                                         · 5 characters: NNNNN
+                                                         · 9 characters: NNNNN-
+
+                                                               NNNN
+
+                                                     Use the three numbers
+                                                     country codes located in the
+                                                     appendix List of ISO 3166
+                                                     Country Codes.
+
+                                                     Alphanumeric
+                                                     Latin characters are allowed.
+                                                     Special characters allowed:
+
+                                                     46
+phone        String  Telephone for the                      - Dot ( . )
+             (15)    customer.                              - Comma ( , )
+                     Include the area code                  - Numeral ( # )
+                                                            - Semicolon ( ; )
+                                                            - Hyphen ( - )
+                                                            - Degree symbol ( ° )
+                                                            - Ampersand ( & )
+                                                            - Asterik ( * )
+
+                                                            Numbers
+                                                            Some special characters are
+                                                            allowed:
+                                                            - Parenthesis ( )
+                                                            - Hyphen ( - )
+                                                            - Asterik ( * )
+
+transaction Object
+Contains the information of the transaction to process.
+
+Field Name           Type Description                       Format
+
+merchantTransactionId String            Merchant-generated  Alphanumeric
+                                 (100)  order reference or  Latin characters are not
+                                        tracking number.    allowed. Special characters
+                                                            allowed:
+                                                            - Dot ( . )
+                                                            - Hyphen ( - )
+
+currencyId           String             Currency in which 3 letter ISO code for
+                     (3)                the payment will be currency.
+                                        processed. (Future). Actually only USD
+
+transactionDetails Object
+Contains the information of the transaction.
+
+Field Name           Type Description                       Format
+quantity
+                     Number Number of items.
+description          (4)
+
+                     String             Description of the
+                     (100)              item.
+
+                                                                                         47
+amount               Decimal Unit price.                   A positive or negative
+                     (10, 2)                               decimal in the currency
+                                                           unit (e.g., 100.00 to charge
+                                                           $100.00). Negative amount
+                                                           represent a Discount for
+                                                           the customer.
+                                                           Minimum amount 1USD.
+
+browserInfo Object
+Contains the information of the device where the transaction is made.
+
+Field Name           Type    Description                               Format
+
+deviceFingerprintID  Number  Device Fingerprint
+customerIp           (40)    Generated by the script provided in
+                             JavaScript. This information must be
+                     String  from the customer browser.
+                     (100)
+                             A valid public IP from customer
+                             browser.
+
+Payment Object
+Contains the tokenized card token on the first payment.
+
+Field Name   Type Description                              Format
+
+payment_token String Payment token associated to the cus_xxxxxxxxxxxxxxxx
+
+             (20)    card.
+
+transaction  Object Contains the information of the
+                          transaction. The first payment.
+
+recurring Object
+Contains the data of the subscription to be processed.
+
+Field Name           Type    Description                   Format
+interval                                                   week, month, year
+                     String  Subscription
+                     ()      frequency.
+
+                                                                               48
+interval_count           Number         Number of
+                         ()             subscription charges.
+
+first_interval_free      Boolean Allows to provide                 true: A subscription is
+                         (true, false) grace period for the        scheduled.
+                                                                   false: The first payment
+                                          subscription.            is charged and the
+                                                                   subscription is
+                                                                   scheduled.
+
+merchantTransactionId String            Reference or tracking      Alphanumeric.
+                                 (100)  number generated by        Latin alphanumeric
+                                        the Merchant.              characters are not
+                                                                   allowed. Special
+                                                                   characters allowed:
+                                                                   - Dot ( . )
+                                                                   - Hypen ( - )
+
+description              String         Subscription
+                         (100)          description.
+
+interval_amount          Decimal        Amount receivable for Minimum amount 1USD.
+                         (10, 2)        each subscription
+                                        payment.
+
+subscription_code
+Contains the code of the subscription to cancel.
+
+Field Name           Type               Description                Format
+subscription_code                       Subscription code.         sub_xxxxxxxxxx
+                     String
+                     ()
+
+refund
+Contains the approval number of the transaction to be reimbursed.
+
+Field Name       Type                   Description                        Format
+authorization                                                              Alphanumeric.
+                 String                 Contains the approval number of
+reason           (8)                    the transaction to be reimbursed.
+
+                 String                 Transaction approval.
+                 ()
+
+                                                                                          49
+List of Returned Values of REST API
+
+Definition of the returned values when consuming REST API.
+
+Group Name Field Name                 Type  Description            Format
+                     response_code
+                                    String  Code of the response
+                                    (8)     See the appendix for
+                                            Response codes
+
+response_messa String                       Description of the
+ge                                          response
+                                            code
+
+pagadito_res request_date           String  Pagadito Time when     ISO 8601 date
+ponse                                       the
+                                            transaction was
+                                            received.
+
+request_id                          String  Pagadito Token for     You will receive
+                                    (32)    this                   this only if the
+                                            transaction            transaction
+                                                                   passed the
+                                                                   validation data.
+
+payment_token String                        Code associated to     cus_xxxxxxxxx
+                          (8)               the                    xxxxxxx
+                                            Credit Card.
+                                            Generated by
+                                            Pagadito in the first
+                                            payment in the
+                                            resource
+                                            /customer
+
+customer_rep authorization          String  Alphanumeric code
+ly                                  (8)     with
+                                            the Approval number
+                                            in
+                                            Pagadito
+
+merchantTransac String                      Merchant-generated
+                                            order
+tionId                              (100)   reference or tracking
+                                            number provided in
+                                            the
+                                            payment.
+
+                                                                                  50
+totalAmount  Decimal  Total amount of the
+                      payment that
+firstName             Pagadito
+lastName              charged to the
+paymentDate           customer
+
+             String   First name of the
+             (60)     account
+                      holder.
+
+             String   Last name of the
+             (60)     account
+                      holder.
+
+             Date     Pagadito Time when   ISO 8601 date
+                      the
+                      payment was
+                      processed.
+
+                                                          51
+List of HTTP Status Codes of REST API
+
+Codes and descriptions of statuses returned when consuming REST API.
+
+Code                                  Description
+
+200   OK Everything worked out as was meant.
+
+400   Bad request. The request was not acceptable. This may happen when a
+
+      required parameter is missing.
+
+401   Access not authorized. Incorrect credentials.
+
+402   Request failed. Parameters were correct but the request failed for some
+
+      reason.
+
+500   Server error. Pagadito had a problem, try again.
+
+                                                                      52
+List of Response Codes of REST API
+
+Codes and descriptions returned when consuming REST API.
+
+Code                           Description
+
+PG200-00 Operation successful
+
+PG400-00 Incomplete data
+
+PG400-01 Field missing or invalid type: [parameter]
+
+PG400-02 Invalid format data for field: [parameter]
+
+PG400-03 Unsoported credit/debit card type. We only support VISA AND MASTERCARD.
+
+PG400-04 The card's expiration is invalid. (month/year)
+
+PG400-05 The card's security code is invalid.
+
+PG400-06 Payments for this country is not supported for Pagadito.
+
+PG400-07 Currency not supported for Pagadito.
+
+          The value must be greater than or equal to one - element_ [quantity]
+
+PG400-08 Invalid format data for field: description element_ [description]
+
+          Invalid format data for field: amount element_ [amount]
+
+PG400-09 Amount is lower than the minimum allowed by Pagadito: $ 1
+
+PG400-10 Interval amount is greater than the maximum allowed by Pagadito: $ 50000
+
+PG400-11  Payment token is not valid.
+          The card's expiration month is invalid. (month)
+
+PG400-12 The sandbox cards is not allowed in production environment.
+
+PG400-13 Payment token has expired, no further payments will be allowed.
+
+PG402-00 We're sorry. An error has occurred
+
+PG402-01 The transaction cannot completed by risk analyzer
+
+PG402-02 The transaction cannot completed by bank reject
+
+                                                                                   53
+List of ISO 3166 Country Codes
+
+ISO Country Codes allowed in services Payment without Redirection, Payment with
+Tokenization and Payment with Tokenized Card.
+
+    ISO Code                      Country
+222
+320           El Salvador
+340           Guatemala
+558           Honduras
+188           Nicaragua
+591           Costa Rica
+840           Panama
+214           United States
+170           Dominican Republic
+862           Colombia
+218           Venezuela
+604           Ecuador
+068           Peru
+600           Bolivia
+858           Paraguay
+032           Uruguay
+152           Argentina
+484           Chile
+724           Mexico
+630           Spain
+              Puerto Rico
+
+                                           54
+036  Australia
+
+620  Portugal
+
+124  Canada
+
+276  Germany
+
+040  Austria
+
+056  Belgium
+
+208  Denmark
+
+246  Finland
+
+250  France
+
+372  Ireland
+
+380  Italy
+
+442  Luxembourg
+
+528  Netherlands
+
+616  Poland
+
+826  United Kingdom
+
+752  Sweden
+
+756  Switzerland
+
+578  Norway
+
+076  Brazil
+
+060  Bermuda
+
+084  Belize
+
+534  Sint Maarten
+
+328  Guyana
+
+740  Suriname
+
+                     55
+608  Philippines
+
+388  Jamaica
+
+158  Taiwan
+
+191  Croatia
+
+646  Rwanda
+
+192  Cuba
+
+780  Trinidad and Tobago
+
+643  Russian Federation
+
+410  Korea
+
+156  China
+
+356  India
+
+376  Israel
+
+392  Japan
+
+634  Qatar
+
+136  Cayman Islands
+
+044  Bahamas
+
+                          56
+List of ISO State Codes of the United States
+
+ISO Codes of States of the United States allowed in services Payment with
+Tokenization and Payment with Tokenized Card.
+
+    ISO Code                    State
+AL
+AK            Alabama (AL)
+AZ            Alaska (AK)
+AR            Arizona (AZ)
+CA            Arkansas (AR)
+CO            California (CA)
+CT            Colorado (CO)
+DE            Connecticut (CT)
+FL            Delaware (DE)
+GA            Florida (FL)
+HI            Georgia (GA)
+ID            Hawaii (HI)
+IL            Idaho (ID)
+IN            Illinois (IL)
+IA            Indiana (IN)
+KS            Iowa (IA)
+KY            Kansas (KS)
+LA            Kentucky (KY)
+ME            Louisiana (LA)
+MD            Maine (ME)
+              Maryland (MD)
+
+                                       57
+MA  Massachusetts (MA)
+
+MI  Michigan (MI)
+
+MN  Minnesota (MN)
+
+MS  Mississippi (MS)
+
+MO  Missouri (MO)
+
+MT  Montana (MT)
+
+NE  Nebraska (NE)
+
+NV  Nevada (NV)
+
+NH  New Hampshire (NH)
+
+NJ  New Jersey (NJ)
+
+NM  New Mexico (NM)
+
+NY  New York (NY)
+
+NC  North Carolina (NC)
+
+ND  North Dakota (ND)
+
+OH  Ohio (OH)
+
+OK  Oklahoma (OK)
+
+OR  Oregon (OR)
+
+PA  Pennsylvania (PA)
+
+RI  Rhode Island (RI)
+
+SC  South Carolina (SC)
+
+SD  South Dakota (SD)
+
+TN  Tennessee (TN)
+
+TX  Texas (TX)
+
+UT  Utah (UT)
+
+                         58
+VT  Vermont (VT)
+
+VA  Virginia (VA)
+
+WA  Washington (WA)
+
+WV  West Virginia (WV)
+
+WI  Wisconsin (WI)
+
+WY  Wyoming (WY)
+
+DC  DC (DC)
+
+                        59
+Credit/Debit Cards for test
+
+You can use the following credit card for testing Sandbox environment.
+
+   Brand           Number                           Expiration date     CVV
+    VISA                                                 12/2030        123
+MasterCard  4111111111111111                             12/2030        123
+            4242424242424242
+
+            5555555555554444
+            5105105105105100
+
+Please, do not use this in Production environment.
+
+                                                                             60
+

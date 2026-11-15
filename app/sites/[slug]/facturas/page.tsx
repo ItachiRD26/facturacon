@@ -48,6 +48,10 @@ export default function FacturasPage() {
   const [filtroEstado, setFiltroEstado] = useState<EstadoFactura | "todos">("todos");
 
   const clientePor = (id: string) => clientes.find((c) => c.id === id);
+  // El cajero solo ve sus propias facturas (siempre él mismo), así que la
+  // columna sería redundante para ese rol — solo tiene valor para
+  // dueño/admin/contador revisando el trabajo del equipo.
+  const mostrarCajero = tenant.rol !== "vendedor";
 
   const filtradas = facturas.filter((f) => {
     const cliente = clientePor(f.clienteId);
@@ -122,7 +126,7 @@ export default function FacturasPage() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "var(--c-bg)", borderBottom: "2px solid var(--c-border)" }}>
-                {["e-CF", "Tipo", "Fecha", "Cliente", "Total", "Estado", "DGII", ""].map((h) => (
+                {["e-CF", "Tipo", "Fecha", "Cliente", ...(mostrarCajero ? ["Cajero"] : []), "Total", "Estado", "DGII", ""].map((h) => (
                   <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "var(--c-text-3)", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: sans, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -139,6 +143,9 @@ export default function FacturasPage() {
                     <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 11, color: "var(--c-text-3)" }}>{f.tipoECF}</td>
                     <td style={{ padding: "11px 14px", fontSize: 12, color: "var(--c-text-3)", fontFamily: sans }}>{fmtDate(f.fecha)}</td>
                     <td style={{ padding: "11px 14px", fontSize: 13, color: "var(--c-text-2)", fontFamily: sans }}>{nombre}</td>
+                    {mostrarCajero && (
+                      <td style={{ padding: "11px 14px", fontSize: 12, color: "var(--c-text-3)", fontFamily: sans }}>{f.creadoPorNombre ?? "—"}</td>
+                    )}
                     <td style={{ padding: "11px 14px", fontFamily: mono, fontSize: 13, fontWeight: 700, color: "var(--c-text-1)" }}>RD$ {fmt(calcTotales(f.items).total)}</td>
                     <td style={{ padding: "11px 14px" }}><Badge estado={f.estado} /></td>
                     <td style={{ padding: "11px 14px" }}>{f.estadoDGII === "Aceptado" ? <Badge tipo="success">Aceptado</Badge> : f.estadoDGII === "Rechazado" ? <Badge tipo="danger">Rechazado</Badge> : <Badge tipo="neutral">{f.estadoDGII ?? "—"}</Badge>}</td>
@@ -165,6 +172,8 @@ export default function FacturasPage() {
       <ModalNuevaFactura
         open={modalAbierto} onClose={() => setModalAbierto(false)} tenantId={tenant.tenantId}
         clientes={clientes} productos={productos} modo="produccion"
+        nombreEmisor={tenant.nombreNegocio} rncEmisor={tenant.rnc}
+        logoA4Url={personalizacion?.logoA4Url} logoTermicoUrl={personalizacion?.logoTermicoUrl}
         onSave={onSave}
       />
 

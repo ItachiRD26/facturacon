@@ -88,6 +88,11 @@ export async function POST(req: NextRequest) {
     cliente = { id: clienteSnap.id, ...clienteSnap.data() } as Cliente;
   }
 
+  // Nombre de quien factura (no confundir con el emisor/empresa del e-CF) —
+  // se copia aquí para mostrarlo en la lista sin tener que hacer un join.
+  const cajeroSnap = await adminDb.collection("users").doc(verif.uid).get();
+  const nombreCajero = (cajeroSnap.data() as { nombre?: string } | undefined)?.nombre;
+
   const factura: Factura = {
     id: "", noFactura: body.noFactura, eCF: body.eCF, tipoECF: body.tipoECF,
     fecha: body.fecha, vencimientoECF: body.vencimientoECF,
@@ -102,6 +107,7 @@ export async function POST(req: NextRequest) {
     // propias facturas (ver firestore.rules) sin poder calcular el total
     // facturado por todo el negocio a partir de la lista completa.
     creadoPor: verif.uid,
+    creadoPorNombre: nombreCajero,
   };
 
   const tenant = { tenantId, rnc: empresa.rnc, ambiente: empresa.ambiente };

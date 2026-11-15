@@ -16,6 +16,14 @@ function fmtFechaFirma(iso?: string): string {
   return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
+// Catálogo oficial DGII (Informe Técnico e-CF v1.0) — obligatorio mostrar el
+// eNCF modificado y el código de modificación en la representación impresa
+// de una Nota de Débito/Crédito, no solo llevarlo en el XML.
+export const CODIGO_MODIFICACION: Record<string, string> = {
+  "1": "Anula el NCF modificado", "2": "Corrige texto", "3": "Corrige montos",
+  "4": "Reemplazo NCF por contingencia",
+};
+
 export default function FacturaA4({ factura, cliente, empresa, esMuestra = true }: { factura: Factura; cliente?: Cliente; empresa: EmpresaImpresion; esMuestra?: boolean }) {
   const totales = calcTotales(factura.items);
   const titulo = `Comprobante Fiscal Electrónico ${factura.tipoECF}`;
@@ -43,6 +51,14 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
           <div>e-NCF: {factura.eCF}</div>
           {factura.tipoECF !== "E32" && factura.tipoECF !== "E34" && (
             <div>Válido hasta: {fmtDate(factura.vencimientoECF)}</div>
+          )}
+          {(factura.tipoECF === "E33" || factura.tipoECF === "E34") && factura.eCFRef && (
+            <>
+              <div>e-NCF Modificado: {factura.eCFRef}</div>
+              {factura.codigoModificacion && (
+                <div>Código Modificación: {CODIGO_MODIFICACION[factura.codigoModificacion] ?? factura.codigoModificacion}</div>
+              )}
+            </>
           )}
           <div>Términos: {factura.terminos}</div>
           {factura.metodoPago && <div>Pago: {factura.metodoPago}</div>}
