@@ -50,6 +50,8 @@ function OnboardingShell() {
   const [paso, setPaso] = useState<Paso>(vieneDeRegistro ? 2 : 1);
 
   const [nombreNegocio, setNombreNegocio] = useState(nombreNegocioPrefill);
+  // Si la persona ya escribió el nombre a mano, una nueva validación no lo pisa; si no, sigue al RNC validado.
+  const [nombreTocado, setNombreTocado] = useState(false);
   const [rnc, setRnc] = useState(rncPrefill);
   const [validando, setValidando] = useState(false);
   const [rncValidado, setRncValidado] = useState<RncValidado | null>(
@@ -73,7 +75,7 @@ function OnboardingShell() {
         setRncError(data.mensajeDgii || data.error || "No encontramos ese RNC en el padrón de la DGII. Verifica el número.");
       } else {
         setRncValidado(data);
-        if (!nombreNegocio) setNombreNegocio(data.name);
+        if (!nombreTocado || !nombreNegocio.trim()) { setNombreNegocio(data.name ?? ""); setNombreTocado(false); }
       }
     } catch {
       setRncError("No se pudo validar el RNC ahora. Intenta de nuevo.");
@@ -115,7 +117,7 @@ function OnboardingShell() {
               <span style={{ display: "flex", gap: 8 }}>
                 <Entrada
                   value={rnc} inputMode="numeric" autoComplete="off" maxLength={13}
-                  onChange={(e) => { setRnc(e.target.value.replace(/[^\d-]/g, "")); setRncValidado(null); setRncError(""); }}
+                  onChange={(e) => { setRnc(e.target.value.replace(/[^\d-]/g, "")); setRncValidado(null); setRncError(""); if (!nombreTocado) setNombreNegocio(""); }}
                   placeholder="131217656" aria-invalid={!!rncError}
                 />
                 <button type="submit" className="onb-validar" disabled={!longitudOk || validando || !!rncValidado?.valid}>
@@ -151,7 +153,7 @@ function OnboardingShell() {
             )}
 
             <Campo etiqueta="Nombre del negocio" ayuda="Es el que verán tus clientes en la factura. Puedes cambiarlo después.">
-              <Entrada value={nombreNegocio} onChange={(e) => setNombreNegocio(e.target.value)} placeholder="Mi Negocio SRL" autoComplete="organization" />
+              <Entrada value={nombreNegocio} onChange={(e) => { setNombreNegocio(e.target.value); setNombreTocado(true); }} placeholder="Mi Negocio SRL" autoComplete="organization" />
             </Campo>
           </div>
 
