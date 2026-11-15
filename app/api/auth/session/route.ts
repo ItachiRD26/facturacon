@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { registroAbierto } from "@/lib/registro";
+import { limitar } from "@/lib/seguridad/limite-tasa";
 
 const SESSION_COOKIE  = "__session";
 const SESSION_MS      = parseInt(process.env.SESSION_DURATION_MS ?? "432000000");
@@ -24,6 +25,9 @@ function cookieDomainPara(hostHeader: string): string | undefined {
 }
 
 export async function POST(request: NextRequest) {
+  // Cada llamada verifica el token y toca Firestore: tope por IP en memoria.
+  const lim = await limitar(request, { nombre: "auth-session", max: 30, ventanaSeg: 600 });
+  if (lim) return lim;
   try {
     const body = await request.json().catch(() => null);
     if (!body?.idToken || typeof body.idToken !== "string")

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { adminDb } from "@/lib/firebase-admin";
+import { limitar } from "@/lib/seguridad/limite-tasa";
 
 // Solicitudes de plan empresarial / a la medida. Público, sin sesión. No hay
 // servicio de correo configurado, así que cada solicitud queda en Firestore
@@ -11,6 +12,11 @@ export async function POST(req: Request) {
   const b = await req.json().catch(() => null) as Record<string, unknown> | null;
   // Campo trampa invisible: una persona nunca lo llena.
   if (b?.web) return NextResponse.json({ ok: true });
+
+  const limIp = await limitar(req, { nombre: "contacto-comercial", max: 5, ventanaSeg: 3600, compartido: true });
+  if (limIp) return limIp;
+  const limGlobal = await limitar(req, { nombre: "contacto-comercial-global", id: "todos", max: 150, ventanaSeg: 3600, compartido: true });
+  if (limGlobal) return limGlobal;
 
   const nombre = txt(b?.nombre, 120);
   const empresa = txt(b?.empresa, 160);

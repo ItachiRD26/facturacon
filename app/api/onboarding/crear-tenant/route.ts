@@ -4,6 +4,9 @@ import { adminDb } from "@/lib/firebase-admin";
 import { createMembership, listMembershipsForUser } from "@/lib/tenant/get-memberships";
 import type { Tenant, TipoNegocio, UserPerfil } from "@/types/tenant";
 import { TIPOS_NEGOCIO } from "@/lib/onboarding/tipos-negocio";
+import { limitar } from "@/lib/seguridad/limite-tasa";
+
+const MAX_EMPRESAS_POR_CUENTA = 25;
 
 // El tipo de cuenta (individual/gestor) ya se decide en /registro y queda en
 // users/{uid}.tipoCuenta — esta ruta solo crea EMPRESAS (una para individual,
@@ -11,6 +14,8 @@ import { TIPOS_NEGOCIO } from "@/lib/onboarding/tipos-negocio";
 export async function POST(req: NextRequest) {
   const uid = await getSessionUid();
   if (!uid) return NextResponse.json({ error: "Sesión requerida" }, { status: 401 });
+  const lim = await limitar(req, { nombre: "crear-tenant", id: uid, max: 5, ventanaSeg: 3600, compartido: true });
+  if (lim) return lim;
 
   const body = await req.json().catch(() => null) as {
     nombreNegocio?: string; rnc?: string; tipoNegocio?: TipoNegocio;
@@ -34,7 +39,14 @@ export async function POST(req: NextRequest) {
     }, { status: 403 });
   }
 
-  const tipoInfo = TIPOS_NEGOCIO.find((t) => t.codigo === body.tipoNegocio);
+  // Tope de empresas por cuenta: una cuenta gratis no puede crear tenants sin fin.
+  if (memberships.length >= MAX_EMPRESAS_POR_CUENTA) {
+    return NextResponse.json({
+      error: `Llegaste al máximo de ${MAX_EMPRESAS_POR_CUENTA} empresas por cuenta. Escríbenos a contacto@facturacon.com.do si necesitas más.`,
+    }, { status: 403 });
+  }
+
+  const tipoInfo =TIPOS_NEGOCIO.find((t) => t.codigo === body.tipoNegocio);
   if (!tipoInfo) return NextResponse.json({ error: "Tipo de negocio inválido" }, { status: 400 });
   if (!tipoInfo.disponible) {
     return NextResponse.json({ error: "Este tipo de negocio todavía no está disponible. Contáctanos para una solución personalizada." }, { status: 400 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { getSessionUid } from "@/lib/auth/session";
+import { limitar } from "@/lib/seguridad/limite-tasa";
 import { getMembership } from "@/lib/tenant/get-memberships";
 import { getTenantById } from "@/lib/tenant/resolve-tenant";
 import { adminDb } from "@/lib/firebase-admin";
@@ -18,6 +19,9 @@ import { generarSlugUnico } from "@/lib/tenant/slug";
 export async function POST(req: NextRequest) {
   const uid = await getSessionUid();
   if (!uid) return NextResponse.json({ error: "Sesión requerida" }, { status: 401 });
+  // Cifra y guarda el .p12 con Cloud KMS (cuesta por operación): tope por usuario.
+  const lim = await limitar(req, { nombre: "completar-requisitos", id: uid, max: 10, ventanaSeg: 600, compartido: true });
+  if (lim) return lim;
 
   const form = await req.formData().catch(() => null);
   if (!form) return NextResponse.json({ error: "Formulario inválido" }, { status: 400 });

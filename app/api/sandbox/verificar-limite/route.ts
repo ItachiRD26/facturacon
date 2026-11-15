@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUid } from "@/lib/auth/session";
+import { limitar } from "@/lib/seguridad/limite-tasa";
 import { adminDb } from "@/lib/firebase-admin";
 import { getMembership } from "@/lib/tenant/get-memberships";
 import { LIMITES_SANDBOX, mensajeLimite, type ColeccionLimitada } from "@/lib/sandbox/limites";
@@ -18,6 +19,8 @@ const ETIQUETAS: Record<ColeccionLimitada, string> = {
 export async function POST(req: NextRequest) {
   const uid = await getSessionUid();
   if (!uid) return NextResponse.json({ error: "Sesión requerida" }, { status: 401 });
+  const lim = await limitar(req, { nombre: "sandbox-verificar", id: uid, max: 120, ventanaSeg: 60 });
+  if (lim) return lim;
 
   const body = await req.json().catch(() => null) as { tenantId?: string; coleccion?: ColeccionLimitada } | null;
   if (!body?.tenantId || !body.coleccion || !(body.coleccion in LIMITES_SANDBOX)) {

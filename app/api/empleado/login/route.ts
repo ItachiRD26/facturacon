@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { getTenantSlugFromHost } from "@/lib/tenant/get-subdomain";
 import { hashCodigo } from "@/lib/tenant/codigo-empleado";
+import { limitar } from "@/lib/seguridad/limite-tasa";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
@@ -16,6 +17,10 @@ const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 // /api/auth/session que usa el login normal — de ahí en adelante es una
 // sesión real, con los mismos roles y reglas de Firestore de siempre.
 export async function POST(req: NextRequest) {
+  // Anti fuerza bruta del código: por IP, y además por empresa para que una red
+  // de IPs distintas tampoco pueda probar códigos sin tope.
+  const limIp = await limitar(req, { nombre: "empleado-login", max: 10, ventanaSeg: 600, compartido: true });
+  if (limIp) return limIp;
   const body = await req.json().catch(() => null);
   const codigo = body?.codigo?.trim();
   const token  = body?.token?.trim();
@@ -26,6 +31,8 @@ export async function POST(req: NextRequest) {
   if (!slug) {
     return NextResponse.json({ error: "Entra desde el subdominio de tu empresa" }, { status: 400 });
   }
+  const limEmpresa = await limitar(req, { nombre: "empleado-login-empresa", id: slug, max: 60, ventanaSeg: 600, compartido: true });
+  if (limEmpresa) return limEmpresa;
 
   const tenantSnap = await adminDb.collection("tenants").where("slug", "==", slug).limit(1).get();
   if (tenantSnap.empty) return NextResponse.json({ error: "Código inválido" }, { status: 401 });

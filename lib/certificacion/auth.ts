@@ -4,6 +4,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { getSessionUid } from "@/lib/auth/session";
+import { limitar } from "@/lib/seguridad/limite-tasa";
 import { getMembership } from "@/lib/tenant/get-memberships";
 import { getTenantById } from "@/lib/tenant/resolve-tenant";
 import type { Tenant } from "@/types/tenant";
@@ -21,6 +22,12 @@ export async function requireTenantEnCertificacion(
   if (!uid) {
     return { ok: false, response: NextResponse.json({ error: "Sesión requerida" }, { status: 401 }) };
   }
+
+  // Todas las rutas del wizard pasan por aquí (descifran el .p12 con KMS y
+  // llaman a la DGII): un solo tope por usuario cubre a todas. Generoso para
+  // el uso normal (el envío de los comprobantes de prueba sale en ráfaga).
+  const limite = await limitar(null, { nombre: "certificacion", id: uid, max: 600, ventanaSeg: 60 });
+  if (limite) return { ok: false, response: limite };
 
   const membership = await getMembership(uid, tenantId);
   if (!membership || (membership.rol !== "owner" && membership.rol !== "admin")) {
