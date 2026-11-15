@@ -12,7 +12,8 @@ export default function CountUp({ to, prefix = "", ms = 900 }: { to: number; pre
     let raf = 0;
     const ini = performance.now();
     const paso = (t: number) => {
-      const p = Math.min(1, (t - ini) / ms);
+      // El primer cuadro de rAF puede traer una marca anterior a `ini`: sin el max, p salía negativo y la cifra "-0".
+      const p = Math.min(1, Math.max(0, (t - ini) / ms));
       setV(Math.round(to * (1 - Math.pow(1 - p, 3))));
       if (p < 1) raf = requestAnimationFrame(paso);
     };

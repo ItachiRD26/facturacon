@@ -10,7 +10,7 @@ import BeneficiosStrip from "@/components/marketing/beneficios-strip";
 import TrustStrip from "@/components/marketing/trust-strip";
 import VistasProducto from "@/components/marketing/vistas-producto";
 import FaqAccordion from "@/components/marketing/faq-accordion";
-import PlanesGrid from "@/components/marketing/planes-grid";
+import Tarifario from "@/components/marketing/tarifario";
 import TicketHero from "@/components/marketing/ticket-hero";
 import { PLANES } from "@/lib/payments/planes";
 import { ETAPAS } from "@/lib/tenant/jornada";
@@ -124,7 +124,7 @@ export default function LandingPage() {
         <Seccion id="precios" tono="brand" titulo={<>Desde RD$ {PLANES[0].montoRD.toLocaleString("es-DO")} al mes</>}
           lede="La certificación como emisor electrónico es gratis. Pagas una sola suscripción mensual según cuántos comprobantes emitas, y eliges tu plan cuando ya estés certificado.">
           <p className="destacado">La mensualidad empieza cuando ya estés certificado.</p>
-          <PlanesGrid />
+          <Tarifario />
           <div style={{ marginTop: 36, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 20 }}>
             <Link href="/registro" className="btn-l btn-ticket">{cta}</Link>
             <PagaditoBadge />

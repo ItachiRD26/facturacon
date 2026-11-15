@@ -555,3 +555,52 @@ body {
 
 /* Con 7 pestañas, en escritorio se acomodan en varias líneas; en móvil se deslizan. */
 @media (min-width: 761px) { .tabs-vistas { flex-wrap: wrap; overflow: visible; } }
+
+/* En pantallas angostas la tira de pestañas se desliza: bordes difuminados para que se note que hay más. */
+@media (max-width: 760px) { .tabs-vistas { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%); padding-inline: 10px; } }
+
+/* ── Tarifario (components/marketing/tarifario.tsx) ─────────────────── */
+.tarifa-panel { background: var(--c-surface); color: var(--c-text-1); border-radius: 20px; box-shadow: 0 30px 60px rgba(7,16,80,.38); overflow: hidden; }
+.tarifa-cab, .tarifa-fila { display: grid; grid-template-columns: 1.55fr 1fr 1fr 1.1fr; align-items: center; gap: 20px; padding-inline: clamp(20px, 3vw, 36px); }
+.tarifa-cab { padding-block: 16px; background: #FAFAF8; border-bottom: 1px solid var(--c-border); font-size: 13px; font-weight: 600; color: var(--c-text-3); }
+.tarifa-fila { padding-block: 20px; border-top: 1px solid var(--c-border-lt); transition: background .2s ease; }
+.tarifa-filas > .tarifa-fila:first-child { border-top: 0; }
+.tarifa-fila:hover { background: var(--c-brand-bg); }
+.der { text-align: right; }
+.tc-vol-t { display: flex; align-items: baseline; gap: 8px; }
+.tc-vol-t b { font-size: clamp(1.6rem, 2.6vw, 2.1rem); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.tc-vol-t span { font-size: 14.5px; color: var(--c-text-3); }
+.tarifa-barra { height: 6px; border-radius: 3px; background: var(--c-border-lt); margin-top: 10px; overflow: hidden; max-width: 260px; }
+.tarifa-barra i { display: block; height: 100%; border-radius: 3px; background: var(--c-brand); transform-origin: left; transition: transform .9s var(--ease-out) .25s; }
+.rv-pre .tarifa-barra i { transform: scaleX(0); }
+.tc { font-size: 16px; font-weight: 500; color: var(--c-text-2); }
+.tc-precio { text-align: right; }
+.tc-precio b { font-size: clamp(1.5rem, 2.4vw, 1.95rem); font-weight: 800; letter-spacing: -.035em; }
+.tc-precio span { font-size: 14.5px; color: var(--c-text-3); margin-left: 4px; }
+.tarifa-empresa { grid-template-columns: 1fr auto; background: var(--c-navy); color: #fff; gap: 28px; padding-block: 26px; }
+.tarifa-empresa:hover { background: var(--c-navy); }
+.tc-emp-txt b { display: block; font-size: 1.35rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: 6px; }
+.tc-emp-txt span { font-size: 15.5px; line-height: 1.55; color: rgba(255,255,255,.76); }
+.tarifa-sub { margin: clamp(44px, 6vw, 72px) 0 22px; font-size: clamp(1.4rem, 2.4vw, 1.8rem); font-weight: 800; letter-spacing: -.03em; color: #fff; }
+.adicional { background: var(--c-navy); color: #fff; border-radius: 16px; padding: 26px; border: 1px solid rgba(255,255,255,.14); display: flex; flex-direction: column; gap: 8px; }
+.adicional h4 { font-size: 18px; font-weight: 700; margin-top: 8px; }
+.adicional-valor { display: flex; align-items: baseline; gap: 8px; color: var(--c-ticket); }
+.adicional-valor b { font-size: 1.9rem; font-weight: 800; letter-spacing: -.035em; line-height: 1.1; }
+.adicional-valor span { font-size: 14px; color: rgba(255,255,255,.7); }
+.adicional p { font-size: 15px; line-height: 1.6; color: rgba(255,255,255,.76); }
+.siempre-gratis { margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding: 18px 24px; border-radius: 14px; border: 1px dashed rgba(255,255,255,.45); background: rgba(255,255,255,.06); color: #fff; }
+.siempre-gratis > b { font-size: 16px; }
+.siempre-gratis ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.siempre-gratis li { display: flex; align-items: center; gap: 7px; font-size: 15px; color: rgba(255,255,255,.9); }
+.siempre-gratis li svg { color: var(--c-ticket); flex-shrink: 0; }
+
+@media (max-width: 760px) {
+  .tarifa-cab { display: none; }
+  .tarifa-fila { grid-template-columns: 1fr auto; gap: 10px 16px; padding: 18px 20px; }
+  .tarifa-fila .tc { grid-column: 1 / -1; display: flex; justify-content: space-between; font-size: 14.5px; padding-top: 8px; border-top: 1px dashed var(--c-border); }
+  .tarifa-fila .tc::before { content: attr(data-label); color: var(--c-text-3); font-weight: 500; }
+  .tc-vol { grid-column: 1; grid-row: 1; }
+  .tc-precio { grid-column: 2; grid-row: 1; align-self: center; }
+  .tarifa-empresa { grid-template-columns: 1fr; }
+  .tarifa-empresa .btn-l { width: 100%; }
+}

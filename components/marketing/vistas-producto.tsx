@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SquaresFour, Receipt, Package, UsersThree, ClipboardText, Wallet, CashRegister } from "@phosphor-icons/react/dist/ssr";
 import FacturaDemo from "./factura-demo";
 import VentanaEscalada from "./ventana-escalada";
@@ -30,6 +30,7 @@ export default function VistasProducto() {
   const [idx, setIdx] = useState(0);
   const [pausa, setPausa] = useState(false);
   const [sinMovimiento, setSinMovimiento] = useState(false);
+  const tira = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -46,12 +47,22 @@ export default function VistasProducto() {
     return () => clearTimeout(t);
   }, [idx, pausa, sinMovimiento]);
 
+  // La tira de pestañas se desliza en pantallas angostas: al cambiar la activa (por clic
+  // o por la rotación) se centra, así nunca queda escondida y siempre se alcanzan las demás.
+  useEffect(() => {
+    const caja = tira.current;
+    const btn = caja?.querySelector<HTMLElement>(`#tab-${VISTAS[idx].id}`);
+    if (!caja || !btn || caja.scrollWidth <= caja.clientWidth) return;
+    const izq = btn.offsetLeft - (caja.clientWidth - btn.offsetWidth) / 2;
+    caja.scrollTo({ left: Math.max(0, izq), behavior: sinMovimiento ? "auto" : "smooth" });
+  }, [idx, sinMovimiento]);
+
   const v = VISTAS[idx];
 
   return (
     <div onMouseEnter={() => setPausa(true)} onMouseLeave={() => setPausa(false)}
       onFocus={() => setPausa(true)} onBlur={() => setPausa(false)}>
-      <div className="tabs-vistas" role="tablist" aria-label="Vistas del sistema">
+      <div ref={tira} className="tabs-vistas" role="tablist" aria-label="Vistas del sistema">
         {VISTAS.map((x, i) => (
           <button key={x.id} type="button" role="tab" id={`tab-${x.id}`} aria-selected={i === idx}
             aria-controls="panel-vista" className="tab-vista" onClick={() => setIdx(i)}>

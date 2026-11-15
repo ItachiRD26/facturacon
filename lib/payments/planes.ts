@@ -18,15 +18,19 @@ export interface Plan {
   // necesita más usuarios sin necesitar más comprobantes, la vía es subir
   // de plan, no comprar usuarios sueltos (al menos por ahora).
   usuarios:  number;
+  // Precio (RD$) de cada comprobante que excede el tope mensual del plan. Va
+  // decreciendo con el tamaño del plan y siempre por encima del costo marginal de
+  // subir al plan siguiente, para que subir de plan convenga antes que pagar extras.
+  extraRD:   number;
 }
 
 export const PLANES: Plan[] = [
-  { id: "250",  facturas: 250,  montoRD: 1380,  montoUSD: "23.00",  usuarios: 2  },
-  { id: "500",  facturas: 500,  montoRD: 2320,  montoUSD: "38.67",  usuarios: 3  },
-  { id: "1000", facturas: 1000, montoRD: 3890,  montoUSD: "64.83",  usuarios: 5  },
-  { id: "2000", facturas: 2000, montoRD: 6340,  montoUSD: "105.67", usuarios: 8  },
-  { id: "3000", facturas: 3000, montoRD: 8290,  montoUSD: "138.17", usuarios: 12 },
-  { id: "4000", facturas: 4000, montoRD: 10300, montoUSD: "171.67", usuarios: 15 },
+  { id: "250",  facturas: 250,  montoRD: 1380,  montoUSD: "23.00",  usuarios: 2, extraRD: 4.5 },
+  { id: "500",  facturas: 500,  montoRD: 2320,  montoUSD: "38.67",  usuarios: 3, extraRD: 3.75 },
+  { id: "1000", facturas: 1000, montoRD: 3890,  montoUSD: "64.83",  usuarios: 5, extraRD: 3 },
+  { id: "2000", facturas: 2000, montoRD: 6340,  montoUSD: "105.67", usuarios: 8, extraRD: 2.5 },
+  { id: "3000", facturas: 3000, montoRD: 8290,  montoUSD: "138.17", usuarios: 12, extraRD: 2.25 },
+  { id: "4000", facturas: 4000, montoRD: 10300, montoUSD: "171.67", usuarios: 15, extraRD: 2 },
 ];
 
 export function buscarPlan(id: string): Plan | undefined {
@@ -36,3 +40,9 @@ export function buscarPlan(id: string): Plan | undefined {
 // Desde este volumen mensual de comprobantes no hay plan de lista: la empresa
 // habla con ventas (/empresas) y se acuerda un plan a la medida.
 export const VOLUMEN_EMPRESA = 10_000;
+
+// Tarifas fijas que se suman al plan. Valores de REFERENCIA propuestos: ajustarlos
+// aquí cambia la landing (y lo que se muestre en el panel) de una vez.
+export const TARIFAS_ADICIONALES = {
+  usuarioRD: 250, // por usuario adicional (cajero, administrador o contador), al mes
+} as const;
