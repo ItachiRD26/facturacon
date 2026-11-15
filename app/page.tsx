@@ -66,13 +66,13 @@ export default function LandingPage() {
                 }}>
                   Certifícate gratis ante la DGII y empieza a facturar
                 </h1>
-                <p style={{ fontSize: 19, lineHeight: 1.6, color: "rgba(255,255,255,0.76)", maxWidth: 520, marginBottom: 40 }}>
+                <p style={{ fontSize: 19, lineHeight: 1.6, color: "rgba(255,255,255,0.76)", maxWidth: 520, marginBottom: 24 }}>
                   Te llevamos de la mano por los 13 pasos del portal, nos encargamos de lo técnico y te
-                  entregamos un sistema de facturación listo para usar. La mensualidad empieza cuando
-                  ya estés certificado.
+                  entregamos un sistema de facturación listo para usar.
                 </p>
+                <p className="destacado">La mensualidad empieza cuando ya estés certificado.</p>
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-                  <Link href="/registro" className="btn-l btn-ticket">{cta}</Link>
+                  <Link href="/registro" className="btn-l btn-white">{cta}</Link>
                   <a href="#como-funciona" className="btn-l btn-ghost-d">Ver cómo funciona</a>
                 </div>
               </div>
@@ -128,7 +128,8 @@ export default function LandingPage() {
                 mensual según cuántos comprobantes emitas, y solo empieza a cobrarse una vez que
                 estés certificado y facturando de verdad.
               </p>
-              <div style={{ marginTop: 28 }}><PagaditoBadge /></div>
+              <p className="destacado" style={{ marginTop: 28 }}>La mensualidad empieza cuando ya estés certificado.</p>
+              <div style={{ marginTop: 24 }}><PagaditoBadge /></div>
             </div>
             <PricingCalculator />
           </div>

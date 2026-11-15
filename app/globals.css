@@ -265,6 +265,8 @@ body {
 .btn-ticket { background: var(--c-ticket); color: var(--c-text-1); }
 .btn-ticket:hover { box-shadow: 0 8px 22px rgba(245,198,52,.35); }
 .btn-brand  { background: var(--c-brand); color: #fff; }
+.btn-white  { background: #fff; color: var(--c-text-1); }
+.btn-white:hover { box-shadow: 0 8px 22px rgba(255,255,255,.18); }
 .btn-ghost-d { border: 1px solid rgba(255,255,255,.3); color: #fff; }
 .btn-ghost-d:hover { background: rgba(255,255,255,.08); }
 @media (prefers-reduced-motion: reduce) { .btn-l { transition: none; } .btn-l:hover { transform: none; } }
@@ -274,3 +276,12 @@ body {
 .tab-vista { padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.28); background: transparent; color: rgba(255,255,255,.82); font: 600 15px var(--font-sans), system-ui, sans-serif; cursor: pointer; transition: background .15s ease, color .15s ease; }
 .tab-vista:hover { background: rgba(255,255,255,.1); }
 .tab-vista[aria-selected="true"] { background: var(--c-ticket); border-color: var(--c-ticket); color: var(--c-text-1); }
+
+/* Destacado: la frase clave del modelo de cobro (la certificación es gratis y la
+   mensualidad empieza después). Amarillo de ticket, para que se lea primero. */
+.destacado {
+  display: inline-block; max-width: 100%; margin-bottom: 36px; padding: 12px 18px;
+  background: var(--c-ticket); color: var(--c-text-1); border-radius: var(--radius-md);
+  font-weight: 800; font-size: clamp(1.05rem, 1.6vw, 1.25rem); line-height: 1.3; letter-spacing: -0.015em;
+  box-shadow: 4px 4px 0 rgba(255,255,255,0.18);
+}

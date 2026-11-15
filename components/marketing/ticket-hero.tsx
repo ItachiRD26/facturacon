@@ -61,7 +61,7 @@ export default function TicketHero() {
         </div>
 
         <div style={{ marginTop: 14, padding: "9px 12px", background: "var(--c-ticket)", borderRadius: 3, fontSize: 12.5, lineHeight: 1.55, color: "var(--c-text-1)" }}>
-          La mensualidad empieza cuando ya estés certificado: planes desde RD$ {desde} al mes.
+          Después de certificarte: planes desde RD$ {desde} al mes.
         </div>
 
         <div style={{ marginTop: 14, textAlign: "left", fontSize: 11, color: "var(--c-text-3)", maxWidth: 170 }}>
