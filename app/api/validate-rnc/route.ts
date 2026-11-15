@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { consultarRncODGII, type ResultadoConsultaDGII } from "@/lib/dgii/validar-rnc-cedula";
+import { consultarRncConCache } from "@/lib/dgii/validar-rnc-cedula";
 import { getSessionUid } from "@/lib/auth/session";
 import { limitar } from "@/lib/seguridad/limite-tasa";
 
@@ -7,11 +7,9 @@ import { limitar } from "@/lib/seguridad/limite-tasa";
 // un amplificador: sin control, cualquiera podía usarnos para martillar a la
 // DGII (y que bloqueen nuestra IP, rompiendo el onboarding de todos). Ahora
 // exige sesión, limita por usuario y recuerda el resultado unos minutos.
-const CACHE_MS = 10 * 60 * 1000;
-// El portal de la DGII puede tardar: dos consultas, cada una con un reintento,
-// de hasta 15 s por intento.
+// El portal puede tardar: dos consultas, cada una con un reintento, de hasta
+// 14 s por intento.
 export const maxDuration = 60;
-const cache = new Map<string, { hasta: number; datos: ResultadoConsultaDGII }>();
 
 export async function GET(req: Request) {
   const uid = await getSessionUid();
@@ -25,17 +23,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ valid: false, error: "Un RNC tiene 9 dígitos y una cédula 11." });
   }
 
-  const enCache = cache.get(number);
-  if (enCache && enCache.hasta > Date.now()) return NextResponse.json(enCache.datos);
-
   const lim = await limitar(req, { nombre: "validate-rnc", id: uid, max: 20, ventanaSeg: 60, compartido: true });
   if (lim) return lim;
 
-  const resultado = await consultarRncODGII(number);
-  // Los fallos de red no se guardan: el reintento debe poder funcionar.
-  if (!resultado.error) {
-    if (cache.size > 500) cache.clear();
-    cache.set(number, { hasta: Date.now() + CACHE_MS, datos: resultado });
-  }
-  return NextResponse.json(resultado);
+  return NextResponse.json(await consultarRncConCache(number));
 }

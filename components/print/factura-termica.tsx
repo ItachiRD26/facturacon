@@ -17,7 +17,8 @@ export default function FacturaTermica({ factura, cliente, empresa, esMuestra = 
           // eslint-disable-next-line @next/next/no-img-element -- imagen del tenant en Storage, no un asset propio del sitio
           <img src={empresa.logoTermicoUrl} alt={empresa.nombre} style={{ maxWidth: 140, maxHeight: 60, objectFit: "contain", margin: "0 auto 6px" }} />
         )}
-        <div style={{ fontWeight: 700 }}>{empresa.nombre}</div>
+        {empresa.nombreComercial && <div style={{ fontWeight: 700, fontSize: 13 }}>{empresa.nombreComercial}</div>}
+        <div style={{ fontWeight: empresa.nombreComercial ? 400 : 700 }}>{empresa.nombre}</div>
         <div>RNC: {fmtRNCDisplay(empresa.rnc)}</div>
         {empresa.direccion && <div>{empresa.direccion}</div>}
         {empresa.telefono && <div>Tel: {empresa.telefono}</div>}

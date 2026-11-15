@@ -18,6 +18,7 @@ import ModalConvertirCotizacion, { type DatosConversion } from "@/components/mod
 import PrintModalCotizacion from "@/components/print/print-modal-cotizacion";
 import { convertirCotizacionEnFacturaReal } from "@/lib/produccion/acciones";
 
+import { nombresImpresion } from "@/lib/tenant/nombres";
 const sans  = "var(--font-sans)";
 const mono  = "var(--font-mono)";
 const serif = "var(--font-serif)";
@@ -198,7 +199,7 @@ export default function CotizacionesPage() {
         open={!!imprimiendo} onClose={() => setImprimiendo(null)} cotizacion={imprimiendo}
         cliente={imprimiendo ? clientePor(imprimiendo.clienteId) : undefined}
         empresa={{
-          nombre: tenant.nombreNegocio, rnc: tenant.rnc,
+          ...nombresImpresion(tenant), rnc: tenant.rnc,
           logoA4Url: personalizacion?.logoA4Url, logoTermicoUrl: personalizacion?.logoTermicoUrl,
         }}
         esMuestra={false}

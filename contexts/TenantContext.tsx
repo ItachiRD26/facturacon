@@ -14,6 +14,9 @@ interface TenantContextValue {
   tenantId:      string;
   slug:          string;
   nombreNegocio: string;
+  // Datos fiscales de la DGII (ver lib/tenant/nombres.ts); pueden faltar en empresas antiguas.
+  razonSocial?:     string;
+  nombreComercial?: string;
   rnc:           string;
   rol:           RolMembership;
   // Otras empresas que esta cuenta administra (cuentas "gestor"); cada una

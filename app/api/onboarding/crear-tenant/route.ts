@@ -5,6 +5,7 @@ import { createMembership, listMembershipsForUser } from "@/lib/tenant/get-membe
 import type { Tenant, TipoNegocio, UserPerfil } from "@/types/tenant";
 import { TIPOS_NEGOCIO } from "@/lib/onboarding/tipos-negocio";
 import { limitar } from "@/lib/seguridad/limite-tasa";
+import { consultarRncConCache } from "@/lib/dgii/validar-rnc-cedula";
 
 const MAX_EMPRESAS_POR_CUENTA = 25;
 
@@ -17,10 +18,11 @@ export async function POST(req: NextRequest) {
   const lim = await limitar(req, { nombre: "crear-tenant", id: uid, max: 5, ventanaSeg: 3600, compartido: true });
   if (lim) return lim;
 
+  // El nombre de la empresa YA NO viene del navegador: se toma de la DGII más abajo.
   const body = await req.json().catch(() => null) as {
-    nombreNegocio?: string; rnc?: string; tipoNegocio?: TipoNegocio;
+    rnc?: string; tipoNegocio?: TipoNegocio;
   } | null;
-  if (!body?.nombreNegocio?.trim() || !body.rnc?.trim() || !body.tipoNegocio) {
+  if (!body?.rnc?.trim() || !body.tipoNegocio) {
     return NextResponse.json({ error: "Faltan datos del onboarding" }, { status: 400 });
   }
 
@@ -46,16 +48,35 @@ export async function POST(req: NextRequest) {
     }, { status: 403 });
   }
 
-  const tipoInfo =TIPOS_NEGOCIO.find((t) => t.codigo === body.tipoNegocio);
+  const tipoInfo = TIPOS_NEGOCIO.find((t) => t.codigo === body.tipoNegocio);
   if (!tipoInfo) return NextResponse.json({ error: "Tipo de negocio inválido" }, { status: 400 });
   if (!tipoInfo.disponible) {
     return NextResponse.json({ error: "Este tipo de negocio todavía no está disponible. Contáctanos para una solución personalizada." }, { status: 400 });
   }
 
+  // Los nombres salen del padrón de la DGII, consultado aquí en el servidor (con
+  // caché): la razón social va en el XML y en la factura, y el nombre comercial solo
+  // existe si la DGII lo tiene registrado. Así nadie puede poner un nombre ajeno ni
+  // inventado, y no depende de lo que mande el navegador.
+  const rnc = body.rnc.replace(/\D/g, "");
+  if (rnc.length !== 9 && rnc.length !== 11) {
+    return NextResponse.json({ error: "El RNC debe tener 9 dígitos (cédula: 11)." }, { status: 400 });
+  }
+  const dgii = await consultarRncConCache(rnc);
+  if (dgii.error) {
+    return NextResponse.json({ error: dgii.error }, { status: 503 });
+  }
+  if (!dgii.valid || !dgii.name) {
+    return NextResponse.json({ error: dgii.mensajeDgii || "La DGII no encuentra ese RNC o cédula." }, { status: 400 });
+  }
+
   const tenantRef = adminDb.collection("tenants").doc();
   const tenant: Omit<Tenant, "id" | "slug"> = {
-    nombreNegocio: body.nombreNegocio.trim(),
-    rnc: body.rnc.replace(/\D/g, ""),
+    nombreNegocio: dgii.nombreComercial || dgii.name,
+    razonSocial: dgii.name,
+    ...(dgii.nombreComercial ? { nombreComercial: dgii.nombreComercial } : {}),
+    facturadorElectronicoDGII: dgii.facturadorElectronico ?? null,
+    rnc,
     tipoNegocio: body.tipoNegocio,
     estado: "demo",
     creadoEn: new Date().toISOString(),

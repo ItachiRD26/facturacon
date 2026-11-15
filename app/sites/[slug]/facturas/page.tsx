@@ -16,6 +16,7 @@ import ModalNuevaFactura from "@/components/modals/modal-nueva-factura";
 import PrintModal from "@/components/print/print-modal";
 import { guardarFactura } from "@/lib/sandbox/acciones";
 
+import { nombresImpresion } from "@/lib/tenant/nombres";
 const sans  = "var(--font-sans)";
 const mono  = "var(--font-mono)";
 const serif = "var(--font-serif)";
@@ -81,7 +82,7 @@ export default function FacturasPage() {
 
   const onSave = async (data: Factura | Omit<Factura, "id">) => {
     await guardarFactura({
-      tenantId: tenant.tenantId, rncEmisor: tenant.rnc, nombreEmisor: tenant.nombreNegocio, rootDomain: "",
+      tenantId: tenant.tenantId, rncEmisor: tenant.rnc, nombreEmisor: nombresImpresion(tenant).nombre, rootDomain: "",
       agregarFactura, actualizarCotizacion: async () => {}, agregarCuenta,
     }, data);
   };
@@ -192,7 +193,7 @@ export default function FacturasPage() {
         open={modalAbierto} onClose={() => setModalAbierto(false)} tenantId={tenant.tenantId}
         clientes={clientes} productos={productos} modo="produccion"
         bloqueo={tenant.puedeEmitir ? undefined : "Tu plan de pago no está activo, así que todavía no puedes emitir comprobantes reales. Actívalo desde el aviso de arriba."}
-        nombreEmisor={tenant.nombreNegocio} rncEmisor={tenant.rnc}
+        nombreEmisor={nombresImpresion(tenant).nombre} nombreComercialEmisor={tenant.nombreComercial} rncEmisor={tenant.rnc}
         logoA4Url={personalizacion?.logoA4Url} logoTermicoUrl={personalizacion?.logoTermicoUrl}
         onSave={onSave}
       />
@@ -201,7 +202,7 @@ export default function FacturasPage() {
         open={!!imprimiendo} onClose={() => setImprimiendo(null)} factura={imprimiendo}
         cliente={imprimiendo ? clientePor(imprimiendo.clienteId) : undefined}
         empresa={{
-          nombre: tenant.nombreNegocio, rnc: tenant.rnc,
+          ...nombresImpresion(tenant), rnc: tenant.rnc,
           logoA4Url: personalizacion?.logoA4Url, logoTermicoUrl: personalizacion?.logoTermicoUrl,
         }}
         esMuestra={false}

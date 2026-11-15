@@ -9,6 +9,14 @@ export interface ResultadoConsultaDGII {
   rnc?:   string;
   estado?: string | null;
   activo?: boolean | null;
+  // "Nombre Comercial" tal como lo tiene registrado la DGII (vacío si no tiene).
+  // Para una persona física, `name` es su nombre personal y este es el nombre del
+  // negocio que registró en su RNC (con el certificado de ONAPI). Es lo único que
+  // se puede imprimir como nombre comercial: viene de la DGII, nunca del usuario.
+  nombreComercial?: string | null;
+  // "Facturador Electrónico" del padrón: true = SI, false = NO, null = sin dato.
+  facturadorElectronico?: boolean | null;
+  actividadEconomica?: string | null;
   error?: string;
   // Texto literal que la propia DGII muestra en su portal cuando no
   // encuentra el RNC/cédula (ej. "El RNC/Cédula consultado no se encuentra
@@ -149,12 +157,23 @@ export async function consultarRncODGII(numero: string): Promise<ResultadoConsul
       .filter((_i, el) => $(el).text().trim() === "Estado")
       .next().text().trim();
 
+    const dato = (etiqueta: string) => $("#cphMain_dvDatosContribuyentes td")
+      .filter((_i, el) => $(el).text().trim() === etiqueta)
+      .next().text().trim();
+    const nombreComercial = dato("Nombre Comercial");
+    const facturador = dato("Facturador Electrónico").toUpperCase();
+    const actividad = dato("Actividad Economica");
+
     if (name && rncResult) {
       return {
         valid: true, name,
         rnc: rncResult.replace(/[^0-9]/g, ""),
         estado: estado || null,
-        activo: estado ? estado.toUpperCase().includes("ACTIVO") : null,
+        // Exacto: "INACTIVO" también contiene la palabra "ACTIVO".
+        activo: estado ? estado.trim().toUpperCase() === "ACTIVO" : null,
+        nombreComercial: nombreComercial || null,
+        facturadorElectronico: facturador === "SI" || facturador === "SÍ" ? true : facturador === "NO" ? false : null,
+        actividadEconomica: actividad || null,
       };
     }
 
@@ -171,4 +190,23 @@ export async function consultarRncODGII(numero: string): Promise<ResultadoConsul
     );
     return { valid: false, error: agotado ? "La DGII tardó demasiado en responder. Intenta de nuevo en un momento." : "Error al consultar DGII" };
   }
+}
+
+// Caché en memoria (10 min) compartida por /api/validate-rnc y por la creación de la
+// empresa: no se vuelve a pegarle a la DGII por el mismo número, y el nombre que se
+// guarda en la empresa sale siempre de esta consulta hecha en el servidor.
+const CACHE_MS = 10 * 60 * 1000;
+const cacheConsulta = new Map<string, { hasta: number; datos: ResultadoConsultaDGII }>();
+
+export async function consultarRncConCache(numero: string): Promise<ResultadoConsultaDGII> {
+  const number = numero.replace(/[^0-9]/g, "");
+  const guardado = cacheConsulta.get(number);
+  if (guardado && guardado.hasta > Date.now()) return guardado.datos;
+  const resultado = await consultarRncODGII(number);
+  // Los fallos (red, formulario ilegible) no se guardan: el reintento debe poder funcionar.
+  if (!resultado.error) {
+    if (cacheConsulta.size > 500) cacheConsulta.clear();
+    cacheConsulta.set(number, { hasta: Date.now() + CACHE_MS, datos: resultado });
+  }
+  return resultado;
 }

@@ -13,7 +13,7 @@ import MarcoOnboarding from "@/components/onboarding/marco-onboarding";
 import { AlertaAuth, BotonAuth, Campo, Encabezado, Entrada } from "@/components/auth/ui-auth";
 
 type Paso = 1 | 2;
-interface RncValidado { valid: boolean; name?: string; rnc?: string; activo?: boolean | null; estado?: string | null }
+interface RncValidado { valid: boolean; name?: string; rnc?: string; activo?: boolean | null; estado?: string | null; nombreComercial?: string | null; facturadorElectronico?: boolean | null }
 
 const ICONOS: Record<TipoNegocio, typeof Storefront> = {
   ferreteria: Wrench, farmacia: Pill, colmado_supermercado: Basket, retail: Storefront,
@@ -33,10 +33,10 @@ function formatearRnc(d: string): string {
 
 // El tipo de cuenta (individual/gestor) ya se elige en /registro, antes de
 // crear el usuario — esta página solo se encarga de la EMPRESA. Si llega con
-// ?rnc=&nombreNegocio= (cuenta individual recién creada, ya con su único
-// negocio declarado en el registro) se salta directo al tipo de negocio; si
-// no (gestor agregando una empresa nueva desde /panel, o individual que
-// todavía no declaró la suya), pide RNC primero.
+// ?rnc= (para pruebas o enlaces directos) se salta directo al tipo de negocio; si
+// no (gestor agregando una empresa nueva desde /panel, o individual que todavía
+// no declaró la suya), pide RNC primero. El nombre de la empresa NO se escribe
+// aquí: lo toma el servidor del padrón de la DGII al crear la empresa.
 // El bloqueo de "individual con empresa ya creada" pasa ANTES de esto, en el
 // server component de page.tsx — este componente asume que ya se puede estar
 // aquí.
@@ -44,18 +44,14 @@ function OnboardingShell() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rncPrefill = searchParams.get("rnc") ?? "";
-  const nombreNegocioPrefill = searchParams.get("nombreNegocio") ?? "";
-  const vieneDeRegistro = !!(rncPrefill && nombreNegocioPrefill);
+  const vieneDeRegistro = !!rncPrefill;
 
   const [paso, setPaso] = useState<Paso>(vieneDeRegistro ? 2 : 1);
 
-  const [nombreNegocio, setNombreNegocio] = useState(nombreNegocioPrefill);
-  // Si la persona ya escribió el nombre a mano, una nueva validación no lo pisa; si no, sigue al RNC validado.
-  const [nombreTocado, setNombreTocado] = useState(false);
   const [rnc, setRnc] = useState(rncPrefill);
   const [validando, setValidando] = useState(false);
   const [rncValidado, setRncValidado] = useState<RncValidado | null>(
-    vieneDeRegistro ? { valid: true, rnc: rncPrefill, name: nombreNegocioPrefill } : null
+    vieneDeRegistro ? { valid: true, rnc: rncPrefill } : null
   );
   const [rncError, setRncError] = useState("");
 
@@ -75,7 +71,6 @@ function OnboardingShell() {
         setRncError(data.mensajeDgii || data.error || "No encontramos ese RNC en el padrón de la DGII. Verifica el número.");
       } else {
         setRncValidado(data);
-        if (!nombreTocado || !nombreNegocio.trim()) { setNombreNegocio(data.name ?? ""); setNombreTocado(false); }
       }
     } catch {
       setRncError("No se pudo validar el RNC ahora. Intenta de nuevo.");
@@ -89,7 +84,7 @@ function OnboardingShell() {
     try {
       const res = await fetch("/api/onboarding/crear-tenant", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombreNegocio, rnc: rncValidado?.rnc ?? rnc, tipoNegocio }),
+        body: JSON.stringify({ rnc: rncValidado?.rnc ?? rnc, tipoNegocio }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "No se pudo crear tu empresa");
@@ -103,7 +98,7 @@ function OnboardingShell() {
   const enviarPaso1 = (e: React.FormEvent) => {
     e.preventDefault();
     if (!rncValidado?.valid) { if (longitudOk && !validando) void validarRnc(); return; }
-    if (nombreNegocio.trim()) setPaso(2);
+    setPaso(2);
   };
 
   return (
@@ -117,7 +112,7 @@ function OnboardingShell() {
               <span style={{ display: "flex", gap: 8 }}>
                 <Entrada
                   value={rnc} inputMode="numeric" autoComplete="off" maxLength={13}
-                  onChange={(e) => { setRnc(e.target.value.replace(/[^\d-]/g, "")); setRncValidado(null); setRncError(""); if (!nombreTocado) setNombreNegocio(""); }}
+                  onChange={(e) => { setRnc(e.target.value.replace(/[^\d-]/g, "")); setRncValidado(null); setRncError(""); }}
                   placeholder="131217656" aria-invalid={!!rncError}
                 />
                 <button type="submit" className="onb-validar" disabled={!longitudOk || validando || !!rncValidado?.valid}>
@@ -142,6 +137,7 @@ function OnboardingShell() {
                   <div style={{ fontWeight: 700, fontSize: 15, color: "var(--c-text-1)", lineHeight: 1.3 }}>{rncValidado.name}</div>
                   <div style={{ fontSize: 13.5, color: "var(--c-text-2)", marginTop: 3, lineHeight: 1.45 }}>
                     {formatearRnc(rncValidado.rnc ?? digitos)} · {rncValidado.estado ? `Estado: ${rncValidado.estado}` : "Encontrado en la DGII"}
+                    {rncValidado.facturadorElectronico != null && ` · Facturador electrónico: ${rncValidado.facturadorElectronico ? "Sí" : "No"}`}
                   </div>
                   {rncValidado.activo === false && (
                     <div style={{ fontSize: 13, color: "var(--c-text-2)", marginTop: 6 }}>
@@ -152,13 +148,31 @@ function OnboardingShell() {
               </div>
             )}
 
-            <Campo etiqueta="Nombre del negocio" ayuda="Es el que verán tus clientes en la factura. Puedes cambiarlo después.">
-              <Entrada value={nombreNegocio} onChange={(e) => { setNombreNegocio(e.target.value); setNombreTocado(true); }} placeholder="Mi Negocio SRL" autoComplete="organization" />
-            </Campo>
+            {rncValidado?.valid && rncValidado.name && (
+              <div style={{ border: "1px solid var(--c-border)", borderRadius: 12, overflow: "hidden" }}>
+                <div style={{ padding: "10px 16px", background: "var(--c-bg)", borderBottom: "1px solid var(--c-border)", fontSize: 12.5, fontWeight: 700, color: "var(--c-text-3)", letterSpacing: "0.02em" }}>
+                  ASÍ SALDRÁ EN TUS FACTURAS
+                </div>
+                <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
+                  {rncValidado.nombreComercial && (
+                    <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.01em", color: "var(--c-text-1)" }}>{rncValidado.nombreComercial}</div>
+                  )}
+                  <div style={{ fontSize: rncValidado.nombreComercial ? 14 : 17, fontWeight: rncValidado.nombreComercial ? 500 : 800, color: rncValidado.nombreComercial ? "var(--c-text-2)" : "var(--c-text-1)" }}>
+                    {rncValidado.name}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--c-text-3)" }}>RNC {formatearRnc(rncValidado.rnc ?? digitos)}</div>
+                </div>
+                <div style={{ padding: "11px 16px", borderTop: "1px solid var(--c-border)", fontSize: 13, lineHeight: 1.5, color: "var(--c-text-2)", background: "var(--c-surface)" }}>
+                  {rncValidado.nombreComercial
+                    ? "El nombre en grande es tu nombre comercial, y debajo va tu razón social. Los dos vienen tal cual de la DGII."
+                    : <>Estos datos vienen tal cual de la DGII y no se pueden cambiar aquí. ¿Tienes un nombre comercial registrado en ONAPI? Para que salga en tus facturas, la DGII debe tenerlo en tu RNC: regístralo en la Oficina Virtual, en <strong>Datos Generales</strong> (nombre comercial y número de expediente de ONAPI), y vuelve a pulsar <strong>Validar</strong>.</>}
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ marginTop: 26 }}>
-            <BotonAuth type="button" disabled={!rncValidado?.valid || !nombreNegocio.trim()} onClick={() => setPaso(2)}>
+            <BotonAuth type="button" disabled={!rncValidado?.valid} onClick={() => setPaso(2)}>
               Continuar <ArrowRight size={18} weight="bold" aria-hidden="true" />
             </BotonAuth>
           </div>

@@ -8,6 +8,7 @@ import FacturaTermica from "@/components/print/factura-termica";
 import { Boton } from "@/components/sandbox/ui";
 import type { Factura } from "@/types";
 
+import { nombresImpresion } from "@/lib/tenant/nombres";
 // Factura ficticia solo para la vista previa — nunca se guarda ni se envía
 // a ningún lado, es puramente para ver cómo queda el logo en el diseño real.
 const FACTURA_EJEMPLO: Factura = {
@@ -35,7 +36,7 @@ export default function PersonalizacionPage() {
   const contenidoRef = useRef<HTMLDivElement>(null);
 
   const empresa = {
-    nombre: tenant.nombreNegocio, rnc: tenant.rnc,
+    ...nombresImpresion(tenant), rnc: tenant.rnc,
     logoA4Url: personalizacion?.logoA4Url, logoTermicoUrl: personalizacion?.logoTermicoUrl,
   };
 

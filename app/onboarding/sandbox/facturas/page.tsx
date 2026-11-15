@@ -15,6 +15,7 @@ import ModalNuevaFactura from "@/components/modals/modal-nueva-factura";
 import PrintModal from "@/components/print/print-modal";
 import { guardarFactura } from "@/lib/sandbox/acciones";
 
+import { nombresImpresion } from "@/lib/tenant/nombres";
 const sans  = "var(--font-sans)";
 const mono  = "var(--font-mono)";
 const serif = "var(--font-serif)";
@@ -60,7 +61,7 @@ export default function SandboxFacturasPage() {
 
   const onSave = async (data: Factura | Omit<Factura, "id">) => {
     await guardarFactura({
-      tenantId, rncEmisor: tenant.rnc, nombreEmisor: tenant.nombreNegocio, rootDomain: ROOT_DOMAIN,
+      tenantId, rncEmisor: tenant.rnc, nombreEmisor: nombresImpresion(tenant).nombre, rootDomain: ROOT_DOMAIN,
       agregarFactura, actualizarCotizacion: async () => {}, agregarCuenta,
     }, data);
   };
@@ -159,7 +160,7 @@ export default function SandboxFacturasPage() {
 
       <ModalNuevaFactura
         open={modalAbierto} onClose={() => setModalAbierto(false)} tenantId={tenantId}
-        clientes={clientes} productos={productos} nombreEmisor={tenant.nombreNegocio} rncEmisor={tenant.rnc} rootDomain={ROOT_DOMAIN}
+        clientes={clientes} productos={productos} nombreEmisor={nombresImpresion(tenant).nombre} nombreComercialEmisor={tenant.nombreComercial} rncEmisor={tenant.rnc} rootDomain={ROOT_DOMAIN}
         logoA4Url={personalizacion?.logoA4Url} logoTermicoUrl={personalizacion?.logoTermicoUrl}
         onSave={onSave}
       />
@@ -168,7 +169,7 @@ export default function SandboxFacturasPage() {
         open={!!imprimiendo} onClose={() => setImprimiendo(null)} factura={imprimiendo}
         cliente={imprimiendo ? clientePor(imprimiendo.clienteId) : undefined}
         empresa={{
-          nombre: tenant.nombreNegocio, rnc: tenant.rnc,
+          ...nombresImpresion(tenant), rnc: tenant.rnc,
           logoA4Url: personalizacion?.logoA4Url, logoTermicoUrl: personalizacion?.logoTermicoUrl,
         }}
       />

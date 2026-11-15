@@ -43,6 +43,8 @@ export default async function TenantLayout({
       tenantId: tenant.id,
       slug,
       nombreNegocio: tenant.nombreNegocio,
+      razonSocial: tenant.razonSocial,
+      nombreComercial: tenant.nombreComercial,
       rnc: tenant.rnc,
       rol: membership.rol,
       otrasEmpresas,

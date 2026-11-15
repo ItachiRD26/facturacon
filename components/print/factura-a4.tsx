@@ -5,7 +5,8 @@ import { fmtRNCDisplay } from "@/lib/dgii/xml-builder";
 import SelloMuestra from "./sello-muestra";
 
 export interface EmpresaImpresion {
-  nombre: string; rnc: string; direccion?: string; telefono?: string;
+  // `nombre` = razón social (como consta en el RNC); `nombreComercial` solo si la DGII lo tiene.
+  nombre: string; nombreComercial?: string; rnc: string; direccion?: string; telefono?: string;
   logoA4Url?: string; logoTermicoUrl?: string;
 }
 
@@ -33,20 +34,21 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
       {esMuestra && <SelloMuestra />}
       <div style={{ position: "relative", zIndex: 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "2px solid #111", paddingBottom: 12, marginBottom: 16 }}>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
           {empresa.logoA4Url && (
             // eslint-disable-next-line @next/next/no-img-element -- imagen del tenant en Storage, no un asset propio del sitio
             <img src={empresa.logoA4Url} alt={empresa.nombre} style={{ maxWidth: 90, maxHeight: 60, objectFit: "contain" }} />
           )}
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>{empresa.nombre}</div>
+          <div style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+            {empresa.nombreComercial && <div style={{ fontWeight: 800, fontSize: 17 }}>{empresa.nombreComercial}</div>}
+            <div style={{ fontWeight: empresa.nombreComercial ? 500 : 700, fontSize: empresa.nombreComercial ? 12 : 16 }}>{empresa.nombre}</div>
             <div>RNC: {fmtRNCDisplay(empresa.rnc)}</div>
             {empresa.direccion && <div>{empresa.direccion}</div>}
             {empresa.telefono && <div>Tel: {empresa.telefono}</div>}
             <div>Fecha emisión: {fmtDate(factura.fecha)}</div>
           </div>
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 20 }}>
           <div style={{ fontWeight: 700 }}>{titulo}</div>
           <div>e-NCF: {factura.eCF}</div>
           {factura.tipoECF !== "E32" && factura.tipoECF !== "E34" && (

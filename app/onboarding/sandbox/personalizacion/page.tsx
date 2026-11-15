@@ -8,6 +8,7 @@ import FacturaTermica from "@/components/print/factura-termica";
 import { Boton } from "@/components/sandbox/ui";
 import type { Factura } from "@/types";
 
+import { nombresImpresion } from "@/lib/tenant/nombres";
 // Idéntico a app/sites/[slug]/personalizacion/page.tsx pero leyendo el
 // tenant del contexto de sandbox — así se puede configurar el logo desde
 // antes de certificarse, no hace falta esperar a estar en producción.
@@ -36,7 +37,7 @@ export default function PersonalizacionSandboxPage() {
   const contenidoRef = useRef<HTMLDivElement>(null);
 
   const empresa = {
-    nombre: tenant.nombreNegocio, rnc: tenant.rnc,
+    ...nombresImpresion(tenant), rnc: tenant.rnc,
     logoA4Url: personalizacion?.logoA4Url, logoTermicoUrl: personalizacion?.logoTermicoUrl,
   };
 

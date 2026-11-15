@@ -87,6 +87,7 @@ function buildEmisor(e: EmpresaConfig, fecha: string): string {
   return `<Emisor>
     <RNCEmisor>${fmtRNC(e.rnc)}</RNCEmisor>
     <RazonSocialEmisor>${escapeXml(e.nombre)}</RazonSocialEmisor>
+    ${e.nombreComercial ? `<NombreComercial>${escapeXml(e.nombreComercial)}</NombreComercial>` : ""}
     <DireccionEmisor>${escapeXml(e.direccion)}</DireccionEmisor>
     ${fmtTelefono(e.telefono) ? `<TablaTelefonoEmisor><TelefonoEmisor>${fmtTelefono(e.telefono)}</TelefonoEmisor></TablaTelefonoEmisor>` : ""}
     <ActividadEconomica>${escapeXml(e.actividadEconomica)}</ActividadEconomica>

@@ -17,7 +17,7 @@ const METODOS = ["Efectivo", "Tarjeta", "Transferencia", "Cheque"];
 const LIMITE_IDENTIFICACION = 250_000;
 
 export default function ModalNuevaFactura({
-  open, onClose, onSave, tenantId, clientes, productos, nombreEmisor, rncEmisor, rootDomain, modo = "sandbox",
+  open, onClose, onSave, tenantId, clientes, productos, nombreEmisor, nombreComercialEmisor, rncEmisor, rootDomain, modo = "sandbox",
   logoA4Url, logoTermicoUrl, bloqueo,
 }: {
   open: boolean; onClose: () => void; tenantId: string;
@@ -29,7 +29,7 @@ export default function ModalNuevaFactura({
   // leer tenants/{tenantId}/config/empresa antes de firmar (estos valores
   // aquí son solo para la vista previa del lado del cliente, antes de
   // emitir — no se usan para lo fiscal).
-  nombreEmisor?: string; rncEmisor?: string; rootDomain?: string;
+  nombreEmisor?: string; nombreComercialEmisor?: string; rncEmisor?: string; rootDomain?: string;
   logoA4Url?: string; logoTermicoUrl?: string;
   modo?: "sandbox" | "produccion";
   // Si viene, impide emitir y muestra este mensaje (ej. el plan de pago no está
@@ -361,11 +361,11 @@ El número ${factura.eCF} ya quedó registrado; el envío a la DGII se podrá re
             <div style={{ overflowY: "auto", padding: "0 24px 20px", display: "flex", justifyContent: "center" }}>
               {formatoPreview === "a4" ? (
                 <FacturaA4 factura={facturaPreview} cliente={cliente}
-                  empresa={{ nombre: nombreEmisor ?? "", rnc: rncEmisor ?? "", logoA4Url, logoTermicoUrl }}
+                  empresa={{ nombre: nombreEmisor ?? "", nombreComercial: nombreComercialEmisor, rnc: rncEmisor ?? "", logoA4Url, logoTermicoUrl }}
                   esMuestra />
               ) : (
                 <FacturaTermica factura={facturaPreview} cliente={cliente}
-                  empresa={{ nombre: nombreEmisor ?? "", rnc: rncEmisor ?? "", logoA4Url, logoTermicoUrl }}
+                  empresa={{ nombre: nombreEmisor ?? "", nombreComercial: nombreComercialEmisor, rnc: rncEmisor ?? "", logoA4Url, logoTermicoUrl }}
                   esMuestra />
               )}
             </div>
