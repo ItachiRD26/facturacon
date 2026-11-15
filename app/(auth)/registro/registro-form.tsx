@@ -1,48 +1,52 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
   updateProfile,
 } from "firebase/auth";
+import { Storefront, Briefcase, ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import Logo from "@/components/ui/logo";
-import GoogleIcon from "@/components/ui/google-icon";
+import { AlertaAuth, BotonAuth, BotonGoogle, Campo, Divisor, Encabezado, Entrada, EntradaClave, TarjetaAuth } from "@/components/auth/ui-auth";
 import type { TipoCuenta } from "@/types/tenant";
 
-const sans  = "var(--font-sans)";
-const mono  = "var(--font-mono)";
+const sans = "var(--font-sans)";
 
-function TipoCuentaCard({ active, onClick, title, desc }: {
-  active: boolean; onClick: () => void; title: string; desc: string;
+function Opcion({ activa, onClick, titulo, texto, Icono }: {
+  activa: boolean; onClick: () => void; titulo: string; texto: string; Icono: typeof Storefront;
 }) {
   return (
-    <button onClick={onClick} type="button" style={{
-      textAlign: "left", padding: 14, borderRadius: 8, cursor: "pointer",
-      border: `2px solid ${active ? "var(--c-brand)" : "var(--c-border)"}`,
-      background: active ? "var(--c-brand-bg)" : "#fff", fontFamily: sans,
-    }}>
-      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 3 }}>{title}</div>
-      <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>{desc}</div>
+    <button type="button" role="radio" aria-checked={activa} onClick={onClick} className="auth-opcion">
+      <span className="auth-radio" aria-hidden="true" />
+      <span style={{ flex: 1 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 15.5, marginBottom: 3 }}>
+          <Icono size={22} weight="duotone" color="var(--c-brand)" aria-hidden="true" />{titulo}
+        </span>
+        <span style={{ display: "block", fontSize: 13.5, color: "var(--c-text-3)", lineHeight: 1.5 }}>{texto}</span>
+      </span>
     </button>
   );
 }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 6,
-  fontSize: 13, color: "#111", outline: "none", fontFamily: sans, background: "#fff",
-};
-const labelStyle: React.CSSProperties = {
-  display: "block", fontSize: 11, fontWeight: 600, color: "#374151",
-  textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 5,
-};
+// Indicador "Paso X de 2": dos barras, la actual rellena.
+function Pasos({ actual }: { actual: 1 | 2 }) {
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 8 }} aria-hidden="true">
+        {[1, 2].map((n) => <span key={n} style={{ flex: 1, height: 4, borderRadius: 2, background: n <= actual ? "var(--c-brand)" : "var(--c-border)" }} />)}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-3)" }}>Paso {actual} de 2</div>
+    </div>
+  );
+}
 
 // Tras crear la cuenta: una cuenta individual sigue directo a registrar su
 // empresa (RNC y tipo de negocio, en /onboarding); un gestor no declara ninguna
-// empresa todavía — su casa es /panel, con el botón para agregar la primera
+// empresa todavía: su casa es /panel, con el botón para agregar la primera
 // cuando quiera (puede administrar varias, a diferencia del individual).
 function destinoTrasRegistro(tipoCuenta: TipoCuenta): string {
   return tipoCuenta === "individual" ? "/onboarding" : "/panel";
@@ -65,7 +69,7 @@ async function crearSesionYRedirigir(
   router.refresh();
 }
 
-export default function RegistroPage() {
+export default function RegistroForm() {
   const router = useRouter();
   const [paso, setPaso] = useState<1 | 2>(1);
   const [tipoCuenta, setTipoCuenta] = useState<TipoCuenta | null>(null);
@@ -78,8 +82,7 @@ export default function RegistroPage() {
 
   const [error,   setError]   = useState("");
   // Cuando el correo ya tiene cuenta, en vez de solo mostrar un error
-  // mostramos un botón directo a /login con el correo precargado — antes el
-  // usuario se quedaba "atascado" viendo el mensaje sin un camino claro.
+  // mostramos un botón directo a /login con el correo precargado.
   const [yaExiste, setYaExiste] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -93,8 +96,7 @@ export default function RegistroPage() {
       const credential = await createUserWithEmailAndPassword(auth, email, pass);
       await updateProfile(credential.user, { displayName: nombreCompleto });
       const idToken = await credential.user.getIdToken();
-      const destino = destinoTrasRegistro(tipoCuenta);
-      await crearSesionYRedirigir(idToken, router, destino, {
+      await crearSesionYRedirigir(idToken, router, destinoTrasRegistro(tipoCuenta), {
         nombre: nombreCompleto, telefono: telefono.trim() || undefined, tipoCuenta,
       });
     } catch (err: unknown) {
@@ -103,11 +105,11 @@ export default function RegistroPage() {
         setError("Ya existe una cuenta con ese correo.");
         setYaExiste(true);
       } else if (msg.includes("weak-password")) {
-        setError("La contraseña debe tener al menos 6 caracteres.");
+        setError("La contraseña es muy débil. Usa al menos 8 caracteres.");
       } else if (msg.includes("invalid-email")) {
-        setError("Correo inválido.");
+        setError("Ese correo no es válido. Revísalo.");
       } else {
-        setError(msg || "Error al registrarte. Intenta de nuevo.");
+        setError(msg || "No pudimos crear tu cuenta. Intenta de nuevo.");
       }
     } finally { setLoading(false); }
   };
@@ -119,129 +121,76 @@ export default function RegistroPage() {
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
       const idToken = await credential.user.getIdToken();
       const nombreGoogle = credential.user.displayName ?? credential.user.email ?? "";
-      const destino = destinoTrasRegistro(tipoCuenta);
-      await crearSesionYRedirigir(idToken, router, destino, { nombre: nombreGoogle, tipoCuenta });
+      await crearSesionYRedirigir(idToken, router, destinoTrasRegistro(tipoCuenta), { nombre: nombreGoogle, tipoCuenta });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error al registrarte con Google.");
+      const msg = err instanceof Error ? err.message : "";
+      if (!msg.includes("popup-closed-by-user")) setError(msg || "No pudimos registrarte con Google.");
     } finally { setLoading(false); }
   };
 
   return (
-    <div style={{
-      background: "#fff", border: "1px solid var(--c-border)", borderRadius: 10,
-      padding: "40px 36px", width: "100%", maxWidth: 400,
-      boxShadow: "0 4px 24px rgba(0,0,0,0.05)", fontFamily: sans,
-    }}>
-      <div style={{ textAlign: "center", marginBottom: 32 }}>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <Logo size={30} />
-        </div>
-        <div style={{ fontSize: 11, color: "var(--c-text-4)", marginTop: 8, fontFamily: mono }}>
-          Crea tu cuenta
-        </div>
-      </div>
+    <TarjetaAuth>
+      <Pasos actual={paso} />
 
       {paso === 1 && (
         <div>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>¿Cómo vas a usar Facturacon?</div>
-          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16, lineHeight: 1.5 }}>
-            Cada empresa hace su propio proceso de certificación, con su propio subdominio — esta
-            elección solo cambia si vas a poder administrar varias.
+          <Encabezado titulo="¿Cómo vas a usar Facturacon?" texto="Cada empresa hace su propia certificación, con su propio subdominio. Esta elección solo cambia si vas a poder administrar varias." />
+          <div role="radiogroup" aria-label="Tipo de cuenta" style={{ display: "grid", gap: 12, marginBottom: 22 }}>
+            <Opcion activa={tipoCuenta === "individual"} onClick={() => setTipoCuenta("individual")} Icono={Storefront}
+              titulo="Solo mi empresa" texto="La cuenta queda ligada a un único negocio, de forma permanente." />
+            <Opcion activa={tipoCuenta === "gestor"} onClick={() => setTipoCuenta("gestor")} Icono={Briefcase}
+              titulo="Soy gestor o contable" texto="Quiero administrar la facturación de varias empresas desde esta misma cuenta." />
+          </div>
+          <BotonAuth type="button" disabled={!tipoCuenta} onClick={() => setPaso(2)}>Continuar</BotonAuth>
+          <p style={{ textAlign: "center", marginTop: 18, fontSize: 14, color: "var(--c-text-3)" }}>
+            ¿Ya tienes cuenta? <Link href="/login" style={{ color: "var(--c-brand)", fontWeight: 700 }}>Inicia sesión</Link>
           </p>
-          <div style={{ display: "grid", gap: 10, marginBottom: 20 }}>
-            <TipoCuentaCard active={tipoCuenta === "individual"} onClick={() => setTipoCuenta("individual")}
-              title="Solo mi empresa" desc="Esta cuenta va a estar ligada a un único negocio, de forma permanente." />
-            <TipoCuentaCard active={tipoCuenta === "gestor"} onClick={() => setTipoCuenta("gestor")}
-              title="Soy gestor o contable" desc="Quiero poder administrar la facturación de varias empresas desde esta misma cuenta." />
-          </div>
-          <button onClick={() => setPaso(2)} disabled={!tipoCuenta} type="button" style={{
-            width: "100%", padding: "11px", background: !tipoCuenta ? "#9ca3af" : "var(--c-brand)",
-            color: "#fff", border: "none", borderRadius: 6, cursor: !tipoCuenta ? "not-allowed" : "pointer",
-            fontSize: 13, fontWeight: 600, fontFamily: sans,
-          }}>
-            Continuar
-          </button>
-          <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "#6b7280" }}>
-            ¿Ya tienes cuenta? <a href="/login" style={{ color: "var(--c-brand)", fontWeight: 600 }}>Inicia sesión</a>
-          </div>
         </div>
       )}
 
       {paso === 2 && (
         <div>
           <button onClick={() => setPaso(1)} type="button" style={{
-            background: "none", border: "none", padding: 0, marginBottom: 16, cursor: "pointer",
-            fontSize: 12, color: "var(--c-text-3)", fontFamily: sans,
+            display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, marginBottom: 14, cursor: "pointer",
+            fontSize: 13.5, fontWeight: 600, color: "var(--c-text-3)", fontFamily: sans,
           }}>
-            ← {esIndividual ? "Solo mi empresa" : "Gestor o contable"}
+            <ArrowLeft size={16} weight="bold" aria-hidden="true" />{esIndividual ? "Solo mi empresa" : "Gestor o contable"}
           </button>
+          <Encabezado titulo="Crea tu cuenta" texto="Gratis, sin tarjeta. Solo necesitas un correo." />
 
-          <button onClick={handleGoogle} disabled={loading} type="button" style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-            width: "100%", padding: "10px", marginBottom: 16, background: "#fff",
-            border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, fontWeight: 600,
-            color: "#111", cursor: loading ? "not-allowed" : "pointer", fontFamily: sans,
-          }}>
-            <GoogleIcon />
-            Continuar con Google
-          </button>
+          <BotonGoogle onClick={handleGoogle} disabled={loading} texto="Registrarme con Google" />
+          <Divisor texto="o con tu correo" />
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "16px 0", fontSize: 11, color: "#9ca3af" }}>
-            <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
-            o con correo
-            <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
-          </div>
-
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <div>
-                <label style={labelStyle}>Nombre</label>
-                <input required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Juan" style={inputStyle} />
-              </div>
-              <div>
-                <label style={labelStyle}>Apellido</label>
-                <input required value={apellido} onChange={(e) => setApellido(e.target.value)} placeholder="Pérez" style={inputStyle} />
-              </div>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <Campo etiqueta="Nombre"><Entrada required autoComplete="given-name" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Juan" /></Campo>
+              <Campo etiqueta="Apellido"><Entrada required autoComplete="family-name" value={apellido} onChange={(e) => setApellido(e.target.value)} placeholder="Pérez" /></Campo>
             </div>
-            <div>
-              <label style={labelStyle}>Correo electrónico</label>
-              <input type="email" required value={email} onChange={(e) => { setEmail(e.target.value); setYaExiste(false); }}
-                placeholder="usuario@ejemplo.com" style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Contraseña</label>
-              <input type="password" required minLength={6} value={pass} onChange={(e) => setPass(e.target.value)}
-                placeholder="Mínimo 6 caracteres" style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>
-                Teléfono <span style={{ textTransform: "none", fontWeight: 400, color: "#9ca3af" }}>(opcional)</span>
-              </label>
-              <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)}
-                placeholder="809 555 0100" style={inputStyle} />
-            </div>
+            <Campo etiqueta="Correo electrónico">
+              <Entrada type="email" required autoComplete="email" value={email} onChange={(e) => { setEmail(e.target.value); setYaExiste(false); }} placeholder="tucorreo@empresa.com" />
+            </Campo>
+            <Campo etiqueta="Contraseña" ayuda="Al menos 8 caracteres.">
+              <EntradaClave required minLength={8} autoComplete="new-password" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="Crea una contraseña" />
+            </Campo>
+            <Campo etiqueta="Teléfono (opcional)">
+              <Entrada type="tel" autoComplete="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="809 555 0100" />
+            </Campo>
 
             {error && (
-              <div style={{ padding: "9px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, fontSize: 12, color: "#991b1b" }}>
-                <div style={{ marginBottom: yaExiste ? 8 : 0 }}>{error}</div>
-                {yaExiste && (
-                  <a href={`/login?email=${encodeURIComponent(email)}`} style={{
-                    display: "inline-block", fontSize: 12, fontWeight: 700, color: "#fff",
-                    background: "var(--c-brand)", padding: "6px 12px", borderRadius: 6, textDecoration: "none",
-                  }}>
-                    Iniciar sesión →
-                  </a>
-                )}
-              </div>
+              <AlertaAuth accion={yaExiste ? (
+                <Link href={`/login?email=${encodeURIComponent(email)}`} style={{ display: "inline-block", fontSize: 13, fontWeight: 700, color: "#fff", background: "var(--c-brand)", padding: "7px 14px", borderRadius: 8, textDecoration: "none" }}>
+                  Iniciar sesión
+                </Link>
+              ) : undefined}>{error}</AlertaAuth>
             )}
 
-            <button type="submit" disabled={loading}
-              style={{ padding: "11px", background: loading ? "#9ca3af" : "var(--c-brand)", color: "#fff", border: "none", borderRadius: 6, cursor: loading ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: sans }}>
-              {loading ? "Creando cuenta..." : "Crear cuenta"}
-            </button>
+            <BotonAuth cargando={loading}>{loading ? "Creando tu cuenta…" : "Crear mi cuenta"}</BotonAuth>
+            <p style={{ fontSize: 12.5, color: "var(--c-text-3)", lineHeight: 1.5, textAlign: "center" }}>
+              Al crear tu cuenta aceptas los <Link href="/terminos" style={{ color: "var(--c-brand)", fontWeight: 600 }}>términos</Link> y la <Link href="/privacidad" style={{ color: "var(--c-brand)", fontWeight: 600 }}>política de privacidad</Link>.
+            </p>
           </form>
         </div>
       )}
-    </div>
+    </TarjetaAuth>
   );
 }
