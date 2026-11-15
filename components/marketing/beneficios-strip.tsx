@@ -6,7 +6,7 @@ import { SealCheck, QrCode, SquaresFour, Flask } from "@phosphor-icons/react/dis
 const beneficios = [
   { t: "Certificación incluida", d: "Te guiamos por los 13 pasos de la DGII y certificamos tu empresa, sin contratar un desarrollador.", Icono: SealCheck },
   { t: "Cumplimiento con la DGII", d: "Firma digital, envío de comprobantes y código QR según la normativa de e-CF vigente.", Icono: QrCode },
-  { t: "Sistema de facturación completo", d: "Clientes, inventario, cotizaciones, facturas e impresión en un solo lugar.", Icono: SquaresFour },
+  { t: "Sistema de facturación completo", d: "Clientes, inventario, cotizaciones y facturas, con varias cajas y cajeros manejados desde un solo lugar.", Icono: SquaresFour },
   { t: "Pruébalo antes de pagar", d: "Un entorno de prueba con datos de ejemplo, sin compromiso. Pagas cuando ya estés certificado.", Icono: Flask },
 ];
 

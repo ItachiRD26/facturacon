@@ -498,3 +498,60 @@ body {
 .iv-etq .c { font-family: var(--font-mono), monospace; font-size: 10.5px; margin-top: 3px; letter-spacing: .12em; }
 .iv-scan { padding: 10px 12px; background: #f0faf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #166534; font-size: 12px; font-weight: 600; line-height: 1.4; }
 @media (prefers-reduced-motion: reduce) { .dd-barras span, .dd-fila, .iv-etq { animation: none !important; } }
+
+/* Vistas extra: clientes, cotizaciones, cuentas por cobrar */
+.dd-kpis.k3 { grid-template-columns: repeat(3, 1fr); }
+.cl-fila { display: inline-flex; align-items: center; gap: 10px; }
+.cl-av { width: 28px; height: 28px; border-radius: 50%; background: #EEF1FE; color: #2540D9; font-size: 10.5px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cl-av.grande { width: 44px; height: 44px; font-size: 15px; background: #2540D9; color: #fff; }
+.cl-ficha { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.cl-ficha .sub2 { font-size: 12px; color: #5B657D; margin-top: 2px; }
+.cl-datos { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12px; padding: 12px 0; border-top: 1px solid #ECEEE8; border-bottom: 1px solid #ECEEE8; }
+.cl-datos span { color: #5B657D; } .cl-datos b { font-weight: 600; text-align: right; }
+.cl-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cl-stats div { background: #F3F4F1; border-radius: 8px; padding: 9px 10px; }
+.cl-stats span { display: block; font-size: 11px; color: #5B657D; } .cl-stats b { font-size: 14px; letter-spacing: -.02em; }
+.iv-btn.mini { padding: 5px 10px; font-size: 11.5px; border-radius: 6px; display: inline-block; color: #2540D9; border-color: #C5CEFA; background: #EEF1FE; }
+
+/* Equipo y cajas */
+.eq-body { padding: 18px 24px; display: grid; grid-template-columns: 1fr 292px; gap: 16px; flex: 1; min-height: 0; }
+.eq-izq { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+.eq-plan { padding: 14px 16px; }
+.eq-plan-t { display: flex; justify-content: space-between; align-items: baseline; font-size: 13.5px; margin-bottom: 9px; }
+.eq-plan-t span { font-size: 12px; color: #5B657D; }
+.eq-barra { height: 8px; border-radius: 4px; background: #ECEEE8; overflow: hidden; }
+.eq-barra i { display: block; height: 100%; background: #2540D9; border-radius: 4px; transform-origin: left; animation: crecex .9s var(--ease-out) .3s both; }
+@keyframes crecex { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.eq-tabs { display: flex; gap: 22px; border-bottom: 1px solid #DADDD5; font-size: 13px; color: #5B657D; font-weight: 600; }
+.eq-tabs span { padding: 0 2px 10px; margin-bottom: -1px; }
+.eq-tabs .on { color: #2540D9; border-bottom: 2px solid #2540D9; }
+.eq-sub { display: block; font-size: 11.5px; color: #5B657D; font-weight: 400; }
+.eq-venta { display: block; height: 5px; border-radius: 3px; background: #ECEEE8; margin-top: 6px; overflow: hidden; }
+.eq-venta i { display: block; height: 100%; background: #2540D9; border-radius: 3px; transform-origin: left; animation: crecex .8s var(--ease-out) both; animation-delay: calc(.45s + var(--i) * 120ms); }
+.eq-der { display: flex; flex-direction: column; gap: 14px; }
+.eq-card { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.eq-card h4 { font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; color: #0F1A30; }
+.eq-card h4 svg { color: #2540D9; }
+.eq-pasos { list-style: none; display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; color: #2F3A55; }
+.eq-pasos li { display: flex; gap: 8px; align-items: flex-start; line-height: 1.35; }
+.eq-pasos svg { color: #166534; flex-shrink: 0; margin-top: 2px; }
+.eq-codigo { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 11px 10px; background: #F5C634; border-radius: 8px; font-family: var(--font-mono), monospace; font-size: 15px; letter-spacing: .06em; animation: filaIn .5s var(--ease-out) .9s both; }
+.eq-nota { font-size: 11.5px; color: #5B657D; line-height: 1.4; }
+.eq-link { font-family: var(--font-mono), monospace; font-size: 11px; background: #F3F4F1; border: 1px solid #DADDD5; border-radius: 6px; padding: 8px 9px; word-break: break-all; color: #2F3A55; line-height: 1.45; }
+.iv-btn svg { vertical-align: -2px; }
+@media (prefers-reduced-motion: reduce) { .eq-barra i, .eq-venta i, .eq-codigo { animation: none !important; } }
+
+/* Equipo: actividad en vivo y celdas sin saltos de línea */
+.eq-feed { padding: 14px 16px 8px; }
+.eq-feed h4 { font-size: 13.5px; font-weight: 700; margin-bottom: 4px; }
+.eq-act { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #ECEEE8; font-size: 12.5px; }
+.eq-feed h4 + .eq-act { border-top: 0; }
+.eq-act .t { flex: 1; color: #2F3A55; } .eq-act .m2 { font-family: var(--font-mono), monospace; font-size: 11.5px; }
+.eq-act .h { color: #8A93A6; font-size: 11.5px; white-space: nowrap; }
+.eq-izq td.r, .eq-izq td:last-child { white-space: nowrap; }
+.iv-tabla td.m, .iv-tabla td:nth-child(n+2) { white-space: nowrap; }
+
+.eq-izq > * { flex-shrink: 0; }
+
+/* Con 7 pestañas, en escritorio se acomodan en varias líneas; en móvil se deslizan. */
+@media (min-width: 761px) { .tabs-vistas { flex-wrap: wrap; overflow: visible; } }
