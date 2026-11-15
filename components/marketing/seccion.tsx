@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Reveal from "./reveal";
 
 // Sección de la landing. Todas usan este componente: mismo contenedor, mismo
 // espacio vertical y mismo encabezado (título + frase de apoyo, a la izquierda).
@@ -17,10 +18,10 @@ export default function Seccion({ id, tono = "paper", titulo, lede, children, cl
     <section id={id} className={`sec sec-${tono}${className ? ` ${className}` : ""}`}>
       <div className="sec-inner">
         {titulo && (
-          <header className="sec-head">
+          <Reveal as="header" className="sec-head">
             <h2 className="sec-h2">{titulo}</h2>
             {lede && <p className="sec-lede">{lede}</p>}
-          </header>
+          </Reveal>
         )}
         {children}
       </div>

@@ -1,3 +1,4 @@
+import Reveal from "./reveal";
 import { SealCheck, QrCode, SquaresFour, Flask } from "@phosphor-icons/react/dist/ssr";
 
 // Lo que incluye Facturacon, solo con lo que realmente hace hoy. Junta lo que
@@ -11,9 +12,9 @@ const beneficios = [
 
 export default function BeneficiosStrip() {
   return (
-    <div className="cols-4">
+    <Reveal stagger className="cols-4">
       {beneficios.map(({ t, d, Icono }) => (
-        <div key={t} style={{
+        <div key={t} className="hov-lift" style={{
           display: "flex", flexDirection: "column", gap: 14, padding: 26,
           background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: "var(--radius-lg)",
           boxShadow: "var(--shadow-sm)",
@@ -23,6 +24,6 @@ export default function BeneficiosStrip() {
           <div style={{ fontSize: 15.5, color: "var(--c-text-2)", lineHeight: 1.6 }}>{d}</div>
         </div>
       ))}
-    </div>
+    </Reveal>
   );
 }

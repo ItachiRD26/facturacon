@@ -198,7 +198,7 @@ body {
   70%  { opacity: 0.95; transform: rotate(-14deg) scale(0.96); }
   100% { opacity: 0.92; transform: rotate(-14deg) scale(1); }
 }
-.sello-cae { animation: selloCae 0.45s cubic-bezier(.2,.8,.3,1) 0.7s both; }
+.sello-cae { animation: selloCae 0.45s cubic-bezier(.2,.8,.3,1) 2.2s both; }
 @media (prefers-reduced-motion: reduce) {
   .sello-cae { animation: none; opacity: 0.92; }
 }
@@ -271,11 +271,22 @@ body {
 .btn-ghost-d:hover { background: rgba(255,255,255,.08); }
 @media (prefers-reduced-motion: reduce) { .btn-l { transition: none; } .btn-l:hover { transform: none; } }
 
-/* Pestañas de las vistas del producto. */
-.tabs-vistas { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
-.tab-vista { padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.28); background: transparent; color: rgba(255,255,255,.82); font: 600 15px var(--font-sans), system-ui, sans-serif; cursor: pointer; transition: background .15s ease, color .15s ease; }
+/* Vistas del producto: pestañas con icono y barra de progreso, sobre un escenario con resplandor. */
+.tabs-vistas { display: flex; gap: 10px; margin-bottom: 22px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; scroll-snap-type: x proximity; }
+.tabs-vistas::-webkit-scrollbar { display: none; }
+.tab-vista { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0; scroll-snap-align: start; padding: 12px 20px; border-radius: 999px; border: 1px solid rgba(255,255,255,.24); background: rgba(255,255,255,.04); color: rgba(255,255,255,.82); font: 600 15.5px var(--font-sans), system-ui, sans-serif; cursor: pointer; transition: background .2s ease, color .2s ease, border-color .2s ease; }
 .tab-vista:hover { background: rgba(255,255,255,.1); }
-.tab-vista[aria-selected="true"] { background: var(--c-ticket); border-color: var(--c-ticket); color: var(--c-text-1); }
+.tab-vista[aria-selected="true"] { background: rgba(255,255,255,.12); border-color: var(--c-ticket); color: #fff; }
+.tab-vista[aria-selected="true"] svg { color: var(--c-ticket); }
+.tab-prog { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--c-ticket); transform-origin: left; animation: progreso linear forwards; }
+@keyframes progreso { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.vista-desc { color: rgba(255,255,255,.8); font-size: 17.5px; line-height: 1.55; max-width: 620px; margin-bottom: 22px; min-height: 3.1em; animation: stageIn .5s var(--ease-out) both; }
+.stage-vistas { position: relative; border-radius: 22px; border: 1px solid rgba(255,255,255,.12); overflow: hidden; background: radial-gradient(120% 90% at 50% 0%, rgba(37,64,217,.5) 0%, rgba(37,64,217,.12) 45%, transparent 75%), #16244a; }
+.stage-vistas::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 24px 24px; pointer-events: none; }
+.stage-in { position: relative; animation: stageIn .6s var(--ease-out) both; padding: clamp(8px, 2.2vw, 28px); }
+@keyframes stageIn { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+@media (min-width: 761px) { .stage-vistas { min-height: clamp(440px, 56vw, 700px); display: flex; align-items: center; } .stage-in { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .stage-in, .vista-desc { animation: none !important; } .tab-prog { display: none; } }
 
 /* Destacado: la frase clave del modelo de cobro (la certificación es gratis y la
    mensualidad empieza después). Amarillo de ticket, para que se lea primero. */
@@ -299,3 +310,125 @@ body {
 .plan-empresa { grid-column: span 2; background: var(--c-navy); color: #fff; justify-content: center; box-shadow: none; border: 1px solid rgba(255,255,255,0.22); }
 @media (max-width: 960px) { .planes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .planes-grid { grid-template-columns: 1fr; } .plan-empresa { grid-column: auto; } }
+
+/* ══ Movimiento de la landing ═════════════════════════════════════════
+   Una idea: el comprobante que se imprime. Entrada del hero escalonada, el
+   ticket se imprime línea por línea y al final cae el sello; el resto aparece
+   al hacer scroll, una vez. Todo con transform/opacity (barato) y apagado con
+   prefers-reduced-motion. */
+:root { --ease-out: cubic-bezier(.2,.7,.2,1); }
+
+/* Entrada del hero */
+@keyframes heroIn { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+.hero-in { animation: heroIn .85s var(--ease-out) both; animation-delay: calc(var(--d, 0) * 1ms); }
+
+/* El ticket se imprime: sale de arriba hacia abajo */
+@keyframes imprime { from { clip-path: inset(-20px -50px 100% -50px); transform: translateY(-36px); } to { clip-path: inset(-20px -50px -60px -50px); transform: none; } }
+.ticket-imprime { animation: imprime 1.5s cubic-bezier(.3,.6,.2,1) .35s both; }
+@keyframes lineaIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+.t-linea { animation: lineaIn .45s var(--ease-out) both; animation-delay: calc(.7s + var(--i, 0) * .2s); }
+@keyframes flota { from { transform: translateY(0) rotate(0deg); } to { transform: translateY(-7px) rotate(.4deg); } }
+.ticket-flota { animation: flota 6.5s ease-in-out 3s infinite alternate; }
+
+/* Resplandor cobalto y trama de puntos detrás del hero (ambiente, no protagonista) */
+.hero { overflow: hidden; }
+.hero > .sec-inner { position: relative; z-index: 1; }
+.hero::before { content: ""; position: absolute; width: min(760px, 90vw); height: min(760px, 90vw); right: -8%; top: -12%; border-radius: 50%; background: radial-gradient(circle, rgba(37,64,217,.5) 0%, rgba(37,64,217,0) 66%); filter: blur(24px); animation: deriva 16s ease-in-out infinite alternate; pointer-events: none; }
+.hero::after { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px); background-size: 28px 28px; -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 75%); mask-image: linear-gradient(180deg, #000 0%, transparent 75%); pointer-events: none; }
+@keyframes deriva { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px, 30px) scale(1.08); } }
+
+/* Aparición al scroll */
+.rv { transition: opacity .75s var(--ease-out), transform .75s var(--ease-out); }
+.rv.rv-pre { opacity: 0; transform: translateY(26px); }
+.rv.rv-in { opacity: 1; transform: none; }
+.rv-stagger.rv-pre { opacity: 1; transform: none; }
+.rv-stagger > * { transition: opacity .65s var(--ease-out), transform .65s var(--ease-out); }
+.rv-stagger.rv-pre > * { opacity: 0; transform: translateY(24px); }
+.rv-stagger.rv-in > * { opacity: 1; transform: none; }
+.rv-stagger.rv-in > *:nth-child(1) { transition-delay: 0ms; }
+.rv-stagger.rv-in > *:nth-child(2) { transition-delay: 80ms; }
+.rv-stagger.rv-in > *:nth-child(3) { transition-delay: 160ms; }
+.rv-stagger.rv-in > *:nth-child(4) { transition-delay: 240ms; }
+.rv-stagger.rv-in > *:nth-child(5) { transition-delay: 320ms; }
+.rv-stagger.rv-in > *:nth-child(6) { transition-delay: 400ms; }
+.rv-stagger.rv-in > *:nth-child(7) { transition-delay: 480ms; }
+.rv-stagger.rv-in > *:nth-child(8) { transition-delay: 560ms; }
+.rv-stagger.rv-in > *:nth-child(9) { transition-delay: 640ms; }
+.rv-stagger.rv-in > *:nth-child(10) { transition-delay: 720ms; }
+.rv-stagger.rv-in > *:nth-child(11) { transition-delay: 800ms; }
+.rv-stagger.rv-in > *:nth-child(12) { transition-delay: 880ms; }
+.rv-done > * { transition-delay: 0ms !important; }
+
+/* Pasos: la línea superior se dibuja al entrar */
+.paso { position: relative; padding-top: 20px; }
+.paso::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--c-text-1); transform-origin: left; transition: transform .8s var(--ease-out) .15s; }
+.paso-sello::before { background: var(--c-stamp); }
+.rv-pre .paso::before { transform: scaleX(0); }
+
+/* Hover: elevar, sin saltos de layout */
+.hov-lift { transition: transform .25s var(--ease-out), box-shadow .25s ease; }
+.hov-lift:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+.rv-done > .hov-lift { transition: transform .25s var(--ease-out), box-shadow .25s ease; }
+.plan-card.hov-lift:hover { box-shadow: 0 26px 50px rgba(7,16,80,.4); }
+.celda-negocio { transition: background .2s ease; }
+.celda-negocio-icono { transition: background .2s ease, color .2s ease, transform .25s var(--ease-out); }
+.celda-negocio:hover .celda-negocio-icono { background: var(--c-brand); color: #fff; transform: scale(1.08) rotate(-4deg); }
+
+/* Acordeón con apertura suave */
+.faq-cuerpo { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s var(--ease-out); }
+.faq-cuerpo[data-abierto="true"] { grid-template-rows: 1fr; }
+.faq-cuerpo > div { overflow: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-in, .ticket-imprime, .t-linea, .ticket-flota, .hero::before { animation: none !important; }
+  .rv, .rv-stagger > *, .paso::before, .hov-lift, .faq-cuerpo { transition: none !important; }
+  .rv.rv-pre, .rv-stagger.rv-pre > * { opacity: 1; transform: none; }
+  .rv-pre .paso::before { transform: none; }
+}
+
+/* ── Factura de ejemplo (components/marketing/factura-demo.tsx) ─────────
+   Hoja A4 con proporción real (210/297) y ticket de 80 mm, separados. Todo en em
+   sobre un font-size que sale del ancho del propio documento (cqw): escala entero. */
+.fd { display: flex; justify-content: center; align-items: flex-start; gap: clamp(32px, 9%, 120px); padding: clamp(20px, 4.5%, 56px); }
+.fd-col { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.fd-col figcaption { font-size: 13.5px; font-weight: 600; color: rgba(255,255,255,.62); }
+.fd-col-a4 { width: min(46%, 470px); }
+.fd-col-ticket { width: min(26%, 262px); padding-top: clamp(14px, 4%, 40px); }
+.fd-a4, .fd-tk-caja { container-type: inline-size; width: 100%; }
+.fd-a4 { aspect-ratio: 210 / 297; background: #fff; border-radius: 3px; box-shadow: 0 30px 60px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.25); overflow: hidden; color: #0F1A30; }
+.fd-pg { font-size: 2.35cqw; line-height: 1.45; height: 100%; display: flex; flex-direction: column; padding: 0 5.2em 4em; }
+.fd-pg > * { flex-shrink: 0; }
+.fd-franja { height: .7em; margin: 0 -5.2em 3.4em; background: linear-gradient(90deg, #0F1A30 0 78%, #D92D3A 78% 100%); }
+.fd-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 1em; }
+.fd-emp { font-weight: 800; font-size: 1.75em; letter-spacing: -.02em; line-height: 1.15; }
+.fd-peq { font-size: .92em; color: #5B657D; }
+.fd-tipo { text-align: right; }
+.fd-tipo b { display: block; font-size: 1.05em; font-weight: 800; line-height: 1.25; }
+.fd-enc { font-family: var(--font-mono), monospace; font-size: 1.3em; margin: .25em 0; }
+.fd-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4em; margin: 2.4em 0 1.6em; padding: 1.2em 0; border-top: .18em solid #0F1A30; border-bottom: 1px solid #DADDD5; }
+.fd-tabla { width: 100%; border-collapse: collapse; margin-top: .4em; }
+.fd-tabla th { text-align: right; background: #F3F4F1; font-size: .92em; font-weight: 700; color: #5B657D; padding: .7em .8em; }
+.fd-tabla th:first-child, .fd-tabla td:first-child { text-align: left; }
+.fd-tabla td { text-align: right; padding: .95em .8em; border-bottom: 1px solid #ECEEE8; }
+.fd-tot { margin: 1.6em 0 0 auto; width: 47%; line-height: 2; }
+.fd-tot div { display: flex; justify-content: space-between; }
+.fd-g { border-top: .18em solid #0F1A30; margin-top: .4em; padding-top: .5em; font-size: 1.4em; font-weight: 800; line-height: 1.5; }
+.fd-pie { margin-top: auto; display: flex; gap: 1.6em; align-items: center; padding-top: 1.4em; border-top: 1px dashed #8A93A6; }
+
+.fd-tk-caja { }
+.fd-ticket-imprime { width: 100%; filter: drop-shadow(0 26px 34px rgba(0,0,0,.4)); container-type: inline-size; animation: imprime 1.9s cubic-bezier(.3,.6,.2,1) .2s both; }
+.fd-tk { background: #fff; color: #0F1A30; font-family: var(--font-mono), "Courier New", monospace; font-size: 4.9cqw; line-height: 1.6; padding: 2em 1.8em 2.2em; border-radius: 3px 3px 0 0; }
+.fd-tk hr { border: 0; border-top: 1px dashed #8A93A6; margin: .7em 0; }
+.fd-c { text-align: center; }
+.fd-f { display: flex; justify-content: space-between; gap: .6em; }
+.fd-tk-grande { font-size: 1.18em; font-weight: 500; }
+
+@media (max-width: 760px) {
+  .fd { flex-direction: column; align-items: center; gap: 36px; padding: 24px 16px 32px; }
+  .fd-col-a4 { width: min(100%, 440px); }
+  .fd-col-ticket { width: min(64%, 270px); padding-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .fd-ticket-imprime { animation: none !important; } }
+
+/* Header público en teléfonos chicos: solo el icono del logo, para que quepan Iniciar sesión y el botón. */
+@media (max-width: 480px) { .site-header .logo-wordmark { display: none; } }

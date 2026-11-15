@@ -2,6 +2,7 @@ import Link from "next/link";
 import SiteHeader from "@/components/marketing/site-header";
 import SiteFooter from "@/components/marketing/site-footer";
 import Seccion from "@/components/marketing/seccion";
+import Reveal from "@/components/marketing/reveal";
 import VideoTutorial from "@/components/marketing/video-tutorial";
 import NegociosSection from "@/components/marketing/negocios-section";
 import PagaditoBadge from "@/components/marketing/pagadito-badge";
@@ -64,18 +65,18 @@ export default function LandingPage() {
           <div className="sec-inner">
             <div className="hero-grid">
               <div>
-                <h1 style={{
+                <h1 className="hero-in" style={{ ["--d" as string]: 80,
                   fontWeight: 800, fontSize: "clamp(2.5rem, 5.4vw, 4.4rem)", lineHeight: 1.02,
                   letterSpacing: "-0.04em", marginBottom: 26, maxWidth: 660, color: "#fff",
                 }}>
                   Certifícate gratis ante la DGII y empieza a facturar
                 </h1>
-                <p style={{ fontSize: 19, lineHeight: 1.6, color: "rgba(255,255,255,0.76)", maxWidth: 520, marginBottom: 24 }}>
+                <p className="hero-in" style={{ ["--d" as string]: 260, fontSize: 19, lineHeight: 1.6, color: "rgba(255,255,255,0.76)", maxWidth: 520, marginBottom: 24 }}>
                   Te llevamos de la mano por los 13 pasos del portal, nos encargamos de lo técnico y te
                   entregamos un sistema de facturación listo para usar.
                 </p>
-                <p className="destacado">La mensualidad empieza cuando ya estés certificado.</p>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                <p className="destacado hero-in" style={{ ["--d" as string]: 440 }}>La mensualidad empieza cuando ya estés certificado.</p>
+                <div className="hero-in" style={{ ["--d" as string]: 600, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
                   <Link href="/registro" className="btn-l btn-white">{cta}</Link>
                   <a href="#como-funciona" className="btn-l btn-ghost-d">Ver cómo funciona</a>
                 </div>
@@ -96,7 +97,7 @@ export default function LandingPage() {
         {/* Vistas del sistema con datos de ejemplo (scripts/landing-imagenes) y las
             garantías de seguridad. Cuando haya capturas reales, reemplazan los PNG. */}
         <Seccion id="producto" tono="ink" titulo="Así se ve por dentro">
-          <VistasProducto />
+          <Reveal><VistasProducto /></Reveal>
           <div style={{ marginTop: 72, paddingTop: 48, borderTop: "1px solid rgba(255,255,255,0.14)" }}>
             <TrustStrip />
           </div>
@@ -106,17 +107,15 @@ export default function LandingPage() {
             etapas salen de lib/tenant/jornada.ts, la misma fuente que usa el panel. */}
         <Seccion id="como-funciona" tono="paper" titulo="De crear tu cuenta a tu primera factura real"
           lede="Pagas solo al final, cuando la DGII ya te autorizó.">
-          <ol className="cols-5" style={{ listStyle: "none" }}>
+          <Reveal as="ol" stagger className="cols-5" style={{ listStyle: "none" }}>
             {ETAPAS.map((e, i) => (
-              <li key={e.id} style={{
-                borderTop: "4px solid " + (e.id === "certificacion" ? "var(--c-stamp)" : "var(--c-text-1)"), paddingTop: 20,
-              }}>
+              <li key={e.id} className={`paso${e.id === "certificacion" ? " paso-sello" : ""}`}>
                 <div style={{ fontWeight: 800, fontSize: 44, lineHeight: 1, letterSpacing: "-0.04em", color: e.id === "certificacion" ? "var(--c-stamp)" : "var(--c-text-1)", marginBottom: 16 }}>{i + 1}</div>
                 <div style={{ fontWeight: 700, fontSize: 19, marginBottom: 6, letterSpacing: "-0.01em" }}>{e.titulo}</div>
                 <div style={{ fontSize: 15.5, color: "var(--c-text-2)", lineHeight: 1.55 }}>{e.detalle}</div>
               </li>
             ))}
-          </ol>
+          </Reveal>
           {hayVideo && <div style={{ marginTop: 64 }}><VideoTutorial /></div>}
         </Seccion>
 
@@ -150,12 +149,12 @@ export default function LandingPage() {
         </Seccion>
 
         <Seccion tono="ink">
-          <div style={{ textAlign: "center", paddingBlock: "clamp(8px, 3vw, 32px)" }}>
+          <Reveal style={{ textAlign: "center", paddingBlock: "clamp(8px, 3vw, 32px)" }}>
             <h2 className="sec-h2" style={{ maxWidth: 680, marginInline: "auto", marginBottom: 32 }}>
               ¿Listo para certificarte como emisor electrónico?
             </h2>
             <Link href="/registro" className="btn-l btn-ticket">{cta}</Link>
-          </div>
+          </Reveal>
         </Seccion>
       </main>
       <SiteFooter />

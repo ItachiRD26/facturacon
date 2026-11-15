@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Reveal from "./reveal";
 import { Check } from "@phosphor-icons/react/dist/ssr";
 import { PLANES, VOLUMEN_EMPRESA } from "@/lib/payments/planes";
 
@@ -13,9 +14,9 @@ export default function PlanesGrid() {
   const maxPlan = PLANES[PLANES.length - 1].facturas;
   return (
     <div>
-      <ul className="planes-grid" style={{ listStyle: "none" }}>
+      <Reveal as="ul" stagger className="planes-grid" style={{ listStyle: "none" }}>
         {PLANES.map((p) => (
-          <li key={p.id} className="plan-card">
+          <li key={p.id} className="plan-card hov-lift">
             <div style={{ fontSize: 14, color: "var(--c-text-3)", fontWeight: 600 }}>Hasta</div>
             <div className="num" style={{ fontWeight: 800, fontSize: "2.4rem", lineHeight: 1, letterSpacing: "-0.04em" }}>
               {p.facturas.toLocaleString("es-DO")}
@@ -36,7 +37,7 @@ export default function PlanesGrid() {
           </li>
         ))}
 
-        <li className="plan-card plan-empresa">
+        <li className="plan-card plan-empresa hov-lift">
           <div style={{ fontWeight: 800, fontSize: "1.55rem", lineHeight: 1.12, letterSpacing: "-0.03em", marginBottom: 10 }}>
             Más de {maxPlan.toLocaleString("es-DO")} comprobantes al mes
           </div>
@@ -46,7 +47,7 @@ export default function PlanesGrid() {
           </p>
           <Link href="/empresas" className="btn-l btn-ticket" style={{ alignSelf: "flex-start" }}>Hablar con ventas</Link>
         </li>
-      </ul>
+      </Reveal>
     </div>
   );
 }

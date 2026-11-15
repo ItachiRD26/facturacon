@@ -1,3 +1,4 @@
+import Reveal from "./reveal";
 import { LockKey, ShieldCheck, Vault } from "@phosphor-icons/react/dist/ssr";
 
 // Garantías verificables sobre seguridad y cumplimiento, en lugar de cifras de
@@ -10,7 +11,7 @@ const items = [
 
 export default function TrustStrip() {
   return (
-    <div className="cols-3">
+    <Reveal stagger className="cols-3">
       {items.map(({ t, d, Icono }) => (
         <div key={t} style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
           <Icono size={34} weight="duotone" color="var(--c-ticket)" style={{ flexShrink: 0 }} aria-hidden="true" />
@@ -20,6 +21,6 @@ export default function TrustStrip() {
           </div>
         </div>
       ))}
-    </div>
+    </Reveal>
   );
 }

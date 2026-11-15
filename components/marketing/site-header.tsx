@@ -8,7 +8,7 @@ const enlace = { color: "rgba(255,255,255,0.78)", textDecoration: "none" } as co
 
 export default function SiteHeader() {
   return (
-    <header style={{
+    <header className="site-header" style={{
       position: "sticky", top: 0, zIndex: 40, background: "var(--c-navy)",
       borderBottom: "1px solid rgba(255,255,255,0.1)", fontFamily: "var(--font-sans)",
     }}>

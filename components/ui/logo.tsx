@@ -45,7 +45,7 @@ export default function Logo({ variant = "full", tone = "color", size = 32, clas
   return (
     <span className={className} style={{ display: "inline-flex", alignItems: "center", gap: size * 0.2 }}>
       {marca}
-      <span style={{
+      <span className="logo-wordmark" style={{
         fontFamily: "var(--font-sans), system-ui, sans-serif", fontWeight: 800, color: wordColor,
         fontSize: size * 0.78, lineHeight: 1, letterSpacing: "-0.035em", whiteSpace: "nowrap",
       }}>

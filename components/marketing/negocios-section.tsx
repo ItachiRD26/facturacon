@@ -1,3 +1,4 @@
+import Reveal from "./reveal";
 import {
   Wrench, Pill, Basket, ForkKnife, Scissors, Car, Stethoscope, Briefcase,
 } from "@phosphor-icons/react/dist/ssr";
@@ -25,7 +26,7 @@ export default function NegociosSection() {
       <p style={{ fontSize: 16.5, color: "var(--c-text-2)", marginBottom: 28, maxWidth: 560, lineHeight: 1.55 }}>
         Si facturas, Facturacon se adapta. Estos son algunos de los negocios que más lo usarán.
       </p>
-      <ul className="grid-negocios" style={{ listStyle: "none" }}>
+      <Reveal as="ul" stagger className="grid-negocios" style={{ listStyle: "none" }}>
         {negocios.map(({ t, d, Icono }) => (
           <li key={t} className="celda-negocio">
             <span className="celda-negocio-icono"><Icono size={26} weight="duotone" aria-hidden="true" /></span>
@@ -35,7 +36,7 @@ export default function NegociosSection() {
             </span>
           </li>
         ))}
-      </ul>
+      </Reveal>
     </div>
   );
 }

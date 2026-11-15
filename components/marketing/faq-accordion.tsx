@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Reveal from "./reveal";
 
 interface Faq { q: string; a: string; }
 
@@ -10,7 +11,7 @@ export default function FaqAccordion({ faqs }: { faqs: Faq[] }) {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <Reveal stagger style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {faqs.map((f, i) => {
         const isOpen = open === i;
         return (
@@ -34,14 +35,14 @@ export default function FaqAccordion({ faqs }: { faqs: Faq[] }) {
                 +
               </span>
             </button>
-            {isOpen && (
-              <div style={{ padding: "0 20px 18px", fontSize: 15, color: "var(--c-text-2)", lineHeight: 1.65 }}>
+            <div className="faq-cuerpo" data-abierto={isOpen}>
+              <div><div style={{ padding: "0 20px 18px", fontSize: 15, color: "var(--c-text-2)", lineHeight: 1.65 }}>
                 {f.a}
-              </div>
-            )}
+              </div></div>
+            </div>
           </div>
         );
       })}
-    </div>
+    </Reveal>
   );
 }
