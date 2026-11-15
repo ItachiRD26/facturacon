@@ -6,6 +6,7 @@ import type { Tenant, TipoNegocio, UserPerfil } from "@/types/tenant";
 import { TIPOS_NEGOCIO } from "@/lib/onboarding/tipos-negocio";
 import { limitar } from "@/lib/seguridad/limite-tasa";
 import { consultarRncConCache } from "@/lib/dgii/validar-rnc-cedula";
+import { sembrarDatosEjemplo } from "@/lib/sandbox/datos-ejemplo";
 
 const MAX_EMPRESAS_POR_CUENTA = 25;
 
@@ -84,6 +85,10 @@ export async function POST(req: NextRequest) {
   };
   await tenantRef.set(tenant);
   await createMembership(uid, tenantRef.id, "owner");
+
+  // Catálogo y clientes de ejemplo para poder facturar desde el primer minuto. Si falla,
+  // la empresa ya está creada: el botón "Cargar datos de ejemplo" lo puede reintentar.
+  await sembrarDatosEjemplo(tenantRef.id, body.tipoNegocio).catch((e) => console.error("[crear-tenant] datos de ejemplo:", e));
 
   return NextResponse.json({ success: true, tenantId: tenantRef.id });
 }

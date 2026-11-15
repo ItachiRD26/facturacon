@@ -1,12 +1,16 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { Tenant } from "@/types/tenant";
+import type { RolMembership, Tenant } from "@/types/tenant";
 
 export interface SandboxCtxValue {
   tenantId: string;
   tenant: Tenant;
   rootDomain: string;
+  // Rol con el que se está "probando" el sistema (solo para ver cómo lo ve cada
+  // persona del equipo; no cambia datos ni permisos reales). Arranca como cajero.
+  rol: RolMembership;
+  setRol: (r: RolMembership) => void;
 }
 
 const SandboxContext = createContext<SandboxCtxValue | null>(null);

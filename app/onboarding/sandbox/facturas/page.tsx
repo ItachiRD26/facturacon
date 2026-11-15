@@ -16,6 +16,7 @@ import PrintModal from "@/components/print/print-modal";
 import { guardarFactura } from "@/lib/sandbox/acciones";
 
 import { nombresImpresion } from "@/lib/tenant/nombres";
+import AvisoDatosEjemplo from "@/components/sandbox/aviso-datos-ejemplo";
 const sans  = "var(--font-sans)";
 const mono  = "var(--font-mono)";
 const serif = "var(--font-serif)";
@@ -34,8 +35,8 @@ function KPICard({ label, valor, sub, accent }: { label: string; valor: string |
 
 export default function SandboxFacturasPage() {
   const { tenantId, tenant } = useSandbox();
-  const { clientes } = useClientes(tenantId);
-  const { productos } = useProductos(tenantId);
+  const { clientes, loading: cargandoClientes } = useClientes(tenantId);
+  const { productos, loading: cargandoProductos } = useProductos(tenantId);
   const { facturas, loading, agregar: agregarFactura, cambiarEstado } = useFacturas(tenantId);
   const { agregar: agregarCuenta } = useCuentasPorCobrar(tenantId);
   const { personalizacion } = usePersonalizacion(tenantId);
@@ -78,6 +79,10 @@ export default function SandboxFacturasPage() {
           <Icon name="plus" size={14} /> Nueva Factura
         </button>
       </div>
+
+      {!cargandoClientes && !cargandoProductos && productos.length === 0 && clientes.length === 0 && (
+        <AvisoDatosEjemplo tenantId={tenantId} />
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 20 }}>
         <KPICard label="Cobrado"   valor={"RD$ " + fmt(totalCobrado)}    sub="Facturas pagadas"    accent="var(--c-brand)" />
