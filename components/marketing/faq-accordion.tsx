@@ -15,7 +15,7 @@ export default function FaqAccordion({ faqs }: { faqs: Faq[] }) {
         const isOpen = open === i;
         return (
           <div key={f.q} style={{
-            border: "1px solid var(--c-border)", borderRadius: "var(--radius-lg)", overflow: "hidden", background: "var(--c-bg)",
+            border: "1px solid var(--c-border)", borderRadius: "var(--radius-lg)", overflow: "hidden", background: "var(--c-surface)",
           }}>
             <button
               onClick={() => setOpen(isOpen ? null : i)}
@@ -28,7 +28,7 @@ export default function FaqAccordion({ faqs }: { faqs: Faq[] }) {
               {f.q}
               <span style={{
                 flexShrink: 0, width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                background: "var(--c-surface)", color: "var(--c-brand)", fontSize: 16, lineHeight: 1,
+                background: "var(--c-brand-bg)", color: "var(--c-brand)", fontSize: 16, lineHeight: 1,
                 transform: isOpen ? "rotate(45deg)" : "none", transition: "transform 0.15s ease",
               }}>
                 +

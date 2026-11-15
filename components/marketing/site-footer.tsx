@@ -4,7 +4,7 @@ import Logo from "@/components/ui/logo";
 export default function SiteFooter() {
   return (
     <footer style={{
-      background: "var(--c-navy)", color: "rgba(255,255,255,0.65)",
+      background: "var(--c-navy)", color: "rgba(255,255,255,0.65)", borderTop: "1px solid rgba(255,255,255,0.12)",
       fontFamily: "var(--font-sans)", padding: "40px 24px 28px",
     }}>
       <div style={{

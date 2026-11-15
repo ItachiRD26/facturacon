@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google-cloud/kms": "^4.3.0",
+    "@phosphor-icons/react": "^2.1.10",
     "@xmldom/xmldom": "^0.9.8",
     "cheerio": "^1.2.0",
     "firebase": "^12.13.0",

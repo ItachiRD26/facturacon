@@ -7,7 +7,7 @@ EDGE="/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
 mkdir -p ../../public/landing
 for f in dashboard factura inventario; do
   [ -f "$f.html" ] || continue
-  "$EDGE" --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
+  "$EDGE" --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=2 --default-background-color=00000000 \
     --window-size=1200,760 --virtual-time-budget=8000 \
     --screenshot="$(pwd -W)/../../public/landing/$f.png" "file:///$(pwd -W)/$f.html" >/dev/null 2>&1
   echo "ok $f"

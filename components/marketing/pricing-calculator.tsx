@@ -24,7 +24,7 @@ export default function PricingCalculator() {
     <div>
       <div style={{
         background: "var(--c-surface)", border: "1px solid var(--c-border)", borderRadius: 16,
-        padding: "36px 32px", textAlign: "center", boxShadow: "var(--shadow-md)",
+        padding: "36px 32px", textAlign: "center", boxShadow: "0 24px 48px rgba(7,16,80,0.35)", color: "var(--c-text-1)",
       }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 12 }}>
           ¿Cuántos comprobantes emites al mes?
@@ -91,7 +91,7 @@ export default function PricingCalculator() {
         </div>
       </div>
 
-      <p style={{ fontSize: 13, color: "var(--c-text-3)", marginTop: 18, lineHeight: 1.55 }}>
+      <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.78)", marginTop: 18, lineHeight: 1.55 }}>
         Cifras de referencia mientras confirmamos los montos finales — no son precios cerrados
         todavía. Te avisaremos antes de que se active cualquier cobro.
       </p>

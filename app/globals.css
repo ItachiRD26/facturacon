@@ -215,30 +215,30 @@ body {
 }
 
 /* ── Sistema de secciones de la landing ──────────────────────────────
-   Un solo contenedor, un solo espacio vertical y un solo encabezado para
-   todas las secciones; lo único que cambia es el tono de fondo. Los tonos
-   se alternan (papel / blanco / tinta) y las blancas llevan filete arriba y
-   abajo, así se distingue dónde empieza y termina cada una. */
+   Un solo tono claro (papel) y dos tonos fuertes con propósito: tinta para el
+   hero, el producto y el cierre; cobalto solo para precios. Alternar dos
+   blancos casi iguales no separa nada, así que no se hace: el contraste entre
+   secciones lo da claro vs. oscuro, y el título grande de cada una dice qué es. */
 :root {
   --header-h: 68px;
   --container: 1120px;
-  --sec-y: clamp(64px, 8vw, 112px);
+  --sec-y: clamp(72px, 9vw, 128px);
 }
-.sec { scroll-margin-top: var(--header-h); }
-.sec-paper { background: var(--c-bg); }
-.sec-white { background: var(--c-surface); border-block: 1px solid var(--c-border); }
+.sec { scroll-margin-top: var(--header-h); position: relative; }
+.sec-paper { background: var(--c-bg); color: var(--c-text-1); }
 .sec-ink   { background: var(--c-navy); color: #fff; }
+.sec-brand { background: var(--c-brand); color: #fff; }
 .sec-inner { max-width: var(--container); margin: 0 auto; padding: var(--sec-y) 24px; }
-.sec-head  { max-width: 640px; margin-bottom: clamp(36px, 5vw, 56px); }
-.sec-h2    { font-weight: 800; font-size: clamp(1.9rem, 3.6vw, 2.75rem); line-height: 1.08; letter-spacing: -0.03em; }
-.sec-lede  { margin-top: 14px; font-size: 17px; line-height: 1.6; color: var(--c-text-2); }
-.sec-ink .sec-lede { color: rgba(255,255,255,0.7); }
+.sec-head  { max-width: 640px; margin-bottom: clamp(36px, 5vw, 60px); }
+.sec-h2    { font-weight: 800; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.06; letter-spacing: -0.035em; }
+.sec-lede  { margin-top: 16px; font-size: 18px; line-height: 1.6; color: var(--c-text-2); }
+.sec-ink .sec-lede, .sec-brand .sec-lede { color: rgba(255,255,255,0.74); }
 
-/* Rejillas de contenido: mismas columnas y mismo hueco en toda la página. */
-.cols-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+/* Rejillas: mismas columnas y mismo hueco en toda la página. */
+.cols-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
 .cols-5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px; }
-.cols-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-.split  { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(32px, 6vw, 80px); align-items: start; }
+.cols-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+.split  { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(32px, 6vw, 88px); align-items: start; }
 @media (max-width: 960px) {
   .cols-4, .cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cols-3 { grid-template-columns: 1fr; }
@@ -250,8 +250,7 @@ body {
 }
 
 /* Hero: ocupa justo la pantalla (descontado el header fijo) para que la
-   siguiente sección no asome cortada al cargar. dvh respeta la barra del
-   navegador en móvil. */
+   siguiente sección no asome cortada. dvh respeta la barra del navegador. */
 .hero {
   min-height: 560px;
   min-height: clamp(560px, calc(100vh - var(--header-h)), 940px);
@@ -259,3 +258,19 @@ body {
   display: flex; align-items: center;
 }
 .hero > .sec-inner { width: 100%; padding-block: clamp(40px, 6vh, 88px); }
+
+/* Botones de la landing: amarillo de ticket sobre fondos oscuros, cobalto sobre claros. */
+.btn-l { display: inline-flex; align-items: center; justify-content: center; padding: 15px 28px; border-radius: var(--radius-md); font-weight: 700; font-size: 16px; text-decoration: none; transition: transform .15s ease, box-shadow .15s ease; }
+.btn-l:hover { transform: translateY(-1px); }
+.btn-ticket { background: var(--c-ticket); color: var(--c-text-1); }
+.btn-ticket:hover { box-shadow: 0 8px 22px rgba(245,198,52,.35); }
+.btn-brand  { background: var(--c-brand); color: #fff; }
+.btn-ghost-d { border: 1px solid rgba(255,255,255,.3); color: #fff; }
+.btn-ghost-d:hover { background: rgba(255,255,255,.08); }
+@media (prefers-reduced-motion: reduce) { .btn-l { transition: none; } .btn-l:hover { transform: none; } }
+
+/* Pestañas de las vistas del producto. */
+.tabs-vistas { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+.tab-vista { padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.28); background: transparent; color: rgba(255,255,255,.82); font: 600 15px var(--font-sans), system-ui, sans-serif; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.tab-vista:hover { background: rgba(255,255,255,.1); }
+.tab-vista[aria-selected="true"] { background: var(--c-ticket); border-color: var(--c-ticket); color: var(--c-text-1); }

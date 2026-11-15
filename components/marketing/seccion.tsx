@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 
 // Sección de la landing. Todas usan este componente: mismo contenedor, mismo
-// espacio vertical y mismo encabezado (título + frase de apoyo, alineado a la
-// izquierda). Lo único que cambia entre secciones es el tono de fondo; los
-// estilos viven en app/globals.css (.sec-*).
+// espacio vertical y mismo encabezado (título + frase de apoyo, a la izquierda).
+// Los estilos viven en app/globals.css (.sec-*).
 //
-//   paper: fondo base de la página
-//   white: blanco con filete arriba y abajo
-//   ink:   tinta oscura, para un solo momento de contraste
-export type TonoSeccion = "paper" | "white" | "ink";
+// Solo hay un tono claro y dos fuertes, con propósito:
+//   paper: el fondo base, para explicar
+//   ink:   tinta oscura, para lo que se ve (hero, producto, cierre)
+//   brand: cobalto, reservado para el precio
+export type TonoSeccion = "paper" | "ink" | "brand";
 
 export default function Seccion({ id, tono = "paper", titulo, lede, children, className }: {
   id?: string; tono?: TonoSeccion; titulo?: ReactNode; lede?: ReactNode; children: ReactNode; className?: string;

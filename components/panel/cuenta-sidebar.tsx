@@ -21,7 +21,7 @@ const GRUPOS: { titulo?: string; items: ItemNav[] }[] = [
   {
     items: [
       { seg: "", label: "Resumen", icon: "dashboard" },
-      { seg: "certificacion", label: "Certificación DGII", icon: "scan", roles: ["owner", "admin"], solo: ["pendiente_certificacion", "certificando"] },
+      { seg: "certificacion", label: "Certificación DGII", icon: "sello", roles: ["owner", "admin"], solo: ["pendiente_certificacion", "certificando"] },
     ],
   },
   {
