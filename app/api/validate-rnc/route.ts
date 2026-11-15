@@ -8,8 +8,9 @@ import { limitar } from "@/lib/seguridad/limite-tasa";
 // DGII (y que bloqueen nuestra IP, rompiendo el onboarding de todos). Ahora
 // exige sesión, limita por usuario y recuerda el resultado unos minutos.
 const CACHE_MS = 10 * 60 * 1000;
-// El portal de la DGII puede tardar: dos consultas de hasta 12 s cada una.
-export const maxDuration = 30;
+// El portal de la DGII puede tardar: dos consultas, cada una con un reintento,
+// de hasta 15 s por intento.
+export const maxDuration = 60;
 const cache = new Map<string, { hasta: number; datos: ResultadoConsultaDGII }>();
 
 export async function GET(req: Request) {
