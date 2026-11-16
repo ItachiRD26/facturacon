@@ -48,25 +48,25 @@ export function planSimulacion(filasPaso2: FilaSetPrueba[]): ItemSimulacion[] {
 
   // Los números `orden` 1-9 ya se usaron en envíos reales: no cambiarlos.
   const lista: ItemSimulacion[] = [
-    // ── Grupo 1 ──
-    { orden: 1,  tanda: 1, grupo: 1, tipoECF: "E43", titulo: "Gasto menor", monto: 1500, cuerpo: { itbis: "0" } },
-    { orden: 2,  tanda: 1, grupo: 1, tipoECF: "E44", titulo: "Régimen especial", monto: 2500, cuerpo: { itbis: "0", ...COMPRADOR } },
-    { orden: 3,  tanda: 1, grupo: 1, tipoECF: "E41", titulo: "Compra a un proveedor informal", monto: 5000, cuerpo: { itbis: "0.18", rncProveedor: RNC_PRUEBA, nombreProveedor: NOMBRE_PRUEBA } },
-    { orden: 4,  tanda: 1, grupo: 1, tipoECF: "E45", titulo: "Venta al gobierno", monto: 8000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
-    { orden: 5,  tanda: 2, grupo: 1, tipoECF: "E46", titulo: "Exportación", monto: 12000, cuerpo: { ...COMPRADOR } },
-    { orden: 6,  tanda: 2, grupo: 1, tipoECF: "E47", titulo: "Pago al exterior", monto: 9000, cuerpo: { idExtranjero: "350555123", nombreExtranjero: "BENEFICIARIO EXTERIOR DE PRUEBA" } },
+    // ── Grupo 1: en el mismo orden de tipos que muestra el portal (31, 32, 41, 43, 44, 45, 46, 47) ──
+    { orden: 17, tanda: 1, grupo: 1, tipoECF: "E31", titulo: "Crédito fiscal", monto: 20000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
+    { orden: 18, tanda: 1, grupo: 1, tipoECF: "E31", titulo: "Crédito fiscal", monto: 35000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
+    { orden: 19, tanda: 1, grupo: 1, tipoECF: "E31", titulo: "Crédito fiscal", monto: 50000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
+    { orden: 20, tanda: 1, grupo: 1, tipoECF: "E31", titulo: "Crédito fiscal", monto: 75000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
     { orden: 7,  tanda: 2, grupo: 1, tipoECF: "E32", titulo: "Consumo de RD$250 mil o más", monto: 300000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
-    { orden: 10, tanda: 2, grupo: 1, tipoECF: "E43", titulo: "Gasto menor", monto: 1800, cuerpo: { itbis: "0" } },
+    { orden: 16, tanda: 2, grupo: 1, tipoECF: "E32", titulo: "Consumo de RD$250 mil o más", monto: 310000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
+    { orden: 3,  tanda: 2, grupo: 1, tipoECF: "E41", titulo: "Compra a un proveedor informal", monto: 5000, cuerpo: { itbis: "0.18", rncProveedor: RNC_PRUEBA, nombreProveedor: NOMBRE_PRUEBA } },
+    { orden: 12, tanda: 2, grupo: 1, tipoECF: "E41", titulo: "Compra a un proveedor informal", monto: 5500, cuerpo: { itbis: "0.18", rncProveedor: RNC_PRUEBA, nombreProveedor: NOMBRE_PRUEBA } },
+    { orden: 1,  tanda: 3, grupo: 1, tipoECF: "E43", titulo: "Gasto menor", monto: 1500, cuerpo: { itbis: "0" } },
+    { orden: 10, tanda: 3, grupo: 1, tipoECF: "E43", titulo: "Gasto menor", monto: 1800, cuerpo: { itbis: "0" } },
+    { orden: 2,  tanda: 3, grupo: 1, tipoECF: "E44", titulo: "Régimen especial", monto: 2500, cuerpo: { itbis: "0", ...COMPRADOR } },
     { orden: 11, tanda: 3, grupo: 1, tipoECF: "E44", titulo: "Régimen especial", monto: 2800, cuerpo: { itbis: "0", ...COMPRADOR } },
-    { orden: 12, tanda: 3, grupo: 1, tipoECF: "E41", titulo: "Compra a un proveedor informal", monto: 5500, cuerpo: { itbis: "0.18", rncProveedor: RNC_PRUEBA, nombreProveedor: NOMBRE_PRUEBA } },
-    { orden: 13, tanda: 3, grupo: 1, tipoECF: "E45", titulo: "Venta al gobierno", monto: 8500, cuerpo: { itbis: "0.18", ...COMPRADOR } },
-    { orden: 14, tanda: 3, grupo: 1, tipoECF: "E46", titulo: "Exportación", monto: 12500, cuerpo: { ...COMPRADOR } },
-    { orden: 15, tanda: 4, grupo: 1, tipoECF: "E47", titulo: "Pago al exterior", monto: 9500, cuerpo: { idExtranjero: "350555123", nombreExtranjero: "BENEFICIARIO EXTERIOR DE PRUEBA" } },
-    { orden: 16, tanda: 4, grupo: 1, tipoECF: "E32", titulo: "Consumo de RD$250 mil o más", monto: 310000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
-    { orden: 17, tanda: 4, grupo: 1, tipoECF: "E31", titulo: "Crédito fiscal", monto: 20000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
-    { orden: 18, tanda: 4, grupo: 1, tipoECF: "E31", titulo: "Crédito fiscal", monto: 35000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
-    { orden: 19, tanda: 5, grupo: 1, tipoECF: "E31", titulo: "Crédito fiscal", monto: 50000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
-    { orden: 20, tanda: 5, grupo: 1, tipoECF: "E31", titulo: "Crédito fiscal", monto: 75000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
+    { orden: 4,  tanda: 4, grupo: 1, tipoECF: "E45", titulo: "Venta al gobierno", monto: 8000, cuerpo: { itbis: "0.18", ...COMPRADOR } },
+    { orden: 13, tanda: 4, grupo: 1, tipoECF: "E45", titulo: "Venta al gobierno", monto: 8500, cuerpo: { itbis: "0.18", ...COMPRADOR } },
+    { orden: 5,  tanda: 4, grupo: 1, tipoECF: "E46", titulo: "Exportación", monto: 12000, cuerpo: { ...COMPRADOR } },
+    { orden: 14, tanda: 4, grupo: 1, tipoECF: "E46", titulo: "Exportación", monto: 12500, cuerpo: { ...COMPRADOR } },
+    { orden: 6,  tanda: 5, grupo: 1, tipoECF: "E47", titulo: "Pago al exterior", monto: 9000, cuerpo: { idExtranjero: "350555123", nombreExtranjero: "BENEFICIARIO EXTERIOR DE PRUEBA" } },
+    { orden: 15, tanda: 5, grupo: 1, tipoECF: "E47", titulo: "Pago al exterior", monto: 9500, cuerpo: { idExtranjero: "350555123", nombreExtranjero: "BENEFICIARIO EXTERIOR DE PRUEBA" } },
     // ── Grupo 2: notas (después de que todo el grupo 1 esté aceptado) ──
     {
       orden: 8, tanda: 6, grupo: 2, tipoECF: "E33", titulo: "Nota de débito", monto: 500,
