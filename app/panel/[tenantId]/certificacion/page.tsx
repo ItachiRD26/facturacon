@@ -6,8 +6,8 @@ import type { TipoECF } from "@/types";
 import type { EmpresaConfig } from "@/types/tenant";
 import type { FilaSetPrueba, ItemAC, FacturaPrueba } from "@/lib/certificacion/tipos";
 import { planSimulacion, marcaSimulacion, type ItemSimulacion } from "@/lib/certificacion/plan-simulacion";
-import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder";
 import VideoPlaceholder from "@/components/marketing/video-placeholder";
+import RepresentacionesImpresas from "@/components/certificacion/representaciones-impresas";
 import InfoTooltip from "@/components/panel/info-tooltip";
 import JornadaProgreso from "@/components/panel/jornada-progreso";
 
@@ -700,8 +700,6 @@ export default function CertificacionPage() {
 
   const totalPaso2 = Object.keys(filas).length;
   const enviadosPaso2 = Object.values(filas).filter((f) => f.estadoEnvio === "enviado" || f.estadoEnvio === "aceptado").length;
-  const candidatosRFCE = Object.values(filas).filter((f) => f.tipoECF === "E32" && f.montoTotal < 250000 && (f.estadoEnvio === "enviado" || f.estadoEnvio === "aceptado"));
-  const pruebasRFCE = Object.values(pruebas).filter((p) => p.tipoECF === "E32" && p.montoTotal < 250000 && p.estadoEnvio === "enviado");
 
   // Una sola frase, calculada del progreso real, para que el usuario nunca
   // tenga que mirar la tabla de pasos y adivinar qué le toca hacer ahora.
@@ -1246,28 +1244,32 @@ export default function CertificacionPage() {
 
       {paso === 5 && (
         <Card>
-          <PasoTitulo n={5} ayuda="La 'representación impresa' es cómo se ve tu factura en papel o PDF. La DGII pide un ejemplo de cada tipo de comprobante para confirmar que coincide con los datos que ya enviaste por sistema. RFCE es el resumen corto que se envía en vez de la factura completa cuando un consumo es menor a RD$250,000.">
+          <PasoTitulo n={5} ayuda="La representación impresa es cómo se ve tu factura en papel o PDF. La DGII pide un ejemplo de cada tipo de comprobante para confirmar que coincide, dato por dato, con lo que ya enviaste por sistema, y que su código QR se puede leer.">
             Paso 5 — Representación impresa
           </PasoTitulo>
-          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
-            En el portal, la DGII te pide subir la representación impresa (PDF) de tus comprobantes:
-            <strong> un archivo por cada tipo</strong> de e-CF, no uno por cada comprobante. Después
-            ella valida lo que subiste (paso 6) — ahí solo toca esperar su respuesta.
-            Para los consumos menores a RD$250,000 (E32) también te pide el XML completo firmado;
-            esos los generamos nosotros y los descargas abajo.
+          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 12 }}>
+            En el portal la DGII te pide <strong>un PDF por cada tipo de comprobante (11 casillas)</strong>, no uno por cada
+            comprobante enviado. Ya los armamos por ti a partir de los e-CF que la DGII aceptó en el Paso 4: cada PDF lleva los
+            mismos datos que se enviaron, el código de seguridad, la fecha de firma y el código QR. La suma de todos los archivos
+            no puede pasar de 10 MB (los tuyos pesan unos pocos KB).
           </p>
-          <TuYNosotros tu="Descargar cada XML de aquí y subirlo al portal de la DGII." nosotros="Generar y firmar el XML completo de cada comprobante." />
-          <ScreenshotPlaceholder titulo="Dónde subir el XML en el portal" descripcion="Sección del portal de la DGII donde se sube el XML firmado de los comprobantes de consumo menores." />
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
-            {[...candidatosRFCE.map((f) => f.encf), ...pruebasRFCE.map((p) => p.eCF)].map((encf) => (
-              <a key={encf} href={`/api/certificacion/descargar-xml?t=${tenantId}&encf=${encf}`} style={{ fontSize: 13, color: "var(--c-brand)", fontWeight: 600 }}>
-                ⬇ {encf}.xml
-              </a>
-            ))}
-            {candidatosRFCE.length === 0 && pruebasRFCE.length === 0 && (
-              <p style={{ fontSize: 12, color: "var(--c-text-3)" }}>Todavía no hay e-CF RFCE enviados.</p>
-            )}
+          <div style={{ fontSize: 12, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 12px", marginBottom: 14 }}>
+            <strong>⏱ La verificación toma entre 3 y 24 horas.</strong> Después de subir los PDF, la DGII los revisa (Paso 6 del portal).
+            El tiempo depende del horario y de la disponibilidad de verificación de la DGII. No hace falta que te quedes esperando:
+            puedes cerrar el asistente y volver más tarde.
           </div>
+          <TuYNosotros tu="Descargar los PDF y subir cada uno en su casilla del portal." nosotros="Armar cada representación impresa con el XML firmado que ya se envió, con su QR." />
+          {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+          <img
+            src="/certificacion/subir-representaciones-impresas-paso-5.webp" alt="Portal de la DGII, Paso 5: una casilla Elegir archivo por cada tipo de comprobante (31, 32 mayor o igual a 250 mil, 33, 34, 41, 43, 44, 45, 46, 47 y 32 menor a 250 mil)"
+            style={{ width: "100%", borderRadius: 10, border: "1px solid var(--c-border)", boxShadow: "0 12px 30px rgba(17,20,57,0.10)", margin: "4px 0 16px" }}
+          />
+          <ol style={{ margin: "0 0 14px", paddingLeft: 18, fontSize: 13, lineHeight: 1.7 }}>
+            <li>Descarga los PDF aquí abajo (uno por uno o todos juntos).</li>
+            <li>En el portal, en cada casilla pulsa <strong>«Elegir archivo»</strong> y escoge el PDF del mismo tipo (el nombre dice el tipo: <em>RI-31-…</em>, <em>RI-34-…</em>).</li>
+            <li>Al terminar las 11, envía. Luego toca esperar la validación de la DGII.</li>
+          </ol>
+          <RepresentacionesImpresas tenantId={tenantId} />
           <SiguientePaso n={6} onClick={() => setPaso(6)} />
         </Card>
       )}
