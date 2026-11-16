@@ -13,7 +13,7 @@ import type { Cliente, Factura, LineaServicio, TipoECF } from "@/types";
 import type { FilaSetPrueba } from "@/lib/certificacion/tipos";
 import type { EmpresaConfig } from "@/types/tenant";
 
-const TIPOS_VALIDOS: TipoECF[] = ["E32", "E33", "E34", "E41", "E43", "E44", "E45", "E46", "E47"];
+const TIPOS_VALIDOS: TipoECF[] = ["E31", "E32", "E33", "E34", "E41", "E43", "E44", "E45", "E46", "E47"];
 
 // Crea, firma y envía un e-CF de prueba "a mano" (Paso 4 — pruebas de
 // simulación que la DGII exige interactivamente, no desde el Excel del Paso
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const rnc = String(body?.rncProveedor ?? "").replace(/\D/g, "");
     if (!rnc) return NextResponse.json({ error: "E41 necesita el RNC del proveedor" }, { status: 400 });
     cliente = { id: `prueba-${eCF}`, rnc, nombre: String(body?.nombreProveedor ?? "Proveedor de prueba"), direccion: "", ciudad: "", contacto: "", telefono: "", tipo: "juridica" };
-  } else if (tipoECF === "E44" || tipoECF === "E45") {
+  } else if (tipoECF === "E31" || tipoECF === "E44" || tipoECF === "E45") {
     const rnc = String(body?.rncComprador ?? "").replace(/\D/g, "") || RNC_PRUEBA_DGII;
     cliente = { id: `prueba-${eCF}`, rnc, nombre: String(body?.nombreComprador ?? NOMBRE_PRUEBA_DGII), direccion: "", ciudad: "", contacto: "", telefono: "", tipo: "juridica" };
   } else if (tipoECF === "E46") {
@@ -116,6 +116,7 @@ export async function POST(req: NextRequest) {
     const xmlFirmado  = await firmarXML(xmlSinFirma, p12Buffer, password);
 
     let trackId: string;
+    let estadoDGII: string | undefined;
     const esRFCE = tipoECF === "E32" && monto < LIMITE_RFCE;
     // Se guarda siempre el XML firmado: el usuario puede descargarlo (y los RFCE lo necesitan para el portal).
     const codigoSeguridad = calcularCodigoSeguridad(extraerSignatureValue(xmlFirmado));
@@ -127,18 +128,19 @@ export async function POST(req: NextRequest) {
       const rfceXmlFirmado  = await firmarXML(rfceXmlSinFirma, p12Buffer, password);
       const resultado = await enviarRFCE(rfceXmlFirmado, tenant, token, eCF);
       trackId = resultado.trackId || resultado.estado;
+      estadoDGII = resultado.estado || undefined; // el RFCE responde su estado final en la misma llamada
     } else {
       trackId = await enviarECF(xmlFirmado, tenant, token, eCF);
     }
 
     const registro: FacturaPrueba = {
       id: eCF, tipoECF, eCF, fecha: factura.fecha, descripcion, montoTotal: monto,
-      estadoEnvio: "enviado", trackId, creadoEn: new Date().toISOString(),
+      estadoEnvio: "enviado", trackId, estadoDGII, creadoEn: new Date().toISOString(),
     };
     await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("facturas_prueba")
       .set({ [eCF]: registro }, { merge: true });
 
-    return NextResponse.json({ ok: true, eCF, trackId });
+    return NextResponse.json({ ok: true, eCF, trackId, estadoDGII });
   } catch (e) {
     const mensaje = e instanceof Error ? e.message : String(e);
     const registro: FacturaPrueba = {

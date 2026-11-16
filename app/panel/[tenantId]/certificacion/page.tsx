@@ -634,9 +634,14 @@ export default function CertificacionPage() {
           body: JSON.stringify({ tenantId, tipoECF: it.tipoECF, descripcion: `${marcaSimulacion(it.orden)} · ${it.titulo}`, monto: it.monto, ...it.cuerpo }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(`${it.tipoECF} (${it.titulo}): ${data.error}`);
-        enviados.push(data.eCF);
-        setPruebas((p) => ({ ...p, [data.eCF]: { id: data.eCF, tipoECF: it.tipoECF, eCF: data.eCF, fecha: "", descripcion: `${marcaSimulacion(it.orden)} · ${it.titulo}`, montoTotal: it.monto, estadoEnvio: "enviado", trackId: data.trackId, creadoEn: new Date().toISOString() } }));
+        if (!res.ok) {
+          // Rechazo inmediato (los resúmenes RFCE responden al instante): la DGII reinicia el lote.
+          if (/rechazad/i.test(String(data.error))) await reiniciarSimulacionLocal();
+          throw new Error(`${it.tipoECF} (${it.titulo}): ${data.error}`);
+        }
+        // Los resúmenes RFCE ya traen su estado final; el resto se consulta por trackId.
+        if (!data.estadoDGII) enviados.push(data.eCF);
+        setPruebas((p) => ({ ...p, [data.eCF]: { id: data.eCF, tipoECF: it.tipoECF, eCF: data.eCF, fecha: "", descripcion: `${marcaSimulacion(it.orden)} · ${it.titulo}`, montoTotal: it.monto, estadoEnvio: "enviado", trackId: data.trackId, estadoDGII: data.estadoDGII, creadoEn: new Date().toISOString() } }));
         await sleep(1200);
       }
       // Espera la respuesta de la DGII de cada uno (máx. ~2 min).
@@ -1122,9 +1127,11 @@ export default function CertificacionPage() {
             Paso 4 — Pruebas de simulación
           </PasoTitulo>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 12 }}>
-            Ya no tienes que inventar datos: el sistema genera cada comprobante, lo firma y lo envía a la DGII. Van en
-            <strong> tandas, en orden</strong>: la siguiente se habilita cuando la DGII acepta todos los de la anterior,
-            así nunca se envía encima de un error (un rechazo reinicia el lote en la DGII y las secuencias gastadas no se reutilizan).
+            Ya no tienes que inventar datos: el sistema genera cada comprobante, lo firma y lo envía a la DGII, siguiendo el
+            <strong> orden oficial</strong>: primero 31, 32 (≥ 250 mil), 41, 43, 44, 45, 46 y 47; luego las notas 33 y 34; luego los
+            resúmenes de consumo. Van en tandas: la siguiente se habilita cuando la DGII acepta todos los de la anterior, así nunca
+            se envía encima de un error (un rechazo reinicia el lote y las secuencias gastadas no se reutilizan). Lo único que
+            descargas y subes tú son las facturas de consumo menores de 250 mil, al final.
           </p>
           <TuYNosotros tu="Pulsar «Enviar tanda» y esperar que la DGII acepte." nosotros="Generar, firmar y enviar cada comprobante, y consultar su resultado." />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "16px 0 10px" }}>
@@ -1156,9 +1163,10 @@ export default function CertificacionPage() {
                   <tbody>
                     {items.map((it) => {
                       const p = pruebaDe(it);
+                      const pos = plan.indexOf(it) + 1;
                       return (
                         <tr key={it.orden} style={{ borderTop: "1px solid var(--c-border)" }}>
-                          <td style={{ padding: "8px 14px", width: 34, color: "var(--c-text-3)" }}>{it.orden}</td>
+                          <td style={{ padding: "8px 14px", width: 34, color: "var(--c-text-3)" }}>{pos}</td>
                           <td style={{ padding: 8, fontWeight: 600, width: 54 }}>{it.tipoECF}</td>
                           <td style={{ padding: 8 }}>
                             {it.titulo}
@@ -1171,11 +1179,6 @@ export default function CertificacionPage() {
                           <td style={{ padding: 8 }}>
                             {p ? <Estado estado={p.estadoDGII ?? p.estadoEnvio} /> : <span style={{ color: "var(--c-text-3)" }}>pendiente</span>}
                           </td>
-                          <td style={{ padding: "8px 14px", textAlign: "right" }}>
-                            {p && p.estadoEnvio !== "error" && (
-                              <a href={`/api/certificacion/descargar-xml?t=${tenantId}&encf=${p.eCF}`} style={{ color: "var(--c-brand)", fontWeight: 600 }}>⬇ XML</a>
-                            )}
-                          </td>
                         </tr>
                       );
                     })}
@@ -1184,6 +1187,39 @@ export default function CertificacionPage() {
               </div>
             );
           })}
+
+          {(() => {
+            const consumo = plan.filter((i) => i.tipoECF === "E32" && i.monto < 250000)
+              .map((i) => pruebaDe(i)).filter((p): p is FacturaPrueba => !!p && p.estadoEnvio !== "error" && !/rechazad|reiniciad/i.test(p.estadoDGII ?? ""));
+            if (consumo.length === 0) return null;
+            const subidos = consumo.filter((p) => xmlSubidos[p.eCF]).length;
+            return (
+              <div style={{ marginTop: 20, padding: 18, border: "1px solid var(--c-border)", borderRadius: 12, background: "var(--c-bg)" }}>
+                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Falta un paso tuyo: subir las facturas de consumo en el portal</div>
+                <p style={{ fontSize: 12, color: "var(--c-text-3)", margin: "0 0 12px" }}>
+                  Cuando en el portal los resúmenes de consumo aparezcan como aceptados, la DGII pide cargar a mano las facturas completas.
+                  En el recuadro <strong>«Facturas de consumo &lt; 250Mil»</strong> pulsa «Elegir archivo», escoge el XML y pulsa «Enviar». Repite con cada uno.
+                </p>
+                {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+                <img
+                  src="/certificacion/subir-facturas-consumo-250mil-paso-2.webp" alt="Portal de la DGII: recuadro «Facturas de consumo menores a 250Mil» con Elegir archivo y Enviar"
+                  style={{ width: "100%", borderRadius: 10, border: "1px solid var(--c-border)", marginBottom: 12 }}
+                />
+                <div style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 8 }}>{subidos} de {consumo.length} marcados como subidos</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {consumo.map((p) => (
+                    <div key={p.eCF} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 12px", background: "var(--c-surface, #fff)", border: "1px solid var(--c-border)", borderRadius: 8 }}>
+                      <a href={`/api/certificacion/descargar-xml?t=${tenantId}&encf=${p.eCF}`} style={{ fontSize: 13, color: "var(--c-brand)", fontWeight: 600 }}>⬇ Descargar {p.eCF}.xml</a>
+                      <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", flexShrink: 0 }}>
+                        <input type="checkbox" checked={!!xmlSubidos[p.eCF]} onChange={(e) => marcarXmlSubido(p.eCF, e.target.checked)} />
+                        Ya lo subí
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {errorTanda && <div style={{ fontSize: 12, color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: 10, marginTop: 4 }}>{errorTanda}</div>}
 
