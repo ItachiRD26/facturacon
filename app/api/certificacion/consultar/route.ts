@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
   if (!verif.ok) return verif.response;
   if (!encf) return NextResponse.json({ error: "Falta el eNCF" }, { status: 400 });
 
-  const setRef = adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("set_paso2");
+  const certRef = adminDb.collection("tenants").doc(tenantId).collection("certificacion");
+  // origen=prueba → comprobante de simulación del Paso 4 (facturas_prueba); si no, fila del set del Paso 2.
+  const esPrueba = req.nextUrl.searchParams.get("origen") === "prueba";
+  const setRef = esPrueba ? certRef.doc("facturas_prueba") : certRef.doc("set_paso2");
   const [setSnap, empresaSnap] = await Promise.all([
     setRef.get(),
     adminDb.collection("tenants").doc(tenantId).collection("config").doc("empresa").get(),
@@ -25,8 +28,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Falta el set de pruebas o los datos de empresa" }, { status: 400 });
   }
 
-  const filas = (setSnap.data()?.filas ?? {}) as Record<string, FilaSetPrueba>;
-  const fila = filas[encf];
+  const campo = esPrueba ? encf : `filas.${encf}`;
+  const fila = esPrueba
+    ? (setSnap.data()?.[encf] as { trackId?: string } | undefined)
+    : ((setSnap.data()?.filas ?? {}) as Record<string, FilaSetPrueba>)[encf];
   if (!fila?.trackId) return NextResponse.json({ error: `${encf} no tiene trackId — aún no se envió` }, { status: 400 });
 
   const empresa = empresaSnap.data() as EmpresaConfig;
@@ -36,7 +41,7 @@ export async function GET(req: NextRequest) {
     const token = await getToken(tenant, async () => obtenerCertificado(tenantId));
     const resultado = await consultarEstado(fila.trackId, tenant, token);
 
-    await setRef.update({ [`filas.${encf}.estadoDGII`]: resultado.estado });
+    await setRef.update({ [`${campo}.estadoDGII`]: resultado.estado, [`${campo}.mensajesDGII`]: resultado.mensajes });
     return NextResponse.json(resultado);
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 502 });

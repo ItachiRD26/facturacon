@@ -84,7 +84,8 @@ export async function POST(req: NextRequest) {
   const factura: Factura = {
     id: eCF, noFactura: eCF, eCF, tipoECF,
     fecha: String(body?.fecha ?? new Date().toISOString().slice(0, 10)),
-    vencimientoECF: "2099-12-31",
+    // Valor autorizado por la DGII para ese tipo: sale de las filas del Excel del Paso 2 (no se adivina).
+    vencimientoECF: filasPaso2.find((x) => x.tipoECF === tipoECF && x.vencimientoECF && x.vencimientoECF !== "2099-12-31")?.vencimientoECF ?? "2099-12-31",
     terminos: "Contado",
     clienteId: cliente?.id ?? "",
     items: [linea],
@@ -116,11 +117,11 @@ export async function POST(req: NextRequest) {
 
     let trackId: string;
     const esRFCE = tipoECF === "E32" && monto < LIMITE_RFCE;
+    // Se guarda siempre el XML firmado: el usuario puede descargarlo (y los RFCE lo necesitan para el portal).
+    const codigoSeguridad = calcularCodigoSeguridad(extraerSignatureValue(xmlFirmado));
+    await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("ecf_firmados")
+      .set({ [eCF]: { xmlFirmado, codigoSeguridad, guardadoEn: new Date().toISOString() } }, { merge: true });
     if (esRFCE) {
-      const signatureValue  = extraerSignatureValue(xmlFirmado);
-      const codigoSeguridad = calcularCodigoSeguridad(signatureValue);
-      await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("ecf_firmados")
-        .set({ [eCF]: { xmlFirmado, codigoSeguridad, guardadoEn: new Date().toISOString() } }, { merge: true });
 
       const rfceXmlSinFirma = buildRFCEXml(factura, empresa, codigoSeguridad, cliente);
       const rfceXmlFirmado  = await firmarXML(rfceXmlSinFirma, p12Buffer, password);

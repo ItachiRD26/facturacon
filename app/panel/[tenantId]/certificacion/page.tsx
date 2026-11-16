@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import type { TipoECF } from "@/types";
 import type { EmpresaConfig } from "@/types/tenant";
 import type { FilaSetPrueba, ItemAC, FacturaPrueba } from "@/lib/certificacion/tipos";
+import { planSimulacion, marcaSimulacion, type ItemSimulacion } from "@/lib/certificacion/plan-simulacion";
 import ScreenshotPlaceholder from "@/components/marketing/screenshot-placeholder";
 import VideoPlaceholder from "@/components/marketing/video-placeholder";
 import InfoTooltip from "@/components/panel/info-tooltip";
@@ -260,6 +261,8 @@ export default function CertificacionPage() {
   const [formPrueba, setFormPrueba] = useState<Record<string, string>>({});
   const [creandoPrueba, setCreandoPrueba] = useState(false);
   const [errorPrueba, setErrorPrueba] = useState("");
+  const [enviandoTanda, setEnviandoTanda] = useState<number | null>(null);
+  const [errorTanda, setErrorTanda] = useState("");
 
   // Paso 6 — evidencia de que la DGII llamó a nuestros servicios receptor
   const [receptor, setReceptor] = useState<EstadoReceptor | null>(null);
@@ -584,6 +587,90 @@ export default function CertificacionPage() {
     }
   }
 
+  // ── Paso 4 · simulación automática por tandas ──────────────────
+  const esFinal = (e?: string) => /aceptad|rechazad/i.test(e ?? "");
+  const esAceptado = (e?: string) => /aceptad/i.test(e ?? "");
+
+  // El comprobante guardado que corresponde a un lugar del plan (el último, si hubo reintentos).
+  function pruebaDe(it: ItemSimulacion): FacturaPrueba | undefined {
+    return Object.values(pruebas)
+      .filter((p) => p.descripcion.startsWith(marcaSimulacion(it.orden) + " "))
+      .sort((a, b) => a.creadoEn.localeCompare(b.creadoEn))
+      .pop();
+  }
+
+  async function consultarPrueba(eCF: string) {
+    try {
+      const res = await fetch(`/api/certificacion/consultar?t=${tenantId}&encf=${eCF}&origen=prueba`);
+      const data = await res.json();
+      if (!res.ok) return;
+      setPruebas((p) => p[eCF] ? { ...p, [eCF]: { ...p[eCF], estadoDGII: data.estado, mensajesDGII: data.mensajes } } : p);
+      return data as { estado?: string; mensajes?: string[] };
+    } catch { /* se reintenta en el siguiente ciclo */ }
+  }
+
+  async function reiniciarSimulacionLocal() {
+    try {
+      await fetch("/api/certificacion/reiniciar-simulacion", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tenantId }),
+      });
+    } catch { /* si falla, igual se refleja en pantalla */ }
+    setPruebas((p) => Object.fromEntries(Object.entries(p).map(([k, v]) =>
+      [k, v.descripcion.startsWith("Simulación #") && !/rechazad|reiniciad/i.test(v.estadoDGII ?? "") ? { ...v, estadoDGII: "Reiniciado" } : v])));
+  }
+
+  async function enviarTanda(plan: ItemSimulacion[], tanda: number) {
+    setErrorTanda(""); setEnviandoTanda(tanda);
+    try {
+      const items = plan.filter((i) => i.tanda === tanda);
+      const enviados: string[] = [];
+      for (const it of items) {
+        if (cancelado.current) return;
+        const previo = pruebaDe(it);
+        // Ya enviado y no rechazado: no se duplica (cada envío gasta una secuencia que no se puede reutilizar).
+        if (previo && previo.estadoEnvio === "enviado" && !/rechazad|reiniciad/i.test(previo.estadoDGII ?? "")) { enviados.push(previo.eCF); continue; }
+        const res = await fetch("/api/certificacion/crear-prueba", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenantId, tipoECF: it.tipoECF, descripcion: `${marcaSimulacion(it.orden)} · ${it.titulo}`, monto: it.monto, ...it.cuerpo }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(`${it.tipoECF} (${it.titulo}): ${data.error}`);
+        enviados.push(data.eCF);
+        setPruebas((p) => ({ ...p, [data.eCF]: { id: data.eCF, tipoECF: it.tipoECF, eCF: data.eCF, fecha: "", descripcion: `${marcaSimulacion(it.orden)} · ${it.titulo}`, montoTotal: it.monto, estadoEnvio: "enviado", trackId: data.trackId, creadoEn: new Date().toISOString() } }));
+        await sleep(1200);
+      }
+      // Espera la respuesta de la DGII de cada uno (máx. ~2 min).
+      const pendientes = new Set(enviados);
+      const ini = Date.now();
+      while (pendientes.size > 0 && Date.now() - ini < 120_000 && !cancelado.current) {
+        await sleep(4000);
+        for (const eCF of [...pendientes]) {
+          const r = await consultarPrueba(eCF);
+          if (r && esFinal(r.estado)) {
+            pendientes.delete(eCF);
+            if (/rechazad/i.test(r.estado ?? "")) {
+              await reiniciarSimulacionLocal();
+              throw new Error(`La DGII rechazó ${eCF}: ${(r.mensajes ?? []).slice(0, 4).join(" | ") || "sin detalle"}. La DGII reinicia el lote cuando rechaza uno: los demás comprobantes de simulación quedaron en «Reiniciado» y se regeneran con eNCF nuevos. Pégame este mensaje antes de reintentar.`);
+            }
+          }
+        }
+      }
+      if (pendientes.size > 0) setErrorTanda("La DGII todavía no responde algunos. Espera un momento y pulsa «Actualizar estado».");
+    } catch (e) {
+      setErrorTanda(e instanceof Error ? e.message : "No se pudo enviar la tanda");
+    } finally {
+      setEnviandoTanda(null);
+    }
+  }
+
+  async function actualizarEstadoSimulacion(plan: ItemSimulacion[]) {
+    setErrorTanda("");
+    for (const it of plan) {
+      const p = pruebaDe(it);
+      if (p && p.trackId && !esFinal(p.estadoDGII)) await consultarPrueba(p.eCF);
+    }
+  }
+
   // ── Paso 6 ──────────────────────────────────────────────────────
   async function finalizar() {
     setFinalizando(true);
@@ -864,8 +951,12 @@ export default function CertificacionPage() {
             src="/certificacion/donde-descargar-set-prueba-paso-2.webp" alt="Paso 2 en la OFV: botón verde «Descargar set de prueba», que baja el archivo Set_Pruebas_eCF.xlsx"
             style={{ width: "100%", borderRadius: 10, border: "1px solid var(--c-border)", boxShadow: "0 12px 30px rgba(17,20,57,0.10)" }}
           />
-          <div style={{ marginTop: 16 }}>
-            <SubidaArchivo onFile={subirSet} cargando={subiendoSet} etiqueta="Subir Excel del set de pruebas" nombreArchivo={nombreArchivoSet} />
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+              <span style={{ background: "var(--c-brand)", color: "#fff", borderRadius: 999, padding: "2px 9px", marginRight: 8 }}>→</span>
+              Sube aquí el Excel que descargaste de la DGII
+            </div>
+            <SubidaArchivo grande onFile={subirSet} cargando={subiendoSet} etiqueta="Haz clic para elegir el Excel del set de pruebas" nombreArchivo={nombreArchivoSet} />
           </div>
           {totalPaso2 > 0 && (
             <>
@@ -975,8 +1066,12 @@ export default function CertificacionPage() {
             src="/certificacion/descargar-aprobaciones-comerciales-paso-3.webp" alt="Paso 3 en la OFV: botón verde «Descargar aprobaciones comerciales», que baja el Excel con las 11 aprobaciones del set de pruebas"
             style={{ width: "100%", borderRadius: 10, border: "1px solid var(--c-border)", boxShadow: "0 12px 30px rgba(17,20,57,0.10)" }}
           />
-          <div style={{ marginTop: 16 }}>
-            <SubidaArchivo onFile={subirAC} cargando={subiendoAC} etiqueta="Subir Excel de Aprobación Comercial" nombreArchivo={nombreArchivoAC} />
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+              <span style={{ background: "var(--c-brand)", color: "#fff", borderRadius: 999, padding: "2px 9px", marginRight: 8 }}>→</span>
+              Sube aquí el Excel de aprobaciones que descargaste de la DGII
+            </div>
+            <SubidaArchivo grande onFile={subirAC} cargando={subiendoAC} etiqueta="Haz clic para elegir el Excel de Aprobación Comercial" nombreArchivo={nombreArchivoAC} />
           </div>
           {Object.keys(acItems).length > 0 && (
             <>
@@ -1016,100 +1111,102 @@ export default function CertificacionPage() {
         </Card>
       )}
 
-      {paso === 4 && (
+      {paso === 4 && (() => {
+        const plan = planSimulacion(Object.values(filas));
+        const tandas = [...new Set(plan.map((i) => i.tanda))];
+        const tandaCompleta = (t: number) => plan.filter((i) => i.tanda === t).every((i) => esAceptado(pruebaDe(i)?.estadoDGII));
+        const aceptados = plan.filter((i) => esAceptado(pruebaDe(i)?.estadoDGII)).length;
+        return (
         <Card>
-          <PasoTitulo n={4} ayuda="A diferencia del Paso 2 (donde subiste un Excel con casos ya armados por la DGII), aquí tú mismo creas comprobantes de prueba llenando un formulario simple, simulando ventas o compras reales — para que la DGII confirme que tu sistema funciona en distintos escenarios, no solo en el set fijo.">
-            Paso 4 — Pruebas interactivas
+          <PasoTitulo n={4} ayuda="La DGII quiere ver que tu sistema genera y envía comprobantes de todos los tipos, con datos que parezcan de una operación real. Nosotros los armamos con datos de ejemplo válidos, los firmamos con tu certificado y los enviamos; tú no escribes nada.">
+            Paso 4 — Pruebas de simulación
           </PasoTitulo>
-          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
-            La DGII también pide crear comprobantes &quot;a mano&quot; (no del Excel) para simular
-            operación real. Crea los que tu certificación requiera — la DGII te dirá cuántos de
-            cada tipo.
+          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 12 }}>
+            Ya no tienes que inventar datos: el sistema genera cada comprobante, lo firma y lo envía a la DGII. Van en
+            <strong> tandas, en orden</strong>: la siguiente se habilita cuando la DGII acepta todos los de la anterior,
+            así nunca se envía encima de un error (un rechazo reinicia el lote en la DGII y las secuencias gastadas no se reutilizan).
           </p>
-          <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-            <select value={tipoPrueba} onChange={(e) => { setTipoPrueba(e.target.value as TipoECF); setFormPrueba({}); }} style={{ fontSize: 13, padding: 8 }}>
-              {(["E32", "E33", "E34", "E41", "E43", "E44", "E45", "E46", "E47"] as TipoECF[]).map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+          <TuYNosotros tu="Pulsar «Enviar tanda» y esperar que la DGII acepte." nosotros="Generar, firmar y enviar cada comprobante, y consultar su resultado." />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "16px 0 10px" }}>
+            <strong style={{ fontSize: 13 }}>{aceptados} de {plan.length} aceptados por la DGII</strong>
+            <button onClick={() => actualizarEstadoSimulacion(plan)} disabled={enviandoTanda !== null} style={{ fontSize: 12, padding: "6px 12px", border: "1px solid var(--c-border)", borderRadius: 6, background: "transparent", cursor: "pointer" }}>
+              ↻ Actualizar estado
+            </button>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 420 }}>
-            <input placeholder="Descripción" value={formPrueba.descripcion ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, descripcion: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
-            <input placeholder="Monto (sin ITBIS)" type="number" step="0.01" value={formPrueba.monto ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, monto: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
+          {tandas.map((t) => {
+            const items = plan.filter((i) => i.tanda === t);
+            const desbloqueada = t === 1 || tandaCompleta(t - 1);
+            const completa = tandaCompleta(t);
+            const sinPaso2 = items.some((i) => i.bloqueo);
+            return (
+              <div key={t} style={{ marginBottom: 14, border: `1px solid ${completa ? "#86efac" : "var(--c-border)"}`, borderRadius: 10, overflow: "hidden", opacity: desbloqueada ? 1 : 0.6 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "10px 14px", background: completa ? "#f0fdf4" : "var(--c-bg)", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>
+                    {completa ? "✅" : desbloqueada ? "▶" : "🔒"} Tanda {t} de {tandas.length}
+                    <span style={{ fontWeight: 400, color: "var(--c-text-3)" }}> · {items.length} comprobante{items.length === 1 ? "" : "s"}</span>
+                  </span>
+                  {!completa && (
+                    <Boton onClick={() => enviarTanda(plan, t)} disabled={!desbloqueada || sinPaso2 || enviandoTanda !== null}>
+                      {enviandoTanda === t ? "Enviando y esperando a la DGII…" : desbloqueada ? `Enviar tanda ${t}` : `Se habilita al aceptarse la tanda ${t - 1}`}
+                    </Boton>
+                  )}
+                </div>
+                <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                  <tbody>
+                    {items.map((it) => {
+                      const p = pruebaDe(it);
+                      return (
+                        <tr key={it.orden} style={{ borderTop: "1px solid var(--c-border)" }}>
+                          <td style={{ padding: "8px 14px", width: 34, color: "var(--c-text-3)" }}>{it.orden}</td>
+                          <td style={{ padding: 8, fontWeight: 600, width: 54 }}>{it.tipoECF}</td>
+                          <td style={{ padding: 8 }}>
+                            {it.titulo}
+                            {it.bloqueo && <div style={{ color: "#991b1b", fontSize: 11 }}>{it.bloqueo}</div>}
+                            {p && /rechazad/i.test(p.estadoDGII ?? "") && p.mensajesDGII && p.mensajesDGII.length > 0 && (
+                              <div style={{ color: "#991b1b", fontSize: 11, marginTop: 4, userSelect: "text" }}>{p.mensajesDGII.slice(0, 6).join(" · ")}</div>
+                            )}
+                          </td>
+                          <td style={{ padding: 8, color: "var(--c-text-3)" }}>{p?.eCF ?? "—"}</td>
+                          <td style={{ padding: 8 }}>
+                            {p ? <Estado estado={p.estadoDGII ?? p.estadoEnvio} /> : <span style={{ color: "var(--c-text-3)" }}>pendiente</span>}
+                          </td>
+                          <td style={{ padding: "8px 14px", textAlign: "right" }}>
+                            {p && p.estadoEnvio !== "error" && (
+                              <a href={`/api/certificacion/descargar-xml?t=${tenantId}&encf=${p.eCF}`} style={{ color: "var(--c-brand)", fontWeight: 600 }}>⬇ XML</a>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
 
-            {["E32", "E41", "E44", "E45"].includes(tipoPrueba) && (
-              <select value={formPrueba.itbis ?? "0.18"} onChange={(e) => setFormPrueba((f) => ({ ...f, itbis: e.target.value }))} style={{ padding: 8, fontSize: 13 }}>
-                <option value="0.18">ITBIS 18%</option><option value="0.16">ITBIS 16%</option><option value="0">Exento</option>
+          {errorTanda && <div style={{ fontSize: 12, color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: 10, marginTop: 4 }}>{errorTanda}</div>}
+
+          <details style={{ marginTop: 16 }}>
+            <summary style={{ fontSize: 12, color: "var(--c-text-3)", cursor: "pointer" }}>Avanzado: crear un comprobante a mano</summary>
+            <div style={{ display: "flex", gap: 10, margin: "12px 0", flexWrap: "wrap" }}>
+              <select value={tipoPrueba} onChange={(e) => { setTipoPrueba(e.target.value as TipoECF); setFormPrueba({}); }} style={{ fontSize: 13, padding: 8 }}>
+                {(["E32", "E33", "E34", "E41", "E43", "E44", "E45", "E46", "E47"] as TipoECF[]).map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
-            )}
-
-            {tipoPrueba === "E41" && (
-              <>
-                <input placeholder="RNC del proveedor" value={formPrueba.rncProveedor ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, rncProveedor: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
-                <input placeholder="Nombre del proveedor" value={formPrueba.nombreProveedor ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, nombreProveedor: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
-              </>
-            )}
-
-            {["E32", "E44", "E45", "E46"].includes(tipoPrueba) && (
-              <>
-                <input placeholder="RNC comprador (opcional)" value={formPrueba.rncComprador ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, rncComprador: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
-                <input placeholder="Nombre comprador (opcional)" value={formPrueba.nombreComprador ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, nombreComprador: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
-              </>
-            )}
-
-            {(tipoPrueba === "E46" || tipoPrueba === "E47") && (
-              <>
-                {tipoPrueba === "E46" && (
-                  <label style={{ fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
-                    <input type="checkbox" checked={formPrueba.esExtranjero === "true"} onChange={(e) => setFormPrueba((f) => ({ ...f, esExtranjero: e.target.checked ? "true" : "" }))} />
-                    Comprador extranjero
-                  </label>
-                )}
-                {(tipoPrueba === "E47" || formPrueba.esExtranjero === "true") && (
-                  <>
-                    <input placeholder="ID extranjero" value={formPrueba.idExtranjero ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, idExtranjero: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
-                    <input placeholder="Nombre extranjero" value={formPrueba.nombreExtranjero ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, nombreExtranjero: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
-                  </>
-                )}
-              </>
-            )}
-
-            {["E33", "E34"].includes(tipoPrueba) && (
-              <>
-                <select value={formPrueba.eCFRef ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, eCFRef: e.target.value }))} style={{ padding: 8, fontSize: 13 }}>
-                  <option value="">eNCF que modifica…</option>
-                  {Object.keys(filas).map((encf) => <option key={encf} value={encf}>{encf}</option>)}
-                </select>
-                <input placeholder="Motivo" value={formPrueba.motivoNota ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, motivoNota: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
-              </>
-            )}
-
-            {errorPrueba && <div style={{ fontSize: 12, color: "#991b1b" }}>{errorPrueba}</div>}
-            <Boton onClick={crearPrueba} disabled={creandoPrueba}>
-              {creandoPrueba ? "Creando…" : `Crear y enviar ${tipoPrueba}`}
-            </Boton>
-          </div>
-
-          {Object.keys(pruebas).length > 0 && (
-            <div style={{ marginTop: 20 }}>
-              <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
-                <thead><tr style={{ background: "var(--c-bg)" }}>
-                  <th style={{ textAlign: "left", padding: 8 }}>eNCF</th><th style={{ textAlign: "left", padding: 8 }}>Tipo</th>
-                  <th style={{ textAlign: "left", padding: 8 }}>Descripción</th><th style={{ textAlign: "left", padding: 8 }}>Estado</th>
-                </tr></thead>
-                <tbody>
-                  {Object.values(pruebas).map((p) => (
-                    <tr key={p.id} style={{ borderTop: "1px solid var(--c-border)" }}>
-                      <td style={{ padding: 8 }}>{p.eCF}</td><td style={{ padding: 8 }}>{p.tipoECF}</td>
-                      <td style={{ padding: 8 }}>{p.descripcion}</td><td style={{ padding: 8 }}><Estado estado={p.estadoEnvio} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-          )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 420 }}>
+              <input placeholder="Descripción" value={formPrueba.descripcion ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, descripcion: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
+              <input placeholder="Monto (sin ITBIS)" type="number" step="0.01" value={formPrueba.monto ?? ""} onChange={(e) => setFormPrueba((f) => ({ ...f, monto: e.target.value }))} style={{ padding: 8, fontSize: 13, border: "1px solid #d1d5db", borderRadius: 4 }} />
+              {errorPrueba && <div style={{ fontSize: 12, color: "#991b1b" }}>{errorPrueba}</div>}
+              <Boton onClick={crearPrueba} disabled={creandoPrueba}>
+                {creandoPrueba ? "Creando…" : `Crear y enviar ${tipoPrueba}`}
+              </Boton>
+            </div>
+          </details>
           <SiguientePaso n={5} onClick={() => setPaso(5)} />
         </Card>
-      )}
+        );
+      })()}
 
       {paso === 5 && (
         <Card>

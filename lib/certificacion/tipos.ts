@@ -38,6 +38,7 @@ export interface FilaSetPrueba {
   estadoEnvio:        EstadoEnvioPrueba;
   trackId?:           string;
   estadoDGII?:        string;
+  mensajesDGII?:      string[];
   error?:             string;
   enviadoEn?:         string;
 }
@@ -78,6 +79,7 @@ export interface FacturaPrueba {
   estadoEnvio:    EstadoEnvioPrueba;
   trackId?:       string;
   estadoDGII?:    string;
+  mensajesDGII?:  string[];
   error?:         string;
   creadoEn:       string;
 }
