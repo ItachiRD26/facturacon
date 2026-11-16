@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { requireTenantEnCertificacion } from "@/lib/certificacion/auth";
-import { buildXML, buildRFCEXml } from "@/lib/dgii/xml-builder";
+import { nowFechaHoraFirma } from "@/lib/dgii/xml-builder";
 import { firmarXML, extraerSignatureValue } from "@/lib/dgii/xml-signer";
 import { calcularCodigoSeguridad } from "@/lib/dgii/qr-builder";
 import { getToken, enviarECF, enviarRFCE } from "@/lib/dgii/dgii-client";
 import { obtenerCertificado } from "@/lib/kms/p12-vault";
-import { esRFCE, filaACliente, filaAFactura } from "@/lib/certificacion/mapeo";
+import { esRFCE } from "@/lib/certificacion/mapeo";
+import { construirXmlDesdeSet } from "@/lib/certificacion/xml-desde-set";
+import { ESTRUCTURA_XSD } from "@/lib/certificacion/xsd-estructura";
 import type { FilaSetPrueba } from "@/lib/certificacion/tipos";
 import type { EmpresaConfig } from "@/types/tenant";
 
@@ -46,14 +48,24 @@ export async function POST(req: NextRequest) {
     const token = await getToken(tenant, async () => obtenerCertificado(tenantId));
     const { p12Buffer, password } = await obtenerCertificado(tenantId);
 
-    const factura = filaAFactura(fila);
-    const cliente = filaACliente(fila);
-
-    const xmlSinFirma = buildXML(factura, cliente, empresa);
-    const xmlFirmado  = await firmarXML(xmlSinFirma, p12Buffer, password);
+    // La DGII compara cada campo contra su conjunto de datos y, si uno solo
+    // difiere, rechaza y REINICIA todo el set. Por eso el XML sale solo de las
+    // celdas del Excel (no de los datos de la empresa) y se verifica ANTES de enviar.
+    const estructura = ESTRUCTURA_XSD[fila.tipoECF.replace(/^E/, "")];
+    if (!fila.datosECF || !estructura) {
+      throw new Error("Este set se cargó con una versión anterior. Vuelve a subir el Excel del set de pruebas y reintenta.");
+    }
+    const ecf = construirXmlDesdeSet(estructura, fila.datosECF, { fechaHoraFirma: nowFechaHoraFirma() });
+    if (ecf.noUsadas.length) {
+      throw new Error(`No se envió: columnas del Excel que no caben en el XML (${ecf.noUsadas.join(", ")}). Avísanos para ajustarlo.`);
+    }
+    const xmlFirmado = await firmarXML(ecf.xml, p12Buffer, password);
 
     let trackId: string;
     if (esRFCE(fila)) {
+      if (!fila.datosRFCE) {
+        throw new Error("Este set no trae la hoja RFCE del Excel. Vuelve a subir el Excel completo de la DGII y reintenta.");
+      }
       const signatureValue = extraerSignatureValue(xmlFirmado);
       const codigoSeguridad = calcularCodigoSeguridad(signatureValue);
 
@@ -62,8 +74,11 @@ export async function POST(req: NextRequest) {
       await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("ecf_firmados")
         .set({ [encf]: { xmlFirmado, codigoSeguridad, guardadoEn: new Date().toISOString() } }, { merge: true });
 
-      const rfceXmlSinFirma = buildRFCEXml(factura, empresa, codigoSeguridad, cliente);
-      const rfceXmlFirmado  = await firmarXML(rfceXmlSinFirma, p12Buffer, password);
+      const rfce = construirXmlDesdeSet(ESTRUCTURA_XSD.RFCE, fila.datosRFCE, { codigoSeguridad: codigoSeguridad.substring(0, 6) });
+      if (rfce.noUsadas.length) {
+        throw new Error(`No se envió: columnas de la hoja RFCE que no caben en el XML (${rfce.noUsadas.join(", ")}).`);
+      }
+      const rfceXmlFirmado = await firmarXML(rfce.xml, p12Buffer, password);
       const resultado = await enviarRFCE(rfceXmlFirmado, tenant, token, encf);
       trackId = resultado.trackId || resultado.estado;
     } else {

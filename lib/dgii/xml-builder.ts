@@ -52,7 +52,7 @@ function fmtFecha(fecha: string): string {
 // Dominicana. Usa America/Santo_Domingo explícitamente — si el servidor
 // corre en UTC (común en hosting cloud), new Date().getHours() desfasaría
 // la hora de firma 4 horas respecto a la hora real del comprobante.
-function nowFechaHoraFirma(): string {
+export function nowFechaHoraFirma(): string {
   const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Santo_Domingo",
     year: "numeric", month: "2-digit", day: "2-digit",

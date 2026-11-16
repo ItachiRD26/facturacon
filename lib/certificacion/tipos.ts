@@ -29,6 +29,11 @@ export interface FilaSetPrueba {
   fechaECFRef?:       string;   // YYYY-MM-DD, fecha del eNCF que modifica
   motivoNota?:        string;
   codigoModificacion?: string;
+  // Celdas con valor del Excel de la DGII (hoja ECF, y hoja RFCE para los E32 < 250 mil),
+  // con la clave normalizada ("NombreItem[2]" → "nombreitem_2"). El XML del Paso 2 se arma
+  // SOLO desde aquí: la DGII exige que cada campo coincida con su conjunto de datos.
+  datosECF?:          Record<string, string>;
+  datosRFCE?:         Record<string, string>;
   // Estado de envío a DGII, actualizado por /api/certificacion/enviar.
   estadoEnvio:        EstadoEnvioPrueba;
   trackId?:           string;

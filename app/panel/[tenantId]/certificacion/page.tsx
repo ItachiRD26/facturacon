@@ -460,7 +460,7 @@ export default function CertificacionPage() {
         const res = await fetch(`/api/certificacion/consultar?t=${tenantId}&encf=${encf}`);
         const data = await res.json();
         const est = String(data.estado ?? "").toLowerCase();
-        setLogEnvio((l) => [...l, `… ${encf}: ${data.estado ?? "esperando"}`]);
+        setLogEnvio((l) => [...l, `… ${encf}: ${data.estado ?? "esperando"}${Array.isArray(data.mensajes) && data.mensajes.length ? " — " + data.mensajes.slice(0, 3).join(" | ") : ""}`]);
         if (est.includes("aceptad")) return true;
         if (est.includes("rechazad")) return false;
       } catch { /* reintentar */ }

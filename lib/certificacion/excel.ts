@@ -14,6 +14,7 @@ import "server-only";
 import * as XLSX from "xlsx";
 import type { TipoECF } from "@/types";
 import type { EstadoAC, FilaSetPrueba, ItemAC, ItemFilaPrueba } from "./tipos";
+import { claveDeColumna, esVacio } from "./xml-desde-set";
 
 const TAMANO_MAXIMO_BYTES = 5 * 1024 * 1024;
 
@@ -30,17 +31,34 @@ function normalizeKey(key: string): string {
     .replace(/[^a-z0-9]/g, ""); // descarta acentos (tras NFD), espacios y símbolos de una sola pasada
 }
 
-function leerFilas(buffer: Buffer): Record<string, unknown>[] {
-  validarTamano(buffer);
-  const workbook = XLSX.read(buffer, { type: "buffer" });
-  const sheet    = workbook.Sheets[workbook.SheetNames[0]];
-  // raw:false → preserva el string exacto del Excel ("15" vs "15.00")
-  const rawRows  = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "", raw: false });
+// Hoja por nombre (sin importar mayúsculas); si no existe y `porDefecto`, la primera.
+function leerHoja(workbook: XLSX.WorkBook, nombre: string, porDefecto: boolean): Record<string, unknown>[] | null {
+  const hoja = workbook.SheetNames.find((s) => s.trim().toUpperCase() === nombre)
+    ?? (porDefecto ? workbook.SheetNames[0] : undefined);
+  if (!hoja) return null;
+  // raw:false → preserva el string exacto del Excel ("15" vs "15.00", "1500.0000")
+  return XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[hoja], { defval: "", raw: false });
+}
+
+function normalizarFilas(rawRows: Record<string, unknown>[]): Record<string, unknown>[] {
   return rawRows.map((row) => {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(row)) out[normalizeKey(k)] = v;
     return out;
   });
+}
+
+function leerFilas(buffer: Buffer): Record<string, unknown>[] {
+  validarTamano(buffer);
+  const workbook = XLSX.read(buffer, { type: "buffer" });
+  return normalizarFilas(leerHoja(workbook, "ECF", true) ?? []);
+}
+
+// Solo las celdas con valor, con clave normalizada — lo que luego arma el XML.
+function datosDeFila(row: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(row)) if (!esVacio(v)) out[claveDeColumna(k)] = String(v);
+  return out;
 }
 
 const VACIO_DGII = new Set(["#e", "#n/a", "n/a"]);
@@ -113,10 +131,20 @@ function leerItems(row: Record<string, unknown>): ItemFilaPrueba[] {
 }
 
 export function parseSetPaso2(buffer: Buffer): FilaSetPrueba[] {
-  const filas = leerFilas(buffer);
+  validarTamano(buffer);
+  const workbook = XLSX.read(buffer, { type: "buffer" });
+  const crudasECF = leerHoja(workbook, "ECF", true) ?? [];
+  const filas = normalizarFilas(crudasECF);
   const resultado: FilaSetPrueba[] = [];
 
-  for (const row of filas) {
+  // Hoja RFCE (resumen de los E32 < 250 mil): se enlaza por eNCF.
+  const datosRFCE = new Map<string, Record<string, string>>();
+  for (const row of leerHoja(workbook, "RFCE", false) ?? []) {
+    const d = datosDeFila(row);
+    if (d.encf) datosRFCE.set(d.encf.toUpperCase(), d);
+  }
+
+  for (const [idx, row] of filas.entries()) {
     const encf = raw(row, "encf", "enf").toUpperCase();
     if (!encf) continue;
 
@@ -138,6 +166,8 @@ export function parseSetPaso2(buffer: Buffer): FilaSetPrueba[] {
       fechaECFRef:        fmtFechaISO(raw(row, "fechancfmodificado")) || undefined,
       motivoNota:         raw(row, "razonmodificacion") || undefined,
       codigoModificacion: raw(row, "codigomodificacion") || undefined,
+      datosECF:  datosDeFila(crudasECF[idx]),
+      ...(datosRFCE.has(encf) ? { datosRFCE: datosRFCE.get(encf) } : {}),
       estadoEnvio: "pendiente",
     });
   }
