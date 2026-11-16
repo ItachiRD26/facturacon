@@ -848,7 +848,11 @@ export default function CertificacionPage() {
             manualmente).
           </p>
           <TuYNosotros tu="Descargar el Excel de 25 casos desde el portal de la DGII y subirlo aquí." nosotros="Firmar y enviar los 25 comprobantes en el orden correcto." />
-          <ScreenshotPlaceholder titulo="Dónde descargar el set de pruebas" descripcion="Ejemplo de dónde, dentro del portal de la DGII, se descarga el Excel de los 25 casos de prueba." />
+          {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+          <img
+            src="/certificacion/donde-descargar-set-prueba-paso-2.webp" alt="Paso 2 en la OFV: botón verde «Descargar set de prueba», que baja el archivo Set_Pruebas_eCF.xlsx"
+            style={{ width: "100%", borderRadius: 10, border: "1px solid var(--c-border)", boxShadow: "0 12px 30px rgba(17,20,57,0.10)" }}
+          />
           <div style={{ marginTop: 16 }}>
             <SubidaArchivo onFile={subirSet} cargando={subiendoSet} etiqueta="Subir Excel del set de pruebas" nombreArchivo={nombreArchivoSet} />
           </div>
