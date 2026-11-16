@@ -886,6 +886,35 @@ export default function CertificacionPage() {
                   {logEnvio.join("\n")}
                 </pre>
               )}
+              {Object.values(filas).some((f) => f.tipoECF === "E32" && f.montoTotal < 250000) && (
+                <div style={{ marginTop: 20, padding: 14, border: "1px solid var(--c-border)", borderRadius: 10, background: "var(--c-bg)" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+                    Facturas de consumo menores a RD$250 mil — las subes tú en el portal
+                  </div>
+                  <p style={{ fontSize: 12, color: "var(--c-text-3)", margin: "0 0 10px" }}>
+                    La DGII primero recibe los resúmenes (ya los enviamos arriba). Cuando en el portal los
+                    <strong> 4 resúmenes de consumo aparezcan como aceptados</strong>, te pide cargar aquí las
+                    facturas íntegras: en el recuadro <em>«Facturas de consumo &lt; 250Mil»</em> pulsa «Elegir archivo»,
+                    escoge uno de estos XML firmados y pulsa «Enviar». Repite con cada uno.
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {Object.values(filas)
+                      .filter((f) => f.tipoECF === "E32" && f.montoTotal < 250000)
+                      .map((f) => {
+                        const listo = f.estadoEnvio === "enviado" || f.estadoEnvio === "aceptado";
+                        return listo ? (
+                          <a key={f.encf} href={`/api/certificacion/descargar-xml?t=${tenantId}&encf=${f.encf}`} style={{ fontSize: 13, color: "var(--c-brand)", fontWeight: 600 }}>
+                            ⬇ {f.encf}.xml
+                          </a>
+                        ) : (
+                          <span key={f.encf} style={{ fontSize: 13, color: "var(--c-text-3)" }}>
+                            {f.encf}.xml — disponible cuando se envíe su resumen
+                          </span>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
               {enviadosPaso2 === totalPaso2 && <SiguientePaso n={3} onClick={() => setPaso(3)} />}
             </>
           )}
