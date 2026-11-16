@@ -35,16 +35,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "El Excel no tiene filas con un eNCF reconocible (columna ENCF)." }, { status: 400 });
   }
 
+  // Firestore rechaza `undefined`: las columnas opcionales vacías del Excel
+  // (RNC comprador, referencia, etc.) deben quitarse antes de guardar.
   const mapaFilas: Record<string, FilaSetPrueba> = {};
-  for (const f of filas) mapaFilas[f.encf] = f;
+  for (const f of filas) mapaFilas[f.encf] = JSON.parse(JSON.stringify(f));
 
-  await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("set_paso2").set({
-    filas: mapaFilas,
-    totalFilas: filas.length,
-    subidoEn: new Date().toISOString(),
-  });
+  try {
+    await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("set_paso2").set({
+      filas: mapaFilas,
+      totalFilas: filas.length,
+      subidoEn: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("[upload-set] no se pudo guardar el set", e);
+    return NextResponse.json({ error: `No se pudo guardar el set de pruebas: ${e instanceof Error ? e.message : "error desconocido"}` }, { status: 500 });
+  }
 
-  return NextResponse.json({ ok: true, totalFilas: filas.length, filas });
+  return NextResponse.json({ ok: true, totalFilas: filas.length, filas: Object.values(mapaFilas) });
 }
 
 export async function GET(req: NextRequest) {

@@ -32,16 +32,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "El Excel no tiene filas aplicables a Aprobación Comercial." }, { status: 400 });
   }
 
+  // Firestore rechaza `undefined` (p. ej. motivoRechazo en aprobaciones).
   const mapaItems: Record<string, ItemAC> = {};
-  for (const it of items) mapaItems[it.encf] = it;
+  for (const it of items) mapaItems[it.encf] = JSON.parse(JSON.stringify(it));
 
-  await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("ac_set").set({
-    items: mapaItems,
-    totalFilas: items.length,
-    subidoEn: new Date().toISOString(),
-  });
+  try {
+    await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("ac_set").set({
+      items: mapaItems,
+      totalFilas: items.length,
+      subidoEn: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("[upload-ac] no se pudo guardar el set", e);
+    return NextResponse.json({ error: `No se pudo guardar el Excel de aprobaciones: ${e instanceof Error ? e.message : "error desconocido"}` }, { status: 500 });
+  }
 
-  return NextResponse.json({ ok: true, totalFilas: items.length, items });
+  return NextResponse.json({ ok: true, totalFilas: items.length, items: Object.values(mapaItems) });
 }
 
 export async function GET(req: NextRequest) {

@@ -19,5 +19,10 @@ if (!getApps().length) {
 }
 
 export const adminDb      = getFirestore(adminApp);
+// Los campos opcionales vacíos (undefined) se omiten en vez de lanzar error:
+// sin esto, guardar un objeto con un campo sin valor hacía fallar la ruta con
+// una respuesta vacía. settings() solo puede llamarse una vez por instancia
+// (en desarrollo el módulo se recarga), por eso va protegido.
+try { adminDb.settings({ ignoreUndefinedProperties: true }); } catch { /* ya configurado */ }
 export const adminAuth    = getAuth(adminApp);
 export const adminStorage = getStorage(adminApp);
