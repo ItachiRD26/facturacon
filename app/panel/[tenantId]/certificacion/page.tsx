@@ -8,6 +8,7 @@ import type { FilaSetPrueba, ItemAC, FacturaPrueba } from "@/lib/certificacion/t
 import { planSimulacion, marcaSimulacion, type ItemSimulacion } from "@/lib/certificacion/plan-simulacion";
 import VideoPlaceholder from "@/components/marketing/video-placeholder";
 import RepresentacionesImpresas from "@/components/certificacion/representaciones-impresas";
+import { CATEGORIAS_RI } from "@/lib/certificacion/categorias-ri";
 import InfoTooltip from "@/components/panel/info-tooltip";
 import JornadaProgreso from "@/components/panel/jornada-progreso";
 
@@ -275,6 +276,12 @@ export default function CertificacionPage() {
   const [confirmoPortal, setConfirmoPortal] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
   // Marca personal de cuáles XML de consumo ya subió al portal (solo ayuda visual, en este navegador).
+  const [riCompletas, setRiCompletas] = useState<boolean>(() => {
+    try {
+      const m = JSON.parse(localStorage.getItem(`cert-ri-subidas-${tenantId}`) ?? "{}") as Record<string, boolean>;
+      return CATEGORIAS_RI.every((c) => m[c.id]);
+    } catch { return false; }
+  });
   const [xmlSubidos, setXmlSubidos] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem(`cert-xml-subidos-${tenantId}`) ?? "{}"); } catch { return {}; }
   });
@@ -722,8 +729,11 @@ export default function CertificacionPage() {
     if (Object.keys(acItems).length === 0) {
       return { texto: "Si la DGII ya te habilitó el Excel de Aprobación Comercial en el portal, súbelo en el Paso 3. Si tu certificación no lo requiere, puedes seguir directo al Paso 4.", ir: 3 };
     }
-    if (Object.keys(pruebas).length === 0) {
-      return { texto: "Crea las pruebas interactivas que la DGII te pida en el Paso 4.", ir: 4 };
+    if (!planSimulacion(Object.values(filas)).every((i) => esAceptado(pruebaDe(i)?.estadoDGII))) {
+      return { texto: "Envía las tandas de comprobantes de simulación del Paso 4 y espera que la DGII acepte cada una.", ir: 4 };
+    }
+    if (!riCompletas) {
+      return { texto: "Descarga las 11 representaciones impresas (PDF) del Paso 5 y súbelas al portal. Luego la DGII tarda de 3 a 24 horas en verificarlas.", ir: 5 };
     }
     if (!receptor || receptor.recepcion.total === 0 || receptor.aprobaciones.total === 0) {
       return { texto: "Registra tus URLs en el portal y lanza las pruebas de recepción y de aprobaciones comerciales (Paso 6). Aquí verás llegar las llamadas de la DGII.", ir: 6 };
@@ -734,6 +744,19 @@ export default function CertificacionPage() {
     return { texto: "Todo listo — dale clic en \"Finalizar certificación\" en el Paso 7.", ir: 7 };
   }
   const siguiente = proximoPaso();
+
+  // Pasos ya terminados (para marcarlos en la barra de pasos), calculados de lo guardado.
+  const simulacionCompleta = planSimulacion(Object.values(filas)).every((i) => esAceptado(pruebaDe(i)?.estadoDGII));
+  const completado: Record<number, boolean> = {
+    0: ofvIniciada && !!empresa,
+    1: tokenValido === true || totalPaso2 > 0,
+    2: totalPaso2 > 0 && enviadosPaso2 === totalPaso2,
+    3: Object.keys(acItems).length > 0 && Object.values(acItems).every((it) => it.enviado),
+    4: simulacionCompleta,
+    5: riCompletas,
+    6: !!receptor && receptor.autenticaciones > 0 && receptor.recepcion.total > 0 && receptor.aprobaciones.total > 0,
+    7: false,
+  };
 
   return (
     <main style={{ maxWidth: 880, margin: "0 auto", padding: "32px 24px 80px", fontFamily: sans }}>
@@ -762,13 +785,13 @@ export default function CertificacionPage() {
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 24 }}>
         {PASOS.map((p) => (
-          <button key={p.n} onClick={() => setPaso(p.n)} type="button" style={{
+          <button key={p.n} onClick={() => setPaso(p.n)} type="button" aria-label={completado[p.n] ? `${p.t} (completado)` : p.t} style={{
             padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
-            background: paso === p.n ? "var(--c-brand)" : "var(--c-bg)",
-            color: paso === p.n ? "#fff" : "var(--c-text-3)",
-            border: "1px solid var(--c-border)",
+            background: paso === p.n ? "var(--c-brand)" : completado[p.n] ? "#f0fdf4" : "var(--c-bg)",
+            color: paso === p.n ? "#fff" : completado[p.n] ? "#166534" : "var(--c-text-3)",
+            border: `1px solid ${paso !== p.n && completado[p.n] ? "#86efac" : "var(--c-border)"}`,
           }}>
-            {p.n}. {p.t}
+            {completado[p.n] ? "✓ " : ""}{p.n}. {p.t}
           </button>
         ))}
       </div>
@@ -1269,7 +1292,7 @@ export default function CertificacionPage() {
             <li>En el portal, en cada casilla pulsa <strong>«Elegir archivo»</strong> y escoge el PDF del mismo tipo (el nombre dice el tipo: <em>RI-31-…</em>, <em>RI-34-…</em>, <em>RI-32-menor-250mil-…</em>).</li>
             <li>Al terminar las 11, envía. Luego toca esperar la validación de la DGII.</li>
           </ol>
-          <RepresentacionesImpresas tenantId={tenantId} />
+          <RepresentacionesImpresas tenantId={tenantId} onCompleto={setRiCompletas} />
           <SiguientePaso n={6} onClick={() => setPaso(6)} />
         </Card>
       )}

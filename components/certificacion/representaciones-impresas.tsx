@@ -6,7 +6,7 @@ interface Fila { id: string; etiqueta: string; eCF: string | null; archivo: stri
 
 // Paso 5 — las 11 representaciones impresas (PDF), una por categoría de tipo, ya armadas desde
 // los e-CF que la DGII aceptó en el Paso 4. El usuario solo las descarga y las sube al portal.
-export default function RepresentacionesImpresas({ tenantId }: { tenantId: string }) {
+export default function RepresentacionesImpresas({ tenantId, onCompleto }: { tenantId: string; onCompleto?: (completo: boolean) => void }) {
   const [filas, setFilas] = useState<Fila[] | null>(null);
   const [error, setError] = useState("");
   const [subidos, setSubidos] = useState<Record<string, boolean>>(() => {
@@ -23,11 +23,10 @@ export default function RepresentacionesImpresas({ tenantId }: { tenantId: strin
   }, [tenantId]);
 
   function marcar(id: string, v: boolean) {
-    setSubidos((prev) => {
-      const sig = { ...prev, [id]: v };
-      try { localStorage.setItem(`cert-ri-subidas-${tenantId}`, JSON.stringify(sig)); } catch { /* sin almacenamiento */ }
-      return sig;
-    });
+    const sig = { ...subidos, [id]: v };
+    setSubidos(sig);
+    try { localStorage.setItem(`cert-ri-subidas-${tenantId}`, JSON.stringify(sig)); } catch { /* sin almacenamiento */ }
+    onCompleto?.((filas ?? []).length > 0 && (filas ?? []).every((f) => sig[f.id]));
   }
 
   const url = (id: string) => `/api/certificacion/representacion?t=${tenantId}&cat=${id}`;
