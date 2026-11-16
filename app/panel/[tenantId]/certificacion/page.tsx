@@ -1266,7 +1266,7 @@ export default function CertificacionPage() {
           />
           <ol style={{ margin: "0 0 14px", paddingLeft: 18, fontSize: 13, lineHeight: 1.7 }}>
             <li>Descarga los PDF aquí abajo (uno por uno o todos juntos).</li>
-            <li>En el portal, en cada casilla pulsa <strong>«Elegir archivo»</strong> y escoge el PDF del mismo tipo (el nombre dice el tipo: <em>RI-31-…</em>, <em>RI-34-…</em>).</li>
+            <li>En el portal, en cada casilla pulsa <strong>«Elegir archivo»</strong> y escoge el PDF del mismo tipo (el nombre dice el tipo: <em>RI-31-…</em>, <em>RI-34-…</em>, <em>RI-32-menor-250mil-…</em>).</li>
             <li>Al terminar las 11, envía. Luego toca esperar la validación de la DGII.</li>
           </ol>
           <RepresentacionesImpresas tenantId={tenantId} />
