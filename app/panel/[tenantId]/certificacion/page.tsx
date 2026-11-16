@@ -271,6 +271,17 @@ export default function CertificacionPage() {
   const [errorDeclaracion, setErrorDeclaracion] = useState("");
   const [confirmoPortal, setConfirmoPortal] = useState(false);
   const [finalizando, setFinalizando] = useState(false);
+  // Marca personal de cuáles XML de consumo ya subió al portal (solo ayuda visual, en este navegador).
+  const [xmlSubidos, setXmlSubidos] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem(`cert-xml-subidos-${tenantId}`) ?? "{}"); } catch { return {}; }
+  });
+  function marcarXmlSubido(encf: string, v: boolean) {
+    setXmlSubidos((prev) => {
+      const sig = { ...prev, [encf]: v };
+      try { localStorage.setItem(`cert-xml-subidos-${tenantId}`, JSON.stringify(sig)); } catch { /* sin almacenamiento */ }
+      return sig;
+    });
+  }
 
   const cancelado = useRef(false);
   useEffect(() => () => { cancelado.current = true; }, []);
@@ -886,35 +897,62 @@ export default function CertificacionPage() {
                   {logEnvio.join("\n")}
                 </pre>
               )}
-              {Object.values(filas).some((f) => f.tipoECF === "E32" && f.montoTotal < 250000) && (
-                <div style={{ marginTop: 20, padding: 14, border: "1px solid var(--c-border)", borderRadius: 10, background: "var(--c-bg)" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
-                    Facturas de consumo menores a RD$250 mil — las subes tú en el portal
-                  </div>
-                  <p style={{ fontSize: 12, color: "var(--c-text-3)", margin: "0 0 10px" }}>
-                    La DGII primero recibe los resúmenes (ya los enviamos arriba). Cuando en el portal los
-                    <strong> 4 resúmenes de consumo aparezcan como aceptados</strong>, te pide cargar aquí las
-                    facturas íntegras: en el recuadro <em>«Facturas de consumo &lt; 250Mil»</em> pulsa «Elegir archivo»,
-                    escoge uno de estos XML firmados y pulsa «Enviar». Repite con cada uno.
-                  </p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {Object.values(filas)
-                      .filter((f) => f.tipoECF === "E32" && f.montoTotal < 250000)
-                      .map((f) => {
+              {Object.values(filas).some((f) => f.tipoECF === "E32" && f.montoTotal < 250000) && (() => {
+                const consumo = Object.values(filas).filter((f) => f.tipoECF === "E32" && f.montoTotal < 250000);
+                const subidos = consumo.filter((f) => xmlSubidos[f.encf]).length;
+                return (
+                  <div style={{ marginTop: 24, padding: 18, border: "1px solid var(--c-border)", borderRadius: 12, background: "var(--c-bg)" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>
+                      Falta un paso tuyo: subir las {consumo.length} facturas de consumo en el portal
+                    </div>
+                    <p style={{ fontSize: 12, color: "var(--c-text-3)", margin: "0 0 14px" }}>
+                      Los resúmenes ya los enviamos nosotros. La DGII ahora pide que cargues tú, a mano, las facturas
+                      completas de los consumos menores a RD$250 mil. Ya las firmamos con tu certificado.
+                    </p>
+                    <ol style={{ margin: "0 0 14px", paddingLeft: 18, fontSize: 13, lineHeight: 1.7 }}>
+                      <li>Espera a que en el portal los <strong>{consumo.length} resúmenes de consumo</strong> aparezcan como aceptados.</li>
+                      <li>Descarga abajo uno de los XML.</li>
+                      <li>En el recuadro <strong>«Facturas de consumo &lt; 250Mil»</strong> del portal pulsa <strong>«Elegir archivo»</strong>, escoge ese XML y pulsa <strong>«Enviar»</strong>.</li>
+                      <li>Repite con cada uno. Cuando el contador del portal llegue a <strong>{consumo.length}/{consumo.length}</strong>, este paso está listo.</li>
+                    </ol>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+                    <img
+                      src="/certificacion/subir-facturas-consumo-250mil-paso-2.webp" alt="Portal de la DGII, Paso 2: recuadro «Facturas de consumo menores a 250Mil» con el botón Elegir archivo y Enviar, y a la derecha el contador de comprobantes aceptados"
+                      style={{ width: "100%", borderRadius: 10, border: "1px solid var(--c-border)", boxShadow: "0 12px 30px rgba(17,20,57,0.10)", marginBottom: 6 }}
+                    />
+                    <p style={{ fontSize: 11, color: "var(--c-text-3)", margin: "0 0 14px" }}>
+                      Así se ve en el portal. A la derecha puedes seguir cuántos van aceptados.
+                    </p>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700 }}>Tus XML firmados</span>
+                      <span style={{ fontSize: 12, color: "var(--c-text-3)" }}>{subidos} de {consumo.length} marcados como subidos</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {consumo.map((f) => {
                         const listo = f.estadoEnvio === "enviado" || f.estadoEnvio === "aceptado";
-                        return listo ? (
-                          <a key={f.encf} href={`/api/certificacion/descargar-xml?t=${tenantId}&encf=${f.encf}`} style={{ fontSize: 13, color: "var(--c-brand)", fontWeight: 600 }}>
-                            ⬇ {f.encf}.xml
-                          </a>
-                        ) : (
-                          <span key={f.encf} style={{ fontSize: 13, color: "var(--c-text-3)" }}>
-                            {f.encf}.xml — disponible cuando se envíe su resumen
-                          </span>
+                        return (
+                          <div key={f.encf} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 12px", background: "var(--c-surface, #fff)", border: "1px solid var(--c-border)", borderRadius: 8 }}>
+                            {listo ? (
+                              <a href={`/api/certificacion/descargar-xml?t=${tenantId}&encf=${f.encf}`} style={{ fontSize: 13, color: "var(--c-brand)", fontWeight: 600 }}>
+                                ⬇ Descargar {f.encf}.xml
+                              </a>
+                            ) : (
+                              <span style={{ fontSize: 13, color: "var(--c-text-3)" }}>{f.encf}.xml — disponible cuando se envíe su resumen</span>
+                            )}
+                            <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", flexShrink: 0 }}>
+                              <input type="checkbox" checked={!!xmlSubidos[f.encf]} onChange={(e) => marcarXmlSubido(f.encf, e.target.checked)} />
+                              Ya lo subí
+                            </label>
+                          </div>
                         );
                       })}
+                    </div>
+                    <p style={{ fontSize: 11, color: "var(--c-text-3)", margin: "10px 0 0" }}>
+                      Si el navegador lo descarga como «E32… (1).xml» no importa: el contenido es el mismo.
+                    </p>
                   </div>
-                </div>
-              )}
+                );
+              })()}
               {enviadosPaso2 === totalPaso2 && <SiguientePaso n={3} onClick={() => setPaso(3)} />}
             </>
           )}
