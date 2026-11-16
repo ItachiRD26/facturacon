@@ -970,7 +970,11 @@ export default function CertificacionPage() {
             necesitan esto; los demás tipos no aplican y no aparecerán aquí.
           </p>
           <TuYNosotros tu="Descargar el Excel de Aprobación Comercial desde el portal y subirlo aquí." nosotros="Firmar y enviar cada aprobación/rechazo a la DGII." />
-          <ScreenshotPlaceholder titulo="Dónde descargar el Excel de Aprobación Comercial" descripcion="Aparece en el portal de la DGII una vez tu set de pruebas del Paso 2 fue aceptado." />
+          {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+          <img
+            src="/certificacion/descargar-aprobaciones-comerciales-paso-3.webp" alt="Paso 3 en la OFV: botón verde «Descargar aprobaciones comerciales», que baja el Excel con las 11 aprobaciones del set de pruebas"
+            style={{ width: "100%", borderRadius: 10, border: "1px solid var(--c-border)", boxShadow: "0 12px 30px rgba(17,20,57,0.10)" }}
+          />
           <div style={{ marginTop: 16 }}>
             <SubidaArchivo onFile={subirAC} cargando={subiendoAC} etiqueta="Subir Excel de Aprobación Comercial" nombreArchivo={nombreArchivoAC} />
           </div>
