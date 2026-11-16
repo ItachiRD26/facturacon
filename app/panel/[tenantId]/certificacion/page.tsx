@@ -278,7 +278,7 @@ export default function CertificacionPage() {
   // Marca personal de cuáles XML de consumo ya subió al portal (solo ayuda visual, en este navegador).
   const [riCompletas, setRiCompletas] = useState<boolean>(() => {
     try {
-      const m = JSON.parse(localStorage.getItem(`cert-ri-subidas-${tenantId}`) ?? "{}") as Record<string, boolean>;
+      const m = JSON.parse(localStorage.getItem(`cert-ri-subidas-v2-${tenantId}`) ?? "{}") as Record<string, boolean>;
       return CATEGORIAS_RI.every((c) => m[c.id]);
     } catch { return false; }
   });

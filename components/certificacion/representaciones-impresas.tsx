@@ -10,7 +10,7 @@ export default function RepresentacionesImpresas({ tenantId, onCompleto }: { ten
   const [filas, setFilas] = useState<Fila[] | null>(null);
   const [error, setError] = useState("");
   const [subidos, setSubidos] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem(`cert-ri-subidas-${tenantId}`) ?? "{}"); } catch { return {}; }
+    try { return JSON.parse(localStorage.getItem(`cert-ri-subidas-v2-${tenantId}`) ?? "{}"); } catch { return {}; }
   });
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function RepresentacionesImpresas({ tenantId, onCompleto }: { ten
   function marcar(id: string, v: boolean) {
     const sig = { ...subidos, [id]: v };
     setSubidos(sig);
-    try { localStorage.setItem(`cert-ri-subidas-${tenantId}`, JSON.stringify(sig)); } catch { /* sin almacenamiento */ }
+    try { localStorage.setItem(`cert-ri-subidas-v2-${tenantId}`, JSON.stringify(sig)); } catch { /* sin almacenamiento */ }
     onCompleto?.((filas ?? []).length > 0 && (filas ?? []).every((f) => sig[f.id]));
   }
 
