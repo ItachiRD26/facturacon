@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarWebhookPagadito } from "@/lib/payments/pagadito-webhook";
 import type { EventoWebhookPagadito } from "@/lib/payments/pagadito-webhook";
-import { tenantIdDesdeErnSuscripcion, marcarPagoRecurrenteExitoso, marcarPagoRecurrenteFallido } from "@/lib/payments/suscripcion";
+import { tenantIdDesdeErnSuscripcion, marcarPagoRecurrenteExitoso, marcarPagoRecurrenteFallido, obtenerSuscripcion } from "@/lib/payments/suscripcion";
 
 // Receptor de webhooks de Pagadito — configurar esta URL en su panel
 // (Configuración Técnica -> Webhooks) una vez haya cuenta real. La
@@ -59,12 +59,22 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    if (evento.resource.status === "COMPLETED") {
+    // Pagadito puede entregar el mismo evento varias veces y fuera de orden (hasta 20 reintentos en 3 días):
+    // todo aquí es idempotente, y un aviso de falla ANTERIOR a un pago ya registrado no suspende la cuenta.
+    const estado = evento.resource.status;
+    if (estado === "COMPLETED") {
       await marcarPagoRecurrenteExitoso(tenantId);
-    } else if (evento.resource.status === "REVOKED" || evento.resource.status === "EXPIRED") {
-      await marcarPagoRecurrenteFallido(tenantId);
+    } else if (["REVOKED", "EXPIRED", "FAILED", "UNCOLLECTABLE"].includes(estado)) {
+      const sus = await obtenerSuscripcion(tenantId);
+      const delEvento = Date.parse(evento.resource.update_timestamp ?? evento.event_create_timestamp ?? "");
+      const ultimoPago = sus?.ultimoPagoEn ? Date.parse(sus.ultimoPagoEn) : NaN;
+      if (Number.isFinite(delEvento) && Number.isFinite(ultimoPago) && delEvento < ultimoPago) {
+        console.warn(`[pagadito-webhook][${tenantId}] ${estado} anterior al último pago registrado: se ignora.`);
+      } else {
+        await marcarPagoRecurrenteFallido(tenantId);
+      }
     }
-    // REGISTERED / VERIFYING: estados intermedios, sin acción todavía.
+    // REGISTERED / VERIFYING / PENDING: estados intermedios, sin acción todavía.
   } catch (e) {
     console.error(`[pagadito-webhook][${tenantId}] Error procesando evento:`, e instanceof Error ? e.message : e);
     return NextResponse.json({ error: "Error interno procesando el evento." }, { status: 500 });

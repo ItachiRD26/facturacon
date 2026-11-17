@@ -69,7 +69,16 @@ export async function verificarWebhookPagadito(
   const cert = new crypto.X509Certificate(certPem);
   const signature = Buffer.from(headers.signatureBase64, "base64");
 
-  return crypto.verify(headers.authAlgo, Buffer.from(cadenaFirmada, "utf8"), cert.publicKey, signature);
+  const datos = Buffer.from(cadenaFirmada, "utf8");
+  // PAGADITO-AUTH-ALGO llega con el nombre de OpenSSL (p. ej. "sha256WithRSAEncryption"). Se prueba tal cual y,
+  // si Node no lo reconoce, con equivalentes habituales del mismo algoritmo (RSA + SHA-256).
+  const candidatos = [headers.authAlgo, "RSA-SHA256", "sha256"];
+  for (const algo of candidatos) {
+    try {
+      if (crypto.verify(algo, datos, cert.publicKey, signature)) return true;
+    } catch { /* algoritmo no reconocido: se prueba el siguiente */ }
+  }
+  return false;
 }
 
 export interface EventoWebhookPagadito {
@@ -80,7 +89,7 @@ export interface EventoWebhookPagadito {
     token: string; ern: string; create_timestamp: string;
     amount: { total: string; currency: string };
     description: string; update_timestamp: string;
-    status: "REGISTERED" | "VERIFYING" | "COMPLETED" | "REVOKED" | "EXPIRED" | string;
+    status: "REGISTERED" | "VERIFYING" | "COMPLETED" | "REVOKED" | "FAILED" | "EXPIRED" | "PENDING" | "UNCOLLECTABLE" | string;
     reference: string;
     items_list: { quantity: string; price: string; description: string; url_product: string }[];
   };
