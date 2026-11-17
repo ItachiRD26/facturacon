@@ -79,6 +79,7 @@ export async function activarCobroRecurrente(params: {
     estado: "activa",
     cardHolderName: params.card.cardHolderName,
     ultimos4: params.card.number.slice(-4),
+    ern: ernSuscripcion(params.tenantId), autorizacion: resultado.authorization,
     creadoEn: new Date().toISOString(),
     ultimoPagoEn: new Date().toISOString(),
     browserInfo: params.browserInfo,

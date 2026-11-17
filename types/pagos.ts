@@ -12,6 +12,9 @@ export interface Suscripcion {
   facturasMes:       number;
   montoUSD:          string;   // lo que se cobra cada vez (una mensualidad, o el año completo)
   periodo?:          "mensual" | "anual";   // ausente = mensual (suscripciones anteriores)
+  // Datos del primer cobro (los pide Pagadito en la certificación técnica y sirven de recibo).
+  ern?:              string;   // número de comprobante que enviamos a Pagadito
+  autorizacion?:     string;   // número de aprobación que devolvió Pagadito
   interno?:          boolean;              // cuenta propia de Facturacon (cliente cero): sin tarjeta ni cobro
   estado:            EstadoSuscripcion;
   cardHolderName?:   string;
