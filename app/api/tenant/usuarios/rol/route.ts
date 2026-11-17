@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireOwnerOAdmin } from "@/lib/tenant/auth";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { getMembership, updateMembershipRol } from "@/lib/tenant/get-memberships";
 import { ROLES_INVITABLES } from "@/lib/tenant/roles";
 import type { RolMembership } from "@/types/tenant";
@@ -31,5 +32,6 @@ export async function POST(req: NextRequest) {
   }
 
   await updateMembershipRol(body.uid, body.tenantId, body.rol);
+  await registrarAuditoria({ tenantId: body.tenantId, uid: verif.uid, accion: "usuario.rol", recurso: body.uid, detalle: { rolAnterior: objetivo.rol, rolNuevo: body.rol }, req });
   return NextResponse.json({ ok: true });
 }

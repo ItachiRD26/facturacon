@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireTenantActivo } from "@/lib/tenant/auth";
 import { limitar } from "@/lib/seguridad/limite-tasa";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { reenviarPendientes, resumenPendientes, sincronizarEstados } from "@/lib/dgii/reenvio";
 
 // Contingencia: GET devuelve cuántos comprobantes están pendientes de llegar a la DGII (solo lectura,
@@ -26,5 +27,8 @@ export async function POST(req: NextRequest) {
 
   const reenvio = await reenviarPendientes(tenantId, 20);
   const estados = await sincronizarEstados(tenantId, 20);
+  // Solo se deja constancia cuando de verdad se envió algo (el sistema consulta esto solo cada pocos minutos).
+  const enviados = Number((reenvio as { enviados?: number } | undefined)?.enviados ?? 0);
+  if (enviados > 0) await registrarAuditoria({ tenantId, uid: v.uid, accion: "factura.sincronizacion", req, detalle: { enviados } });
   return NextResponse.json({ reenvio, estados, resumen: await resumenPendientes(tenantId) });
 }

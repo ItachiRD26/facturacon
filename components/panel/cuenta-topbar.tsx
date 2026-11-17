@@ -11,6 +11,7 @@ const LABELS: Record<string, string> = {
   secuencias: "Secuencias fiscales",
   certificado: "Certificado digital",
   plan: "Plan y facturación",
+  actividad: "Actividad de la cuenta",
   soporte: "Ayuda y soporte",
 };
 

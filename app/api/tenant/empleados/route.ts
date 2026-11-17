@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { requireOwnerOAdmin } from "@/lib/tenant/auth";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { createMembership } from "@/lib/tenant/get-memberships";
 import { generarCodigoEmpleado, generarTokenLinkEmpleado, hashCodigo } from "@/lib/tenant/codigo-empleado";
 import { ROLES_INVITABLES } from "@/lib/tenant/roles";
@@ -83,5 +84,6 @@ export async function POST(req: NextRequest) {
   if (notas) empleado.notas = notas;
   await adminDb.collection("tenants").doc(tenantId).collection("empleados").doc(uid).set(empleado);
 
+  await registrarAuditoria({ tenantId, uid: verif.uid, accion: "empleado.creado", recurso: uid, detalle: { nombre, rol }, req });
   return NextResponse.json({ ok: true, uid, codigo });
 }

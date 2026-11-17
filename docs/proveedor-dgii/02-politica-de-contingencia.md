@@ -32,9 +32,9 @@ Asegurar que los contribuyentes puedan seguir facturando y que ningún comproban
 
 ### C. Pérdida o corrupción de datos
 1. Detener las escrituras afectadas.
-2. Restaurar desde el **respaldo** más reciente o desde un punto en el tiempo anterior al daño. `[PENDIENTE]` Activar respaldos programados de Firestore y su retención.
+2. Restaurar desde el **respaldo** más reciente o desde un punto en el tiempo anterior al daño (hasta 7 días atrás). Procedimiento paso a paso en `docs/RESPALDOS.md`.
 3. Verificar la consistencia (secuencias fiscales, comprobantes enviados a la DGII) y avisar a los afectados.
-4. **Prueba de restauración** al menos cada 6 meses `[PENDIENTE]`.
+4. **Prueba de restauración** al menos cada 6 meses, con registro de fecha, responsable y resultado.
 
 ### D. Compromiso de credenciales o certificados
 1. Revocar de inmediato la sesión, el usuario o el código afectado.
@@ -51,7 +51,7 @@ Asegurar que los contribuyentes puedan seguir facturando y que ningún comproban
 
 ## 4. Respaldo y recuperación
 - Los datos viven en Google Cloud Firestore con replicación del proveedor.
-- `[PENDIENTE]` Respaldos programados (diarios) y recuperación a un punto en el tiempo; copia en otra ubicación; retención [definir].
+- Respaldo **diario** (se conserva 7 días) y **semanal** (14 semanas) de Firestore, más recuperación a un punto en el tiempo de los últimos 7 días. La base tiene protección contra borrado accidental y se replica en varias zonas (multirregión).
 - Los certificados `.p12` están cifrados con KMS; el contribuyente conserva siempre el original.
 - El código fuente está en un repositorio privado con historial completo.
 

@@ -28,6 +28,7 @@ Proteger la confidencialidad, integridad y disponibilidad de la información de 
 - Los cajeros pueden entrar con un código personal revocable; un cajero revocado deja de tener acceso de inmediato.
 - Limitación de intentos (rate limiting) en las rutas sensibles: inicio de sesión, registro, consultas a la DGII y escrituras públicas.
 - `[PENDIENTE]` Verificación en dos pasos (2FA) obligatoria para dueños y administradores.
+- Las reglas de la base de datos impiden que cajeros, contadores y lectores lean el código de la tarjeta guardada del plan.
 - Revisión de accesos de administración al menos cada 6 meses.
 
 ## 5. Aislamiento entre contribuyentes
@@ -54,10 +55,12 @@ Cada empresa (tenant) tiene sus datos separados. El acceso se controla en dos ca
 
 ## 9. Registro y trazabilidad (bitácora)
 - Los comprobantes conservan su estado, fechas, respuesta de la DGII y trazabilidad de envío.
-- `[PENDIENTE]` Bitácora de auditoría con quién, qué, cuándo y desde dónde para eventos sensibles (inicio de sesión, cambio de certificado, emisión y anulación, cambios de usuarios, roles y plan). Retención: [definir, por ejemplo 12 meses o más].
+- **Bitácora de auditoría:** el sistema registra quién, qué, cuándo y desde qué dirección IP en las operaciones sensibles: inicio y cierre de sesión, carga o renovación del certificado digital, altas, cambios de rol y bajas de personas del equipo, accesos de cajeros, permisos de facturación, cambios de secuencias fiscales, emisión y reenvío de comprobantes, activación y cancelación del plan y cobros.
+- Los registros solo los escribe el servidor, no se pueden editar ni borrar desde la aplicación, no contienen contraseñas, claves ni datos de tarjeta, y el dueño y los administradores los consultan en la sección «Actividad» del panel.
+- **Retención:** 24 meses; después se eliminan automáticamente.
 
 ## 10. Respaldo y recuperación
-Ver la *Política de Contingencia* (Anexo 1.2). `[PENDIENTE]` Respaldos programados de la base de datos y prueba periódica de restauración.
+Ver la *Política de Contingencia* (Anexo 1.2): recuperación a un punto en el tiempo (7 días), respaldo diario (7 días) y semanal (14 semanas), protección contra borrado y prueba de restauración cada 6 meses.
 
 ## 11. Gestión de incidentes
 1. **Detección:** alertas, reportes de clientes o del equipo.

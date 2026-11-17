@@ -12,6 +12,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { enviarPlantilla } from "@/lib/email/enviar";
 import { URL_SITIO } from "@/lib/email/plantilla";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { obtenerSuscripcion, refSuscripcion, cancelarSuscripcionEnPagadito } from "./suscripcion";
 import { adicionalesDeMeses } from "./adicionales";
 import { tokenizarYCobrar, cobrarConToken } from "./pagadito-tokenizacion";
@@ -175,6 +176,7 @@ async function ejecutarCobro(tenantId: string, sus: Suscripcion, hoy: string): P
     }, { merge: true });
     await reactivarSiSuspendido(tenantId);
 
+    await registrarAuditoria({ tenantId, uid: "sistema", accion: "cobro.ciclo", recurso: ern, detalle: { resultado: "cobrado", totalRD: monto.totalRD, intento } });
     const dest = await datosDestinatario(tenantId);
     if (dest) {
       void enviarPlantilla("pago_recibido", { nombre: dest.nombre, plan: etiquetaPlan(plan), monto: monto.totalRD, fecha: fechaDMA(hoy), referencia: res.authorization, proximoCobro: fechaDMA(siguiente) }, { para: dest.email });
@@ -187,6 +189,7 @@ async function ejecutarCobro(tenantId: string, sus: Suscripcion, hoy: string): P
     if (/PG3018/.test(detalle)) { console.error(`[cobros][${tenantId}] ERN repetido (${ern}): revisar en Pagadito si el cobro entró.`); return "no_toca"; }
 
     await ciclosDe(tenantId).doc(`${venc}-${intento}`).set(registroCiclo({ fecha: venc, intento, estado: "fallido", monto, meses, ern, error: detalle, motivo: "ciclo" }));
+    await registrarAuditoria({ tenantId, uid: "sistema", accion: "cobro.ciclo", recurso: ern, resultado: "error", detalle: { resultado: intento >= INTENTOS_POR_CICLO ? "suspendido" : "reintento", totalRD: monto.totalRD, intento } });
     const fechas = calendarioIntentos(venc);
     const limitePago = fechaDMA(fechaLimitePago(venc));
     const dest = await datosDestinatario(tenantId);

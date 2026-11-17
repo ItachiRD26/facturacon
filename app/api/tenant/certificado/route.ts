@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { requireRolEnTenant } from "@/lib/tenant/auth";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { limitar } from "@/lib/seguridad/limite-tasa";
 import { guardarCertificado, obtenerCertificado, type CertificadoGuardado } from "@/lib/kms/p12-vault";
 import { estadoPorFecha, leerInfoCertificado } from "@/lib/dgii/certificado-info";
@@ -99,6 +100,10 @@ export async function POST(req: NextRequest) {
   await adminDb.collection("tenants").doc(tenantId).collection("config").doc("dgii_token").delete().catch(() => undefined);
   console.log(`[certificado] renovado en ${tenantId} (nuevo ${info.fingerprint}, vence ${info.venceEn.slice(0, 10)})`);
 
+  await registrarAuditoria({
+    tenantId, uid: v.uid, accion: "certificado.renovado", req,
+    detalle: { vence: info.venceEn.slice(0, 10), reemplazaAnterior: !!actual },
+  });
   const nuevo = (await refCert(tenantId).get()).data() as CertificadoGuardado;
   return NextResponse.json({ ok: true, ...vista(nuevo) });
 }

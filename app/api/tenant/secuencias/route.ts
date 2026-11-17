@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRolEnTenant } from "@/lib/tenant/auth";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { ErrorSecuencia, guardarRango, leerSecuencias, registrarCantidad } from "@/lib/tenant/secuencias-fiscales";
 import type { TipoECF } from "@/types";
 
@@ -26,6 +27,12 @@ export async function PUT(req: NextRequest) {
         desde: Number(body!.desde), hasta: Number(body!.hasta), vencimiento: String(body!.vencimiento ?? ""),
       });
     }
+    await registrarAuditoria({
+      tenantId: body!.tenantId!, uid: v.uid, accion: "secuencias.cambio", recurso: String(body!.tipo ?? ""), req,
+      detalle: body!.cantidad !== undefined
+        ? { cantidad: Number(body!.cantidad) }
+        : { desde: Number(body!.desde), hasta: Number(body!.hasta), vencimiento: String(body!.vencimiento ?? "") },
+    });
     return NextResponse.json({ ok: true, secuencias: await leerSecuencias(body!.tenantId!) });
   } catch (e) {
     if (e instanceof ErrorSecuencia) return NextResponse.json({ error: e.message }, { status: 400 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { requireOwnerOAdmin } from "@/lib/tenant/auth";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 
 // Revoca el acceso de un empleado: desactiva su código, deshabilita su
 // cuenta de Firebase y mata cualquier sesión que ya tuviera abierta —
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
   await ref.update({ activo: false });
   await adminAuth.updateUser(uid, { disabled: true }).catch(() => {});
   await adminAuth.revokeRefreshTokens(uid).catch(() => {});
+  await registrarAuditoria({ tenantId, uid: verif.uid, accion: "empleado.revocado", recurso: uid, req });
 
   return NextResponse.json({ ok: true });
 }

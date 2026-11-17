@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { registroAbierto } from "@/lib/registro";
 import { limitar } from "@/lib/seguridad/limite-tasa";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 
 const SESSION_COOKIE  = "__session";
 const SESSION_MS      = parseInt(process.env.SESSION_DURATION_MS ?? "432000000");
@@ -72,6 +73,8 @@ export async function POST(request: NextRequest) {
       await userRef.set(perfilUpdate, { merge: true });
     }).catch(console.error);
 
+    await registrarAuditoria({ uid: decoded.uid, accion: "sesion.inicio", detalle: { metodo: decoded.firebase?.sign_in_provider ?? "desconocido" }, req: request });
+
     const response = NextResponse.json({ success: true });
     response.cookies.set(SESSION_COOKIE, sessionCookie, {
       maxAge: SESSION_SECONDS, httpOnly: true,
@@ -97,7 +100,10 @@ export async function DELETE(request: NextRequest) {
     const sessionCookie = request.cookies.get(SESSION_COOKIE)?.value;
     if (sessionCookie) {
       const decoded = await adminAuth.verifySessionCookie(sessionCookie).catch(() => null);
-      if (decoded) await adminAuth.revokeRefreshTokens(decoded.uid).catch(console.error);
+      if (decoded) {
+        await registrarAuditoria({ uid: decoded.uid, accion: "sesion.cierre", req: request });
+        await adminAuth.revokeRefreshTokens(decoded.uid).catch(console.error);
+      }
     }
   } catch { /* silenciar */ }
 

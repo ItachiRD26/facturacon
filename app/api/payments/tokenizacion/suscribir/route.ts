@@ -3,6 +3,7 @@ import { requireAccesoFacturacion } from "@/lib/tenant/auth";
 import { activarCobroRecurrente } from "@/lib/payments/cobros";
 import { ErrorPagadito, type TarjetaPagadito } from "@/lib/payments/pagadito-tokenizacion";
 import { marcaAceptada, TEXTO_MARCAS_ACEPTADAS } from "@/lib/payments/tarjeta";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 
 interface Body {
   tenantId: string;
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
       card: body.card,
       browserInfo: { deviceFingerprintID: body.deviceFingerprintID, customerIp },
     });
+    await registrarAuditoria({ tenantId: body.tenantId, uid: verif.uid, accion: "plan.activado", recurso: body.planId, req, detalle: { periodo: body.periodo === "anual" ? "anual" : "mensual", ultimos4: suscripcion.ultimos4 } });
     // Nunca devolver payment_token/subscription_code al cliente — solo lo
     // que necesita para mostrar confirmación.
     return NextResponse.json({

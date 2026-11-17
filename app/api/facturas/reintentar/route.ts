@@ -5,6 +5,7 @@ import { getToken, enviarECF, enviarRFCE } from "@/lib/dgii/dgii-client";
 import { obtenerCertificado } from "@/lib/kms/p12-vault";
 import { clasificarError } from "@/lib/dgii/reenvio";
 import type { EmpresaConfig } from "@/types/tenant";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 
 // Reenvía a la DGII un comprobante que quedó "pendiente" (ya tiene e-NCF y XML
 // firmado, pero la DGII o la red fallaron al enviarlo). Usa el MISMO XML
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
     await ref.update({
       estadoDGII, trackIdDGII: trackId, fechaEnvioDGII: new Date().toISOString(), mensajesDGII: [],
     });
+    await registrarAuditoria({ tenantId, uid: verif.uid, accion: "factura.reintento", recurso: f.eCF, req, detalle: { estadoDGII } });
     return NextResponse.json({ ok: true, estadoDGII });
   } catch (e) {
     const mensaje = e instanceof Error ? e.message : String(e);

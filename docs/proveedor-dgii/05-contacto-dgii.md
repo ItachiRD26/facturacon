@@ -13,13 +13,10 @@
 | Nivel de responsabilidad | Titular y responsable técnico y de seguridad |
 
 ## 1.5.2 Correo electrónico
-garciajeter9@gmail.com
+contacto@facturacon.com.do
 
 ## 1.5.3 Teléfono de contacto directo
 809-962-2259
-
-## Contacto alterno (recomendado)
-Nombre: [COMPLETAR] · Correo: [COMPLETAR] · Teléfono: [COMPLETAR]
 
 ## Procedimiento de actualización
 Cada vez que cambie alguno de estos datos se notificará a la Gerencia de Facturación de la DGII por el canal que indique, y se actualizará esta ficha. Fecha de la última verificación: [fecha].

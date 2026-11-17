@@ -107,6 +107,9 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Bitácora de auditoría (lib/auditoria): solo el servidor escribe y lee; el panel la muestra desde una página del servidor.
+      match /auditoria/{id} { allow read, write: if false; }
+
       // Cuentas de empleado (login por código, ver lib/tenant/codigo-
       // empleado.ts) — codigoHash nunca debe ser legible por el cliente, así
       // que todo el documento queda server-only. El dueño/admin lo gestiona
@@ -119,8 +122,10 @@ service cloud.firestore {
       // para miembros (para mostrar el estado en el panel), pero
       // payment_token/subscription_code solo los escribe el backend tras
       // tokenizar la tarjeta — nunca el cliente directamente.
+      // Solo dueño y administradores: ahí vive el código de la tarjeta guardada (paymentToken), que un cajero,
+      // contador o lector no debe poder leer con el SDK aunque el panel no se lo muestre.
       match /facturacion/{doc} {
-        allow read: if hasMembership(tenantId);
+        allow read: if esOwnerOAdmin(tenantId);
         allow write: if false;
       }
 

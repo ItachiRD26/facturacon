@@ -2,23 +2,23 @@
 
 **Organización:** ABC FACTURACON (nombre comercial de PETER JETER GARCIA RODRIGUEZ) — RNC/Cédula 40212171397 · **Versión:** 0.1 (borrador)
 
-> Tiempos definidos por Peter (30 minutos a 1 hora de primera respuesta) y aplicados a los casos urgentes. Todo lo prometido a la DGII hay que cumplirlo: si no se puede sostener, hay que bajar el compromiso **antes** de enviarlo.
+> Los tiempos de respuesta rigen **dentro del horario de atención** (lunes a viernes, 9:00 a. m. a 9:00 p. m.). Fuera de ese horario las solicitudes se atienden al reanudarse. Todo lo prometido a la DGII hay que cumplirlo.
 
 ## 1. Canales de asistencia
 | Canal | Dirección | Para qué | Horario |
 |---|---|---|---|
-| Correo de soporte | `contacto@facturacon.com.do` | Dudas, incidencias y solicitudes | Lunes a viernes, [8:00 a. m. a 6:00 p. m.], hora de República Dominicana |
-| Sección «Ayuda y soporte» del panel | www.facturacon.com.do (dentro del panel) | Guías, tutoriales y envío de consultas con el contexto de la cuenta | Siempre disponible; atención en horario laboral |
-| Teléfono | 809-962-2259 | Urgencias de emisión | [confirmar horario] |
-| Asistencia para certificación como emisor | Asistente guiado de 13 pasos y soporte por correo | Acompañamiento en las pruebas ante la DGII | Horario laboral |
+| Correo de soporte | `contacto@facturacon.com.do` | Dudas, incidencias y solicitudes | Lunes a viernes, de 9:00 a. m. a 9:00 p. m., hora de República Dominicana |
+| Sección «Ayuda y soporte» del panel | www.facturacon.com.do (dentro del panel) | Guías, tutoriales y envío de consultas con el contexto de la cuenta | Siempre disponible; atención de lunes a viernes de 9:00 a. m. a 9:00 p. m. |
+| Teléfono | 809-962-2259 | Urgencias de emisión | Lunes a viernes, de 9:00 a. m. a 9:00 p. m. |
+| Asistencia para certificación como emisor | Asistente guiado de 13 pasos y soporte por correo | Acompañamiento en las pruebas ante la DGII | Lunes a viernes, de 9:00 a. m. a 9:00 p. m. |
 
 ## 2. Tiempos de respuesta (compromiso)
 | Prioridad | Ejemplo | Primera respuesta | Meta de solución |
 |---|---|---|---|
-| **Crítica** | No se pueden emitir comprobantes; sospecha de acceso indebido | 30 minutos a 1 hora (en horario de atención) | [4 horas] |
-| **Alta** | Un tipo de comprobante falla; envíos pendientes a la DGII | 1 hora (en horario de atención) | [1 día laborable] |
-| **Normal** | Dudas de uso, reportes, ajustes de datos | [4 horas laborables] | [2 días laborables] |
-| **Baja** | Sugerencias, mejoras | [1 día laborable] | Según planificación |
+| **Crítica** | No se pueden emitir comprobantes; sospecha de acceso indebido | 30 minutos a 1 hora (en horario de atención) | 4 horas (en horario de atención) |
+| **Alta** | Un tipo de comprobante falla; envíos pendientes a la DGII | 1 hora (en horario de atención) | 1 día laborable |
+| **Normal** | Dudas de uso, reportes, ajustes de datos | 4 horas (en horario de atención) | 2 días laborables |
+| **Baja** | Sugerencias, mejoras | 1 día laborable | Según planificación |
 
 ## 3. Escalamiento
 1. Primer nivel: soporte (correo o panel).

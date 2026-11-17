@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireOwnerOAdmin } from "@/lib/tenant/auth";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { getMembership, deleteMembership } from "@/lib/tenant/get-memberships";
 
 interface Body { tenantId: string; uid: string }
@@ -25,5 +26,6 @@ export async function POST(req: NextRequest) {
   }
 
   await deleteMembership(body.uid, body.tenantId);
+  await registrarAuditoria({ tenantId: body.tenantId, uid: verif.uid, accion: "usuario.eliminado", recurso: body.uid, detalle: { rol: objetivo.rol }, req });
   return NextResponse.json({ ok: true });
 }

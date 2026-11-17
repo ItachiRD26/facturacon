@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { requireTenantActivo } from "@/lib/tenant/auth";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { buildXML, buildRFCEXml, totalesFiscales, LIMITE_RFCE, fmtRNC } from "@/lib/dgii/xml-builder";
 import { firmarXML, extraerSignatureValue } from "@/lib/dgii/xml-signer";
 import { calcularCodigoSeguridad, generarURLQR, formatFechaQR, formatFechaHoraQR, extraerFechaHoraFirmaISO } from "@/lib/dgii/qr-builder";
@@ -278,6 +279,10 @@ export async function POST(req: NextRequest) {
   void _omitId;
   await facturas.doc(key).set(cleanData(datos));
   await bloqueo.update({ estado: "ok", eCF }).catch(() => {});
+  await registrarAuditoria({
+    tenantId, uid: verif.uid, accion: "factura.emitida", recurso: eCF, req,
+    detalle: { tipo: body.tipoECF, total: totalMonto, estadoDGII },
+  });
 
   console.log(`[emitir][${tenantId}] e-CF ${eCF} (${body.tipoECF}) → trackId=${trackId || "—"} estado=${estadoDGII} docId=${key}`);
 

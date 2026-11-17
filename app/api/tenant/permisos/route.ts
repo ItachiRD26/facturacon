@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { requireRolEnTenant } from "@/lib/tenant/auth";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { obtenerSuscripcion } from "@/lib/payments/suscripcion";
 import { buscarPlan } from "@/lib/payments/planes";
 import { limitar } from "@/lib/seguridad/limite-tasa";
@@ -35,5 +36,6 @@ export async function POST(req: NextRequest) {
   if (Object.keys(cambios).length === 0) return NextResponse.json({ error: "Nada que cambiar." }, { status: 400 });
 
   await adminDb.collection("tenants").doc(v.tenant.id).update(cambios);
+  await registrarAuditoria({ tenantId: v.tenant.id, uid: v.uid, accion: "permisos.cambio", detalle: cambios, req });
   return NextResponse.json({ ok: true, ...cambios });
 }

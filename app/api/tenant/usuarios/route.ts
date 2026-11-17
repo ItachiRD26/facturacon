@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { requireOwnerOAdmin } from "@/lib/tenant/auth";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { listMembershipsForTenant, createMembership } from "@/lib/tenant/get-memberships";
 import { ROLES_INVITABLES } from "@/lib/tenant/roles";
 import { apagarFacturacionDuenoPorEquipo } from "@/lib/tenant/permisos-facturacion";
@@ -74,5 +75,6 @@ export async function POST(req: NextRequest) {
 
   await createMembership(usuario.uid, body.tenantId, body.rol);
   if (body.rol === "vendedor") await apagarFacturacionDuenoPorEquipo(body.tenantId);
+  await registrarAuditoria({ tenantId: body.tenantId, uid: verif.uid, accion: "usuario.agregado", recurso: usuario.uid, detalle: { rol: body.rol, correo: body.email.trim() }, req });
   return NextResponse.json({ ok: true });
 }

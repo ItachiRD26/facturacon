@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { requireOwnerOAdmin } from "@/lib/tenant/auth";
+import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { generarCodigoEmpleado, hashCodigo } from "@/lib/tenant/codigo-empleado";
 
 // Genera un código nuevo para un empleado existente (perdió el suyo, o el
@@ -21,5 +22,6 @@ export async function POST(req: NextRequest) {
   const codigo = generarCodigoEmpleado();
   await ref.update({ codigoHash: hashCodigo(codigo), codigoUltimos4: codigo.slice(-4), activo: true });
 
+  await registrarAuditoria({ tenantId, uid: verif.uid, accion: "empleado.codigo", recurso: uid, req });
   return NextResponse.json({ ok: true, codigo });
 }
