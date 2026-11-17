@@ -8,6 +8,8 @@ import { useSuscripcion } from "@/hooks/use-suscripcion";
 import { PLANES, VOLUMEN_EMPRESA, montoPeriodoRD, textoUsuarios, type Plan } from "@/lib/payments/planes";
 import type { EstadoTenant } from "@/types/tenant";
 import SuscripcionWizard from "./suscripcion-wizard";
+import SelectorPlan from "./selector-plan";
+import type { PeriodoPlan } from "@/lib/payments/planes";
 import TutorialButton from "./tutorial-button";
 import JornadaProgreso from "./jornada-progreso";
 import { etapaActualPara } from "@/lib/tenant/jornada";
@@ -87,13 +89,16 @@ function AdicionalesCard({ tenantId }: { tenantId: string }) {
 }
 
 export default function PlanClient({
-  tenantId, estadoTenant, ambienteLive, usoMes, abrirAlInicio, urlSistema,
+  tenantId, estadoTenant, ambienteLive, usoMes, urlSistema,
 }: {
-  tenantId: string; estadoTenant: EstadoTenant; ambienteLive: boolean; usoMes: number; abrirAlInicio: boolean; urlSistema?: string;
+  tenantId: string; estadoTenant: EstadoTenant; ambienteLive: boolean; usoMes: number; urlSistema?: string;
 }) {
   const router = useRouter();
   const { suscripcion, loading } = useSuscripcion(tenantId);
-  const [wizard, setWizard] = useState<{ abierto: boolean; planId: string | null; saltar: boolean }>({ abierto: abrirAlInicio, planId: null, saltar: false });
+  // El plan se elige en la propia página (selector con Mensual/Anual); el modal solo se abre para pagar.
+  const [wizard, setWizard] = useState<{ abierto: boolean; planId: string | null; periodo: PeriodoPlan }>({ abierto: false, planId: null, periodo: "mensual" });
+  const [planSel, setPlanSel] = useState<string | null>(null);
+  const [periodoSel, setPeriodoSel] = useState<PeriodoPlan>("mensual");
   const [confirmarCancelar, setConfirmarCancelar] = useState(false);
   const [cancelando, setCancelando] = useState(false);
   const [error, setError] = useState("");
@@ -102,7 +107,7 @@ export default function PlanClient({
   const plan = suscripcion ? PLANES.find((p) => p.id === suscripcion.planId) : undefined;
   const etapa = etapaActualPara(estadoTenant, suscripcion?.estado ?? null);
 
-  const abrir = (planId: string | null, saltar = false) => setWizard({ abierto: true, planId, saltar });
+  const abrir = (planId: string | null, periodo: PeriodoPlan) => setWizard({ abierto: true, planId, periodo });
 
   const cancelar = async () => {
     setCancelando(true); setError("");
@@ -167,12 +172,9 @@ export default function PlanClient({
             <div style={{ fontSize: 15, fontWeight: 700 }}>Elige cuántos comprobantes necesitas al mes</div>
             <TutorialButton titulo="Cómo activar tu cobro recurrente" />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            {PLANES.map((p) => <TarjetaPlan key={p.id} plan={p} onElegir={() => abrir(p.id, true)} destacada={p.id === suscripcion?.planId} />)}
-            <TarjetaEmpresa />
-          </div>
+          <SelectorPlan planId={planSel} onElegir={setPlanSel} onContinuar={(id) => abrir(id, periodoSel)} periodo={periodoSel} onPeriodo={setPeriodoSel} />
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 14, lineHeight: 1.55 }}>
-            Se cobra cada mes a tu tarjeta de forma automática hasta que canceles. Tu tarjeta se envía directo a Pagadito, nuestra pasarela de pago; nunca pasa por los servidores de Facturacon.
+            Al elegir el plan se cobra el primer periodo y después se renueva solo, el mismo día, hasta que canceles. Tu tarjeta se envía a Pagadito, nuestra pasarela de pago, por una conexión cifrada; Facturacon no la guarda.
           </p>
         </>
       )}
@@ -188,7 +190,7 @@ export default function PlanClient({
                 ? <>Renueva o actualiza tu tarjeta antes del <b>{fmtFecha(fechaLimitePago(suscripcion.proximoCobroEn))}</b> para evitar la suspensión de tu cuenta.{suscripcion.proximoIntentoEn ? <> Volveremos a intentar el cobro el {fmtFecha(suscripcion.proximoIntentoEn)}.</> : null}</>
                 : "Confirma tu tarjeta para que no se suspenda tu cuenta."}
           </p>
-          <Button onClick={() => abrir(suscripcion.planId, true)}>Arreglar mi pago ahora →</Button>
+          <Button onClick={() => abrir(suscripcion.planId, suscripcion.periodo === "anual" ? "anual" : "mensual")}>Arreglar mi pago ahora →</Button>
         </Card>
       )}
 
@@ -226,7 +228,7 @@ export default function PlanClient({
               </div>
               {suscripcion.cardHolderName && <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 2 }}>{suscripcion.cardHolderName}</div>}
               <div style={{ marginTop: 12 }}>
-                <Button variante="secondary" tamano="sm" onClick={() => abrir(suscripcion.planId, true)}>Cambiar tarjeta</Button>
+                <Button variante="secondary" tamano="sm" onClick={() => abrir(suscripcion.planId, suscripcion.periodo === "anual" ? "anual" : "mensual")}>Cambiar tarjeta</Button>
               </div>
             </Card>
             <Card padding={18}>
@@ -251,11 +253,13 @@ export default function PlanClient({
 
       {error && <div role="alert" style={{ fontSize: 13, color: "var(--c-red)", marginTop: 12 }}>{error}</div>}
 
-      <SuscripcionWizard
-        open={wizard.abierto} onClose={() => setWizard((w) => ({ ...w, abierto: false }))} tenantId={tenantId}
-        ambienteLive={ambienteLive} planIdActual={wizard.planId ?? suscripcion?.planId} saltarPlan={wizard.saltar}
-        urlSistema={urlSistema} onActivada={() => router.refresh()}
-      />
+      {wizard.abierto && (
+        <SuscripcionWizard
+          open={wizard.abierto} onClose={() => setWizard((w) => ({ ...w, abierto: false }))} tenantId={tenantId}
+          ambienteLive={ambienteLive} planId={wizard.planId} periodo={wizard.periodo}
+          urlSistema={urlSistema} onActivada={() => router.refresh()}
+        />
+      )}
 
       <Modal open={confirmarCancelar} onClose={() => setConfirmarCancelar(false)} title="¿Cancelar el cobro recurrente?" maxWidth={440}>
         <p style={{ fontSize: 13, color: "var(--c-text-2)", lineHeight: 1.6, marginBottom: 18 }}>

@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Script from "next/script";
-import { PLANES, montoPeriodoRD } from "@/lib/payments/planes";
+import { PLANES, montoPeriodoRD, type PeriodoPlan } from "@/lib/payments/planes";
 import Modal from "@/components/modals/modal";
 import { Boton, Campo, Input } from "@/components/sandbox/ui";
 import InfoTooltip from "./info-tooltip";
 import TutorialButton from "./tutorial-button";
-import SelectorPlan, { type PeriodoPlan } from "./selector-plan";
 
 // País fijo: República Dominicana (ISO 3166 numérico 214, único mercado que
 // atiende Facturacon hoy — ver APPENDIX List of ISO 3166 Country Codes de
@@ -32,38 +31,27 @@ const VACIO: FormTarjeta = {
   ciudad: "", provincia: "", direccion: "", telefono: "",
 };
 
-type Paso = 1 | 2 | 3;
+// 1 = datos de pago, 2 = listo. El plan y el periodo (mensual/anual) ya se eligieron en la página de Plan y facturación.
+type Paso = 1 | 2;
 
-// Reemplaza al viejo ModalSuscripcion: antes leía el plan de
-// tenants/{tenantId}/certificacion/pago, un documento que ningún código
-// escribía — el formulario de pago nunca se podía completar. Ahora el plan
-// se elige aquí mismo, como Paso 1, sin depender de nada externo.
+// Asistente de pago: solo pide los datos de la tarjeta y cobra. El plan se elige antes, en las tarjetas
+// de la página de Plan y facturación. Se monta solo mientras está abierto, así cada vez empieza con el formulario limpio.
 export default function SuscripcionWizard({
-  open, onClose, tenantId, onActivada, ambienteLive = false, planIdActual, saltarPlan = false, urlSistema,
+  open, onClose, tenantId, onActivada, ambienteLive = false, planId, periodo, urlSistema,
 }: {
   open: boolean; onClose: () => void; tenantId: string; onActivada: () => void;
   ambienteLive?: boolean;
-  // Si ya hubo una suscripción antes (reactivación tras pago fallido/cancelación),
-  // precarga el mismo plan para que el usuario no tenga que volver a elegir.
-  planIdActual?: string | null;
-  // El plan ya se eligió afuera (tarjetas de la pantalla de plan): empieza en Datos de pago.
-  saltarPlan?: boolean;
+  planId: string | null;
+  periodo: PeriodoPlan;
   // Si se pasa, el mensaje final ofrece abrir el sistema ya listo para facturar.
   urlSistema?: string;
 }) {
   const [paso, setPaso] = useState<Paso>(1);
-  const [planId, setPlanId] = useState<string | null>(null);
-  const [periodo, setPeriodo] = useState<PeriodoPlan>("mensual");
   const [form, setForm] = useState<FormTarjeta>(VACIO);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
   const [scriptListo, setScriptListo] = useState(false);
   const [activada, setActivada] = useState<{ facturasMes: number; ultimos4?: string } | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    setPaso(saltarPlan && planIdActual ? 2 : 1); setPlanId(planIdActual ?? null); setPeriodo("mensual"); setForm(VACIO); setError(""); setActivada(null);
-  }, [open, planIdActual, saltarPlan]);
 
   const set = <K extends keyof FormTarjeta>(k: K, v: FormTarjeta[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -103,56 +91,30 @@ export default function SuscripcionWizard({
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "No se pudo activar el cobro recurrente.");
       setActivada({ facturasMes: data.facturasMes, ultimos4: data.ultimos4 });
-      setPaso(3);
+      setPaso(2);
       onActivada();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
     } finally { setEnviando(false); }
   };
 
-  const titulo = paso === 1 ? "Paso 1 — Elige tu plan" : paso === 2 ? "Paso 2 — Datos de pago" : "¡Listo!";
+  const titulo = paso === 1 ? "Datos de pago" : "¡Listo!";
 
   return (
     <>
       {/* Requerido por Pagadito para evaluar el riesgo de la transacción —
           ver documentacion-pagadito/PG-TokenizationPayment.pdf. */}
       <Script src="/cybs_devicefingerprint.js" strategy="afterInteractive" onReady={() => setScriptListo(true)} />
-      <Modal open={open} onClose={onClose} title={titulo} maxWidth={paso === 1 ? 820 : 560}>
-        {paso < 3 && (
-          <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
-            {[1, 2].map((n) => (
-              <div key={n} style={{ flex: 1, height: 4, borderRadius: 2, background: n <= paso ? "var(--c-brand)" : "var(--c-border)" }} />
-            ))}
-          </div>
-        )}
-
+      <Modal open={open} onClose={onClose} title={titulo} maxWidth={560}>
         {paso === 1 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-              <p style={{ fontSize: 12, color: "var(--c-text-3)", margin: 0 }}>
-                Elige cuántos comprobantes necesitas emitir al mes.
-              </p>
-              <InfoTooltip texto="El plan define cuántas facturas electrónicas puedes emitir al mes y cuántos usuarios/cajeros puedes tener. Si te quedas corto, puedes subir de plan más adelante." />
-            </div>
-
-            <SelectorPlan planId={planId} onElegir={setPlanId} onContinuar={(id) => { setPlanId(id); setPaso(2); }} periodo={periodo} onPeriodo={setPeriodo} />
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-              <Boton variant="secondary" onClick={onClose}>Cancelar</Boton>
-              <Boton onClick={() => setPaso(2)} disabled={!planId}>Continuar →</Boton>
-            </div>
-          </div>
-        )}
-
-        {paso === 2 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <p style={{ fontSize: 12, color: "var(--c-text-3)", margin: 0 }}>
                 {plan && (periodo === "anual"
-                  ? `Se cobrará RD$ ${montoPeriodoRD(plan, "anual").toLocaleString("es-DO")} una vez al año (2 meses gratis) a esta tarjeta, automáticamente, hasta que canceles.`
-                  : `Se cobrará RD$ ${plan.montoRD.toLocaleString("es-DO")}/mes a esta tarjeta, automáticamente, hasta que canceles.`)}
+                  ? `Plan de ${plan.facturas.toLocaleString("es-DO")} comprobantes · se cobra HOY RD$ ${montoPeriodoRD(plan, "anual").toLocaleString("es-DO")} (el año, 2 meses gratis) y se renueva cada año, automáticamente, hasta que canceles.`
+                  : `Plan de ${plan.facturas.toLocaleString("es-DO")} comprobantes · se cobra HOY RD$ ${plan.montoRD.toLocaleString("es-DO")} y se renueva cada mes, automáticamente, hasta que canceles.`)}
               </p>
-              <InfoTooltip texto="Tu número de tarjeta se envía directo a Pagadito (nuestra pasarela de pago) — nunca pasa ni se guarda en los servidores de Facturacon." />
+              <InfoTooltip texto="Tu tarjeta se envía a Pagadito (nuestra pasarela de pago) por una conexión cifrada. Facturacon no la guarda: solo conserva un código seguro de Pagadito y los últimos 4 dígitos." />
               <TutorialButton titulo="Cómo activar tu cobro recurrente" />
             </div>
 
@@ -190,7 +152,7 @@ export default function SuscripcionWizard({
             {error && <div style={{ fontSize: 12, color: "#991b1b" }}>{error}</div>}
 
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-              <Boton variant="secondary" onClick={() => setPaso(1)}>← Atrás</Boton>
+              <Boton variant="secondary" onClick={onClose}>Cancelar</Boton>
               <Boton onClick={submit} disabled={!formValido || !scriptListo || enviando}>
                 {enviando ? "Activando..." : "Activar cobro recurrente"}
               </Boton>
@@ -198,7 +160,7 @@ export default function SuscripcionWizard({
           </div>
         )}
 
-        {paso === 3 && activada && (
+        {paso === 2 && activada && (
           <div style={{ textAlign: "center", padding: "16px 0 4px" }}>
             <div style={{
               width: 56, height: 56, borderRadius: "50%", background: "#166534", color: "#fff",
