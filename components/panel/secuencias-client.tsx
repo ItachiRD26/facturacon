@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Modal from "@/components/modals/modal";
 import { Button, Card, PageHeader, Pill, th, td, tablaWrap } from "@/components/ui/kit";
 import { TIPOS_ECF } from "@/types";
+import { calcularRango } from "@/lib/tenant/secuencias-calculo";
 import type { TipoECF } from "@/types";
 
 interface Rango { desde: number; hasta: number; vencimiento: string; ultimo: number }
@@ -23,6 +24,8 @@ export default function SecuenciasClient({ tenantId, embebido = false }: { tenan
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
   const [venc, setVenc] = useState("");
+  const [cantidad, setCantidad] = useState("");
+  const [avanzado, setAvanzado] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
 
@@ -37,7 +40,7 @@ export default function SecuenciasClient({ tenantId, embebido = false }: { tenan
 
   function abrir(tipo: TipoECF) {
     const r = sec?.[tipo];
-    setEditando(tipo); setErrorForm("");
+    setEditando(tipo); setErrorForm(""); setCantidad(""); setAvanzado(false);
     setDesde(r ? String(r.desde) : "1"); setHasta(r ? String(r.hasta) : ""); setVenc(r?.vencimiento ?? "");
   }
 
@@ -47,7 +50,9 @@ export default function SecuenciasClient({ tenantId, embebido = false }: { tenan
     try {
       const res = await fetch("/api/tenant/secuencias", {
         method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenantId, tipo: editando, desde: Number(desde), hasta: Number(hasta), vencimiento: venc }),
+        body: JSON.stringify(avanzado
+          ? { tenantId, tipo: editando, desde: Number(desde), hasta: Number(hasta), vencimiento: venc }
+          : { tenantId, tipo: editando, cantidad: Number(cantidad) }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error);
@@ -72,9 +77,8 @@ export default function SecuenciasClient({ tenantId, embebido = false }: { tenan
       <Card style={{ marginBottom: 20, background: "var(--c-brand-bg)", borderColor: "var(--c-brand-border)" }}>
         <div style={{ fontSize: 13, lineHeight: 1.6 }}>
           <strong>¿De dónde salen estos números?</strong> Después de certificarte, en la Oficina Virtual de la DGII
-          solicitas la <em>autorización de secuencias</em> para cada tipo de comprobante que vas a usar. La DGII te
-          responde con un rango (por ejemplo del 1 al 1,000) y una fecha de vencimiento. Escríbelos aquí tal cual.
-          Solo registra los tipos que vas a emitir.
+          solicitas cuántos comprobantes quieres de cada tipo. Aquí solo dices <strong>cuántos solicitaste</strong>: Facturacon calcula la
+          numeración (empieza en 1 y continúa en orden) y el vencimiento (31 de diciembre del año siguiente). Solo registra los tipos que vas a emitir.
         </div>
       </Card>
 
@@ -123,26 +127,49 @@ export default function SecuenciasClient({ tenantId, embebido = false }: { tenan
       </div>
 
       <Modal open={!!editando} onClose={() => setEditando(null)} title={`Secuencia ${editando ?? ""}`} maxWidth={460}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <p style={{ fontSize: 12, color: "var(--c-text-3)", lineHeight: 1.5 }}>
-            Copia los datos de la autorización que te dio la DGII. Si es una ampliación del mismo rango, deja el
-            inicial igual y sube el final. Un rango nuevo debe empezar después del último número que ya usaste.
-          </p>
-          <label style={{ fontSize: 12 }}>Número inicial
-            <input style={input} inputMode="numeric" value={desde} onChange={(e) => setDesde(e.target.value.replace(/\D/g, ""))} />
-          </label>
-          <label style={{ fontSize: 12 }}>Número final
-            <input style={input} inputMode="numeric" value={hasta} onChange={(e) => setHasta(e.target.value.replace(/\D/g, ""))} />
-          </label>
-          <label style={{ fontSize: 12 }}>Fecha de vencimiento
-            <input style={input} type="date" value={venc} onChange={(e) => setVenc(e.target.value)} />
-          </label>
-          {errorForm && <p style={{ fontSize: 12, color: "var(--c-red)" }}>{errorForm}</p>}
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <Button variante="secondary" onClick={() => setEditando(null)}>Cancelar</Button>
-            <Button onClick={guardar} disabled={guardando || !desde || !hasta || !venc}>{guardando ? "Guardando…" : "Guardar"}</Button>
-          </div>
-        </div>
+        {(() => {
+          const n = Number(cantidad);
+          const valida = Number.isInteger(n) && n >= 1;
+          const prev = valida && editando ? calcularRango(sec?.[editando], n, hoy()) : null;
+          const fmtF = (iso: string) => `${iso.slice(8, 10)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}`;
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <label style={{ fontSize: 13, fontWeight: 600 }}>¿Cuántos comprobantes de este tipo solicitaste a la DGII?
+                <input style={{ ...input, marginTop: 6 }} inputMode="numeric" autoFocus placeholder="Ej.: 500" value={cantidad}
+                  onChange={(e) => setCantidad(e.target.value.replace(/\D/g, ""))} disabled={avanzado} />
+              </label>
+              {prev && !avanzado && (
+                <div style={{ fontSize: 12, lineHeight: 1.6, background: "var(--c-brand-bg)", border: "1px solid var(--c-brand-border)", borderRadius: 8, padding: "10px 12px" }}>
+                  Se registrará la numeración del <strong>{prev.desde.toLocaleString("es-DO")}</strong> al <strong>{prev.hasta.toLocaleString("es-DO")}</strong>
+                  {prev.modo === "amplia" && " (se suma a la que ya tenías)"}, con vencimiento el <strong>{fmtF(prev.vencimiento)}</strong> (31 de diciembre del año siguiente).
+                </div>
+              )}
+              <details onToggle={(e) => setAvanzado((e.currentTarget as HTMLDetailsElement).open)}>
+                <summary style={{ fontSize: 12, color: "var(--c-text-3)", cursor: "pointer" }}>Avanzado: la DGII me autorizó un rango distinto</summary>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
+                  <p style={{ fontSize: 12, color: "var(--c-text-3)", lineHeight: 1.5, margin: 0 }}>
+                    Úsalo solo si en la OFV (Consulta de autorizaciones) ves un rango o un vencimiento diferente al calculado. Si es una ampliación del
+                    mismo rango, deja el inicial igual y sube el final. Un rango nuevo debe empezar después del último número que ya usaste.
+                  </p>
+                  <label style={{ fontSize: 12 }}>Número inicial
+                    <input style={input} inputMode="numeric" value={desde} onChange={(e) => setDesde(e.target.value.replace(/\D/g, ""))} />
+                  </label>
+                  <label style={{ fontSize: 12 }}>Número final
+                    <input style={input} inputMode="numeric" value={hasta} onChange={(e) => setHasta(e.target.value.replace(/\D/g, ""))} />
+                  </label>
+                  <label style={{ fontSize: 12 }}>Fecha de vencimiento
+                    <input style={input} type="date" value={venc} onChange={(e) => setVenc(e.target.value)} />
+                  </label>
+                </div>
+              </details>
+              {errorForm && <p style={{ fontSize: 12, color: "var(--c-red)" }}>{errorForm}</p>}
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <Button variante="secondary" onClick={() => setEditando(null)}>Cancelar</Button>
+                <Button onClick={guardar} disabled={guardando || (avanzado ? !desde || !hasta || !venc : !valida)}>{guardando ? "Guardando…" : "Guardar"}</Button>
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
     </div>
   );

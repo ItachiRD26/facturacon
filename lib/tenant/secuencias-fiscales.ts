@@ -9,6 +9,7 @@
 import "server-only";
 import { adminDb } from "@/lib/firebase-admin";
 import type { TipoECF } from "@/types";
+import { MAX_CANTIDAD, calcularRango } from "./secuencias-calculo";
 
 export interface RangoSecuencia {
   desde: number;
@@ -70,6 +71,17 @@ export async function guardarRango(tenantId: string, tipo: TipoECF, nuevo: { des
     }
     tx.set(ref(tenantId), { [tipo]: { desde, hasta, vencimiento, ultimo } }, { merge: true });
   });
+}
+
+// Registra lo que el usuario pidió en la OFV indicando solo CUÁNTOS comprobantes. El rango y el vencimiento
+// se calculan (ver secuencias-calculo.ts). El caso raro de una numeración distinta se registra con guardarRango.
+export async function registrarCantidad(tenantId: string, tipo: TipoECF, cantidad: number) {
+  if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > MAX_CANTIDAD) {
+    throw new ErrorSecuencia(`La cantidad debe ser un número entero entre 1 y ${MAX_CANTIDAD.toLocaleString("es-DO")}.`);
+  }
+  const actual = (await leerSecuencias(tenantId))[tipo];
+  const r = calcularRango(actual, cantidad, hoyRD());
+  await guardarRango(tenantId, tipo, { desde: r.desde, hasta: r.hasta, vencimiento: r.vencimiento });
 }
 
 // Reserva el siguiente e-NCF del tipo. Atómico: dos emisiones simultáneas
