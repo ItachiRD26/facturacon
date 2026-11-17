@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     // que necesita para mostrar confirmación.
     return NextResponse.json({
       ok: true,
-      estado: suscripcion.estado, ultimos4: suscripcion.ultimos4, facturasMes: suscripcion.facturasMes,
+      estado: suscripcion.estado, ultimos4: suscripcion.ultimos4, facturasMes: suscripcion.facturasMes, proximoCobroEn: suscripcion.proximoCobroEn,
     });
   } catch (e) {
     const mensaje = e instanceof Error ? e.message : String(e);
