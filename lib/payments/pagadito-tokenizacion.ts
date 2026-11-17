@@ -24,10 +24,27 @@ const BASE_URL = SANDBOX
   : "https://api.pagadito.com/v1/";
 
 function credenciales(): { uid: string; wsk: string } {
-  const uid = process.env.PAGADITO_UID;
-  const wsk = process.env.PAGADITO_WSK;
+  // trim(): al pegar una variable en Vercel suele colarse un espacio o salto de línea al final, y con eso
+  // la autenticación Basic falla (401) aunque la clave sea correcta.
+  const uid = process.env.PAGADITO_UID?.trim();
+  const wsk = process.env.PAGADITO_WSK?.trim();
   if (!uid || !wsk) throw new Error("Pagadito no está configurado (faltan PAGADITO_UID/PAGADITO_WSK).");
   return { uid, wsk };
+}
+
+// Diagnóstico SIN secretos para los logs del servidor cuando Pagadito rechaza el acceso (401/403): ambiente,
+// servidor al que se llamó, largo de las claves y si traían espacios sobrantes.
+function diagnosticoAcceso(recurso: string, res: Response): string {
+  const uid = process.env.PAGADITO_UID ?? "", wsk = process.env.PAGADITO_WSK ?? "";
+  const host = new URL(BASE_URL).host;
+  const info = {
+    recurso, http: res.status, ambiente: SANDBOX ? "sandbox" : "live", host,
+    uidLargo: uid.trim().length, wskLargo: wsk.trim().length,
+    uidConEspacios: uid !== uid.trim(), wskConEspacios: wsk !== wsk.trim(),
+    wwwAuthenticate: res.headers.get("www-authenticate") ?? undefined, server: res.headers.get("server") ?? undefined,
+  };
+  console.error("[pagadito-tokenizacion] acceso rechazado:", JSON.stringify(info));
+  return JSON.stringify({ ambiente: info.ambiente, host: info.host });
 }
 
 export interface RespuestaTokenizacion<T> {
@@ -104,7 +121,8 @@ async function llamarTokenizacion<T>(recurso: string, body: unknown): Promise<Re
   try {
     data = JSON.parse(texto) as RespuestaTokenizacion<T>;
   } catch {
-    throw new Error(`Pagadito Tokenización (${recurso}): respuesta no-JSON (HTTP ${res.status}) — ${texto.substring(0, 300)}`);
+    const extra = res.status === 401 || res.status === 403 ? ` · ${diagnosticoAcceso(recurso, res)}` : "";
+    throw new Error(`Pagadito Tokenización (${recurso}): respuesta no-JSON (HTTP ${res.status}) — ${texto.substring(0, 300)}${extra}`);
   }
 
   if (data.response_code !== "PG200-00") {
