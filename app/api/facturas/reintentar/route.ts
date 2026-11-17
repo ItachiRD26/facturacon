@@ -3,6 +3,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import { requireTenantActivo } from "@/lib/tenant/auth";
 import { getToken, enviarECF, enviarRFCE } from "@/lib/dgii/dgii-client";
 import { obtenerCertificado } from "@/lib/kms/p12-vault";
+import { clasificarError } from "@/lib/dgii/reenvio";
 import type { EmpresaConfig } from "@/types/tenant";
 
 // Reenvía a la DGII un comprobante que quedó "pendiente" (ya tiene e-NCF y XML
@@ -53,7 +54,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, estadoDGII });
   } catch (e) {
     const mensaje = e instanceof Error ? e.message : String(e);
-    await ref.update({ mensajesDGII: [mensaje] }).catch(() => {});
+    if (clasificarError(mensaje) === "rechazo") {
+      await ref.update({ estadoDGII: "Rechazado", mensajesDGII: [mensaje.slice(0, 600)], fechaEnvioDGII: new Date().toISOString() }).catch(() => {});
+      return NextResponse.json({ error: `La DGII rechazó el comprobante: ${mensaje}` }, { status: 422 });
+    }
+    await ref.update({ mensajesDGII: [mensaje.slice(0, 300)] }).catch(() => {});
     return NextResponse.json({ error: `La DGII no recibió el comprobante: ${mensaje}` }, { status: 502 });
   }
 }

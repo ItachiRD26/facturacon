@@ -6,6 +6,7 @@ import { firmarXML, extraerSignatureValue } from "@/lib/dgii/xml-signer";
 import { calcularCodigoSeguridad, generarURLQR, formatFechaQR, formatFechaHoraQR, extraerFechaHoraFirmaISO } from "@/lib/dgii/qr-builder";
 import { getToken, enviarECF, enviarRFCE } from "@/lib/dgii/dgii-client";
 import { obtenerCertificado } from "@/lib/kms/p12-vault";
+import { clasificarError, marcarExito, marcarFallo, servicioEnPausa } from "@/lib/dgii/reenvio";
 import { contarComprobantesEsteMes } from "@/lib/tenant/estadisticas";
 import { obtenerSuscripcion } from "@/lib/payments/suscripcion";
 import { buscarPlan } from "@/lib/payments/planes";
@@ -226,7 +227,11 @@ export async function POST(req: NextRequest) {
       signatureValue, ...(esRFCE ? { esRFCE: true } : {}),
     }, empresa.ambiente);
 
-    try {
+    if (await servicioEnPausa(tenantId)) {
+      // La DGII acaba de fallar: no se hace esperar al cajero otra vez. El comprobante ya está firmado,
+      // con su e-NCF y su QR, y se envía solo cuando la DGII vuelva.
+      mensajesDGII = ["La DGII no está respondiendo en este momento. El comprobante se enviará solo cuando vuelva."];
+    } else try {
       const token = await getToken(tenant, async () => ({ p12Buffer, password }));
       if (esRFCE) {
         xmlRFCEFirmado = await firmarXML(buildRFCEXml(factura, empresa, codigoSeguridad, cliente), p12Buffer, password);
@@ -240,11 +245,20 @@ export async function POST(req: NextRequest) {
         trackId = await enviarECF(xmlFirmado, tenant, token, eCF);
         estadoDGII = "Enviado";
       }
+      await marcarExito(tenantId);
     } catch (e) {
-      // La DGII/red falló: el comprobante ya tiene número y XML firmado, se
-      // guarda como pendiente para no perderlo.
-      mensajesDGII = [e instanceof Error ? e.message : String(e)];
-      console.error(`[emitir][${tenantId}] envío de ${eCF} falló:`, mensajesDGII[0]);
+      const mensaje = e instanceof Error ? e.message : String(e);
+      if (clasificarError(mensaje) === "rechazo") {
+        // La DGII lo recibió y lo rechazó: reintentarlo no sirve; queda visible como Rechazado.
+        estadoDGII = "Rechazado";
+        mensajesDGII = [mensaje.slice(0, 600)];
+      } else {
+        // La DGII/red falló: el comprobante ya tiene número y XML firmado, se guarda como pendiente
+        // (contingencia) y el sistema lo envía solo cuando la DGII vuelva.
+        mensajesDGII = [mensaje.slice(0, 300)];
+        await marcarFallo(tenantId);
+      }
+      console.error(`[emitir][${tenantId}] envío de ${eCF} falló:`, mensaje);
     }
   } catch (e) {
     // No se pudo ni firmar: el número queda registrado como usado y sin enviar.
