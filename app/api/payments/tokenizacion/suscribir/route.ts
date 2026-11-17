@@ -52,6 +52,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       estado: suscripcion.estado, ultimos4: suscripcion.ultimos4, facturasMes: suscripcion.facturasMes, proximoCobroEn: suscripcion.proximoCobroEn,
+      comprobante: {
+        fecha: suscripcion.ultimoPagoEn, montoRD: suscripcion.montoUltimoCobroRD, montoUSD: suscripcion.montoUltimoCobroUSD,
+        autorizacion: suscripcion.autorizacion, ern: suscripcion.ern,
+      },
     });
   } catch (e) {
     if (e instanceof ErrorPagadito) {

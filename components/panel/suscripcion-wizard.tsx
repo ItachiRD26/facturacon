@@ -43,7 +43,10 @@ export default function SuscripcionWizard({
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
   const [scriptListo, setScriptListo] = useState(false);
-  const [activada, setActivada] = useState<{ facturasMes: number; ultimos4?: string; proximoCobroEn?: string } | null>(null);
+  const [activada, setActivada] = useState<{
+    facturasMes: number; ultimos4?: string; proximoCobroEn?: string;
+    comprobante?: { fecha?: string; montoRD?: number; montoUSD?: string; autorizacion?: string; ern?: string };
+  } | null>(null);
 
   const plan = PLANES.find((p) => p.id === planId);
   const monto = plan ? montoPeriodoRD(plan, periodo) : 0;
@@ -78,7 +81,7 @@ export default function SuscripcionWizard({
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "No se pudo activar el cobro recurrente.");
-      setActivada({ facturasMes: data.facturasMes, ultimos4: data.ultimos4, proximoCobroEn: data.proximoCobroEn });
+      setActivada({ facturasMes: data.facturasMes, ultimos4: data.ultimos4, proximoCobroEn: data.proximoCobroEn, comprobante: data.comprobante });
       setPaso(2);
       onActivada();
     } catch (err) {
@@ -142,6 +145,15 @@ export default function SuscripcionWizard({
               {activada.proximoCobroEn ? <><br />Próximo cobro: <b>{fmtFecha(activada.proximoCobroEn)}</b>.</> : null}
               <br />Ya puedes emitir comprobantes fiscales reales.
             </p>
+            {activada.comprobante?.autorizacion && (
+              <div style={{ textAlign: "left", margin: "0 auto 20px", maxWidth: 420, border: "1px solid var(--c-border)", borderRadius: 10, padding: "12px 14px", background: "var(--c-bg)", fontSize: 12.5, lineHeight: 1.7 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, color: "var(--c-text-3)", marginBottom: 4 }}>COMPROBANTE DE PAGO</div>
+                {activada.comprobante.fecha && <div><span style={{ color: "var(--c-text-3)" }}>Fecha y hora:</span> {new Date(activada.comprobante.fecha).toLocaleString("es-DO", { timeZone: "America/Santo_Domingo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}</div>}
+                {activada.comprobante.montoRD !== undefined && <div><span style={{ color: "var(--c-text-3)" }}>Monto:</span> <b>RD$ {activada.comprobante.montoRD.toLocaleString("es-DO")}</b>{activada.comprobante.montoUSD ? ` (US$ ${activada.comprobante.montoUSD})` : ""}</div>}
+                <div><span style={{ color: "var(--c-text-3)" }}>N.º de aprobación:</span> <b className="num-sans">{activada.comprobante.autorizacion}</b></div>
+                {activada.comprobante.ern && <div style={{ wordBreak: "break-all" }}><span style={{ color: "var(--c-text-3)" }}>Referencia (ERN):</span> {activada.comprobante.ern}</div>}
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
               {urlSistema && <a href={urlSistema} style={{ padding: "9px 18px", borderRadius: 6, fontSize: 13, fontWeight: 600, background: "var(--c-brand)", color: "#fff", textDecoration: "none" }}>Abrir mi sistema →</a>}
               <Boton variant="secondary" onClick={onClose}>{urlSistema ? "Cerrar" : "Entendido"}</Boton>

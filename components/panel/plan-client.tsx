@@ -9,6 +9,7 @@ import { PLANES, VOLUMEN_EMPRESA, montoPeriodoRD, textoUsuarios, type Plan } fro
 import type { EstadoTenant } from "@/types/tenant";
 import SuscripcionWizard from "./suscripcion-wizard";
 import SelectorPlan from "./selector-plan";
+import HistorialCobros from "./historial-cobros";
 import type { PeriodoPlan } from "@/lib/payments/planes";
 import TutorialButton from "./tutorial-button";
 import JornadaProgreso from "./jornada-progreso";
@@ -238,6 +239,8 @@ export default function PlanClient({
               </div>
             </Card>
           </div>
+
+          <HistorialCobros tenantId={tenantId} />
 
           <Card padding={18}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, flexWrap: "wrap" }}>

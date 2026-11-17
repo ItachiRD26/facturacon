@@ -98,6 +98,7 @@ export async function activarCobroRecurrente(params: {
     estado: "activa",
     cardHolderName: params.card.cardHolderName, ultimos4: params.card.number.slice(-4),
     ern, ultimoErn: ern, autorizacion: res.authorization,
+    montoUltimoCobroRD: monto.totalRD, montoUltimoCobroUSD: monto.totalUSD,
     creadoEn: ahora, ultimoPagoEn: ahora,
     browserInfo: params.browserInfo,
     cobroPropio: true, anclaCobro: hoy, cicloActual: 1, proximoCobroEn: fechaCiclo(hoy, periodo, 1),
@@ -174,6 +175,7 @@ async function ejecutarCobro(tenantId: string, sus: Suscripcion, hoy: string): P
       estado: "activa", ultimoPagoEn: new Date().toISOString(), actualizadoEn: new Date().toISOString(),
       cicloActual: ciclo + 1, proximoCobroEn: siguiente, proximoIntentoEn: FieldValue.delete(), intentosFallidos: 0,
       adicionalesFacturadosHasta: limite, ultimoErn: ern, ultimoError: FieldValue.delete(),
+      montoUltimoCobroRD: monto.totalRD, montoUltimoCobroUSD: monto.totalUSD, autorizacion: res.authorization,
     }, { merge: true });
     await reactivarSiSuspendido(tenantId);
 

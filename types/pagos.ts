@@ -38,6 +38,8 @@ export interface Suscripcion {
   ultimoErn?:        string;
   ultimoError?:      string;
   ultimoEventoPagadito?: { ern: string; estado: string; cuando: string };
+  montoUltimoCobroRD?:  number;
+  montoUltimoCobroUSD?: string;
 }
 
 // Un intento de cobro de ciclo: tenants/{id}/facturacion/cargos/ciclos/{id}.
