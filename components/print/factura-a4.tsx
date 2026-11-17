@@ -3,6 +3,7 @@ import type { Cliente, Factura } from "@/types";
 import { calcLinea, calcTotales, fmt, fmtDate } from "@/types";
 import { fmtRNCDisplay } from "@/lib/dgii/xml-builder";
 import SelloMuestra from "./sello-muestra";
+import { FUENTE_NOMBRE } from "@/lib/print/fuente-impresion";
 
 export interface EmpresaImpresion {
   // `nombre` = razón social (como consta en el RNC); `nombreComercial` solo si la DGII lo tiene.
@@ -25,6 +26,13 @@ export const CODIGO_MODIFICACION: Record<string, string> = {
   "4": "Reemplazo NCF por contingencia",
 };
 
+// Fecha/hora de firma EXACTAMENTE como quedó dentro del XML firmado (es la misma que lleva el QR); la DGII la
+// compara. Solo si no hay XML se cae a la fecha de envío.
+export function fechaFirmaDe(f: { xmlFirmado?: string; fechaEnvioDGII?: string }): string {
+  const m = f.xmlFirmado?.match(/<FechaHoraFirma>([^<]+)<\/FechaHoraFirma>/);
+  return m ? m[1].trim() : fmtFechaFirma(f.fechaEnvioDGII);
+}
+
 export default function FacturaA4({ factura, cliente, empresa, esMuestra = true }: { factura: Factura; cliente?: Cliente; empresa: EmpresaImpresion; esMuestra?: boolean }) {
   const totales = calcTotales(factura.items);
   const titulo = `Comprobante Fiscal Electrónico ${factura.tipoECF}`;
@@ -40,8 +48,18 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
             <img src={empresa.logoA4Url} alt={empresa.nombre} style={{ maxWidth: 90, maxHeight: 60, objectFit: "contain" }} />
           )}
           <div style={{ minWidth: 0, overflowWrap: "anywhere" }}>
-            {empresa.nombreComercial && <div style={{ fontWeight: 800, fontSize: 17 }}>{empresa.nombreComercial}</div>}
-            <div style={{ fontWeight: empresa.nombreComercial ? 500 : 700, fontSize: empresa.nombreComercial ? 12 : 16 }}>{empresa.nombre}</div>
+            {empresa.logoA4Url ? (
+              <>
+                {empresa.nombreComercial && <div style={{ fontWeight: 800, fontSize: 17 }}>{empresa.nombreComercial}</div>}
+                <div style={{ fontWeight: empresa.nombreComercial ? 500 : 700, fontSize: empresa.nombreComercial ? 12 : 16 }}>{empresa.nombre}</div>
+              </>
+            ) : (
+              // Sin logo: el nombre del negocio arriba, con la letra de marca.
+              <>
+                <div style={{ fontFamily: FUENTE_NOMBRE, fontWeight: 800, fontSize: 26, lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 2 }}>{empresa.nombreComercial ?? empresa.nombre}</div>
+                {empresa.nombreComercial && <div style={{ fontSize: 12 }}>{empresa.nombre}</div>}
+              </>
+            )}
             <div>RNC: {fmtRNCDisplay(empresa.rnc)}</div>
             {empresa.direccion && <div>{empresa.direccion}</div>}
             {empresa.telefono && <div>Tel: {empresa.telefono}</div>}
@@ -131,17 +149,18 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 20, alignItems: "flex-start", borderTop: "1px dashed #999", paddingTop: 14 }}>
-        {factura.urlQR ? <QRCodeSVG value={factura.urlQR} size={80} level="M" /> : (
-          <div style={{ width: 80, height: 80, border: "1px dashed #999", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#999" }}>
-            QR DGII
-          </div>
-        )}
-        <div style={{ fontSize: 10, color: "#444" }}>
-          {factura.codigoSeguridad && <div>Código de Seguridad: <strong>{factura.codigoSeguridad}</strong></div>}
-          <div>Fecha Firma Digital: {fmtFechaFirma(factura.fechaEnvioDGII)}</div>
-          <div style={{ marginTop: 4 }}>Verifique en ecf.dgii.gov.do</div>
+      {/* Pie fiscal: QR y, DEBAJO del QR, el código de seguridad y la fecha de firma (formato exigido por la DGII). */}
+      <div style={{ display: "flex", gap: 20, alignItems: "flex-end", borderTop: "1px dashed #999", paddingTop: 14 }}>
+        <div>
+          {factura.urlQR ? <QRCodeSVG value={factura.urlQR} size={100} level="M" /> : (
+            <div style={{ width: 100, height: 100, border: "1px dashed #999", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#999" }}>
+              QR DGII
+            </div>
+          )}
+          {factura.codigoSeguridad && <div style={{ fontSize: 10, marginTop: 4 }}>Código de Seguridad: <strong>{factura.codigoSeguridad}</strong></div>}
+          <div style={{ fontSize: 10 }}>Fecha Firma: {fechaFirmaDe(factura)}</div>
         </div>
+        <div style={{ fontSize: 10, color: "#444" }}>Verifique en ecf.dgii.gov.do</div>
       </div>
 
       <div style={{ textAlign: "center", fontSize: 10, color: "#888", marginTop: 18, borderTop: "1px dashed #ccc", paddingTop: 8 }}>

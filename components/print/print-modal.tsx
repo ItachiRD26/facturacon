@@ -1,5 +1,6 @@
 "use client";
 
+import { cssFuenteNombre } from "@/lib/print/fuente-impresion";
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Cliente, Factura } from "@/types";
@@ -26,12 +27,14 @@ export default function PrintModal({
       : "@page { size: 80mm auto; margin: 4mm; }";
     ventana.document.write(`
       <html><head><title>${factura.eCF}</title>
-      <style>${pageStyle} body { margin: 0; font-family: ${formato === "a4" ? "Arial, sans-serif" : "monospace"}; }</style>
+      <style>${cssFuenteNombre()} ${pageStyle} body { margin: 0; font-family: ${formato === "a4" ? "Arial, sans-serif" : "monospace"}; }</style>
       </head><body>${html}</body></html>
     `);
     ventana.document.close();
     ventana.focus();
-    setTimeout(() => { ventana.print(); ventana.close(); }, 300);
+    // Espera la fuente del nombre del negocio (máx. 1.5 s) antes de imprimir.
+    void Promise.race([ventana.document.fonts?.ready ?? Promise.resolve(), new Promise((r) => setTimeout(r, 1500))])
+      .then(() => setTimeout(() => { ventana.print(); ventana.close(); }, 200));
   };
 
   return createPortal(

@@ -1,7 +1,8 @@
 import { QRCodeSVG } from "qrcode.react";
 import type { Cliente, Factura } from "@/types";
 import { calcLinea, calcTotales, fmt, fmtDate } from "@/types";
-import { CODIGO_MODIFICACION, type EmpresaImpresion } from "./factura-a4";
+import { CODIGO_MODIFICACION, fechaFirmaDe, type EmpresaImpresion } from "./factura-a4";
+import { FUENTE_NOMBRE } from "@/lib/print/fuente-impresion";
 import { fmtRNCDisplay } from "@/lib/dgii/xml-builder";
 import SelloMuestra from "./sello-muestra";
 
@@ -17,8 +18,18 @@ export default function FacturaTermica({ factura, cliente, empresa, esMuestra = 
           // eslint-disable-next-line @next/next/no-img-element -- imagen del tenant en Storage, no un asset propio del sitio
           <img src={empresa.logoTermicoUrl} alt={empresa.nombre} style={{ maxWidth: 140, maxHeight: 60, objectFit: "contain", margin: "0 auto 6px" }} />
         )}
-        {empresa.nombreComercial && <div style={{ fontWeight: 700, fontSize: 13 }}>{empresa.nombreComercial}</div>}
-        <div style={{ fontWeight: empresa.nombreComercial ? 400 : 700 }}>{empresa.nombre}</div>
+        {empresa.logoTermicoUrl ? (
+          <>
+            {empresa.nombreComercial && <div style={{ fontWeight: 700, fontSize: 13 }}>{empresa.nombreComercial}</div>}
+            <div style={{ fontWeight: empresa.nombreComercial ? 400 : 700 }}>{empresa.nombre}</div>
+          </>
+        ) : (
+          // Sin logo: el nombre del negocio arriba, con la letra de marca.
+          <>
+            <div style={{ fontFamily: FUENTE_NOMBRE, fontWeight: 800, fontSize: 21, lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 2 }}>{empresa.nombreComercial ?? empresa.nombre}</div>
+            {empresa.nombreComercial && <div>{empresa.nombre}</div>}
+          </>
+        )}
         <div>RNC: {fmtRNCDisplay(empresa.rnc)}</div>
         {empresa.direccion && <div>{empresa.direccion}</div>}
         {empresa.telefono && <div>Tel: {empresa.telefono}</div>}
@@ -74,12 +85,13 @@ export default function FacturaTermica({ factura, cliente, empresa, esMuestra = 
       </div>
 
       <div style={{ textAlign: "center", marginTop: 8 }}>
-        {factura.urlQR ? <QRCodeSVG value={factura.urlQR} size={88} level="M" /> : (
+        {factura.urlQR ? <div style={{ display: "flex", justifyContent: "center" }}><QRCodeSVG value={factura.urlQR} size={96} level="M" /></div> : (
           <div style={{ width: 80, height: 80, border: "1px dashed #999", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#999" }}>
             QR DGII
           </div>
         )}
-        {factura.codigoSeguridad && <div style={{ fontWeight: 700, marginTop: 4 }}>Cód. Seg.: {factura.codigoSeguridad}</div>}
+        {factura.codigoSeguridad && <div style={{ fontWeight: 700, marginTop: 4 }}>Código de Seguridad: {factura.codigoSeguridad}</div>}
+        <div style={{ fontSize: 10 }}>Fecha Firma: {fechaFirmaDe(factura)}</div>
         <div style={{ fontSize: 9, color: "#555" }}>ecf.dgii.gov.do</div>
       </div>
 

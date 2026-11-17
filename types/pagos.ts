@@ -12,6 +12,7 @@ export interface Suscripcion {
   facturasMes:       number;
   montoUSD:          string;   // lo que se cobra cada vez (una mensualidad, o el año completo)
   periodo?:          "mensual" | "anual";   // ausente = mensual (suscripciones anteriores)
+  interno?:          boolean;              // cuenta propia de Facturacon (cliente cero): sin tarjeta ni cobro
   estado:            EstadoSuscripcion;
   cardHolderName?:   string;
   ultimos4?:         string;
