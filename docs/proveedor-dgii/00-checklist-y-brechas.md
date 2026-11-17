@@ -19,7 +19,7 @@ Estado al 2026-11-17. **Los textos de esta carpeta son borradores**: describen l
 |---|---|---|
 | 1.1 | Política de Seguridad | Borrador listo: `01-politica-de-seguridad.md` |
 | 1.2 | Política de Contingencia | Borrador listo: `02-politica-de-contingencia.md` |
-| 1.3 | Política de Protección de Datos **pública** (Ley 172-13) con la URL | Borrador listo: `03-politica-de-proteccion-de-datos.md`. Falta revisión de un abogado y publicarla (hoy `/privacidad` es un borrador distinto) |
+| 1.3 | Política de Protección de Datos **pública** (Ley 172-13) con la URL | Borrador mejorado con el texto de la ley (derechos, plazos de 5 y 10 días hábiles, transferencias, conservación): `03-politica-de-proteccion-de-datos.md`. Falta revisión del abogado y publicarla en `/privacidad` (hoy es un texto provisional). Documentos relacionados listos como borrador: `06-terminos-y-condiciones.md` y `07-acuerdo-tratamiento-de-datos.md` |
 | 1.4 | Vías de asistencia y tiempos de respuesta | Listo con los tiempos de Peter (30 min a 1 h en urgentes). Falta confirmar el horario de atención |
 | 1.5 | Contacto para la DGII (nombre, cargo, correo, teléfono directo) | Completado: `05-contacto-dgii.md` (correo contacto@facturacon.com.do) |
 | 1.6 | Certificación de seguridad (ISO 27001 u otra) | Opcional; no se tiene |
