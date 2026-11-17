@@ -21,6 +21,8 @@ export async function GET(req: NextRequest) {
   if (hoyParam && !/^\d{4}-\d{2}-\d{2}$/.test(hoyParam)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
   const hoy = hoyParam ?? hoyRD();
   const soloTenant = enPruebas ? req.nextUrl.searchParams.get("tenant") : null;
+  // Una fecha simulada solo se acepta junto con una empresa concreta: nunca debe recorrer todas con un día inventado.
+  if (hoyParam && !soloTenant) return NextResponse.json({ error: "Con ?hoy= hay que indicar también ?tenant=ID" }, { status: 400 });
 
   // Las empresas suspendidas ya agotaron sus reintentos: no se les cobra hasta que actualicen su pago.
   const ids = soloTenant

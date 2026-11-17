@@ -166,8 +166,9 @@ async function ejecutarCobro(tenantId: string, sus: Suscripcion, hoy: string): P
       transaction: { merchantTransactionId: ern, currencyId: "USD", transactionDetails: lineasCobro(plan, periodo, monto, meses.length) },
     });
 
+    // Ciclo k vence en fechaCiclo(ancla, k). Recién cobrado el ciclo `ciclo`, el siguiente es ciclo + 1.
     const ciclo = (sus.cicloActual ?? 1);
-    const siguiente = fechaCiclo(sus.anclaCobro!, periodo, ciclo);
+    const siguiente = fechaCiclo(sus.anclaCobro!, periodo, ciclo + 1);
     await ciclosDe(tenantId).doc(`${venc}-${intento}`).set(registroCiclo({ fecha: venc, intento, estado: "cobrado", monto, meses, ern, autorizacion: res.authorization, motivo: "ciclo" }));
     await ref.set({
       estado: "activa", ultimoPagoEn: new Date().toISOString(), actualizadoEn: new Date().toISOString(),

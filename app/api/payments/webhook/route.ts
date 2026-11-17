@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { adminDb } from "@/lib/firebase-admin";
 import { verificarWebhookPagadito } from "@/lib/payments/pagadito-webhook";
 import type { EventoWebhookPagadito } from "@/lib/payments/pagadito-webhook";
 import { tenantIdDesdeErnSuscripcion, marcarPagoRecurrenteExitoso, marcarPagoRecurrenteFallido, obtenerSuscripcion, registrarEventoPagadito } from "@/lib/payments/suscripcion";
@@ -57,6 +58,10 @@ export async function POST(req: NextRequest) {
     // merchant account, o de una prueba) — se ignora sin error.
     return NextResponse.json({ ok: true });
   }
+
+  // Un aviso de una empresa que no existe (prueba ya borrada, ERN ajeno) se ignora: no debe crear datos huérfanos.
+  const existe = await adminDb.collection("tenants").doc(tenantId).get().then((d) => d.exists).catch(() => true);
+  if (!existe) return NextResponse.json({ ok: true });
 
   try {
     // Pagadito puede entregar el mismo evento varias veces y fuera de orden (hasta 20 reintentos en 3 días):

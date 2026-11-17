@@ -53,7 +53,7 @@ function db() {
   return getFirestore();
 }
 const refSus = (d, id) => d.collection("tenants").doc(id).collection("facturacion").doc("suscripcion");
-const BROWSER = { deviceFingerprintID: "prueba-" + Date.now().toString(36), customerIp: "190.80.1.1" };
+const BROWSER = { deviceFingerprintID: String(Date.now()) + String(Math.floor(Math.random() * 1e6)).padStart(6, "0"), customerIp: "190.80.1.1" };
 
 const [, , cmd, a1, a2, a3] = process.argv;
 
@@ -70,7 +70,7 @@ const [, , cmd, a1, a2, a3] = process.argv;
     // los cobros siguientes los decide Facturacon (cron /api/cron/cobros), no Pagadito.
     const periodo = a1 === "anual" ? "anual" : "mensual";
     const plan = PLANES[a2 && PLANES[a2] ? a2 : "100"];
-    const tarjeta = TARJETAS[a3] ?? TARJETAS.visa;
+    const tarjeta = TARJETAS[a3] ?? (/^\d{13,19}$/.test(a3 || "") ? { number: a3, marca: "tarjeta " + a3.slice(0, 4) + "…" + a3.slice(-4) } : TARJETAS.visa);   // también acepta un número de 13 a 19 dígitos
     const tenantId = "PAGADITOPRUEBA" + Date.now();
     const montoUSD = (plan.usd * (periodo === "anual" ? 10 : 1)).toFixed(2);
     const ern = `sub-${tenantId}-${Date.now().toString(36)}`;
