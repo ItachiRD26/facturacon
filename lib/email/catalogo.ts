@@ -35,19 +35,15 @@ export interface DatosPorCorreo {
   rol_cambiado: { nombre: string; negocio: string; rolNuevo: string };
   // ── Certificación ──
   cert_iniciada: { nombre: string; negocio: string; urlAsistente: string };
-  cert_paso_completado: { nombre: string; negocio: string; paso: string; siguiente: string; urlAsistente: string };
-  cert_esperando_verificacion: { nombre: string; negocio: string; urlAsistente: string };
   cert_rechazo_dgii: { nombre: string; negocio: string; paso: string; motivo: string; urlAsistente: string };
   cert_inactiva: { nombre: string; negocio: string; dias: number; pasoActual: string; urlAsistente: string };
   cert_aprobada: { nombre: string; negocio: string; urlPanel?: string };
   certificado_por_vencer: { nombre: string; negocio: string; dias: number; fechaVence: string; urlPanel?: string };
   certificado_vencido: { nombre: string; negocio: string; fechaVencio: string; urlPanel?: string };
   // ── Facturación ──
-  ecf_cliente: { negocio: string; cliente?: string; tipo: string; eNCF: string; fecha: string; total: number; mensaje?: string };
   ecf_rechazado_dgii: { nombre: string; negocio: string; eNCF: string; motivo: string; urlFactura: string };
   contingencia_pendientes: { nombre: string; negocio: string; cantidad: number; horasMasAntigua: number; urlPanel?: string };
   secuencias_por_agotarse: { nombre: string; negocio: string; tipo: string; restantes: number; urlPanel?: string };
-  cotizacion_cliente: { negocio: string; cliente?: string; numero: string; total: number; vigencia?: string; mensaje?: string };
   stock_bajo: { nombre: string; negocio: string; productos: string[]; urlInventario?: string };
   // ── Cobros ──
   pago_recibido: { nombre: string; plan: string; monto: number; fecha: string; referencia: string; eNCF?: string; proximoCobro?: string };
@@ -68,7 +64,6 @@ export interface DatosPorCorreo {
   novedades: { nombre: string; titulo: string; items: string[]; urlMas?: string };
   encuesta_opinion: { nombre: string; urlEncuesta: string };
   // ── Internos (llegan a contacto@) ──
-  interno_nuevo_registro: { nombre: string; correo: string; negocio: string; rnc: string };
   interno_contacto_web: { nombre: string; correo: string; telefono?: string; mensaje: string };
   interno_pago_fallido: { negocio: string; plan: string; monto: number; motivo?: string };
   interno_error_dgii: { negocio: string; contexto: string; detalle: string };
@@ -129,25 +124,6 @@ export const CATALOGO: Catalogo = {
       boton: { texto: "Continuar mi certificación", url: d.urlAsistente },
     }),
   },
-  cert_paso_completado: {
-    meta: { categoria: "certificacion", nombre: "Paso de certificación completado", cuando: "Cuando la DGII acepta un paso", destino: "usuario", naturaleza: "aviso" },
-    render: (d) => ({
-      asunto: `Paso completado: ${d.paso}`, titulo: "¡Avanzaste en tu certificación!",
-      parrafos: [saludo(d.nombre), `La DGII aceptó el paso «${d.paso}» de ${d.negocio}.`, `Lo que sigue: ${d.siguiente}.`],
-      alerta: { tipo: "exito", texto: `Completado: ${d.paso}` },
-      boton: { texto: "Seguir con el asistente", url: d.urlAsistente },
-    }),
-  },
-  cert_esperando_verificacion: {
-    meta: { categoria: "certificacion", nombre: "Esperando verificación de la DGII", cuando: "Al subir las representaciones impresas", destino: "usuario", naturaleza: "aviso" },
-    render: (d) => ({
-      asunto: "Ya subiste todo: ahora la DGII verifica", preheader: "La verificación toma entre 3 y 24 horas.",
-      titulo: "Ahora toca esperar a la DGII",
-      parrafos: [saludo(d.nombre), `Subiste las representaciones impresas de ${d.negocio}. La DGII las revisa y suele tardar entre 3 y 24 horas, según el horario y su disponibilidad.`, "No tienes que quedarte esperando. Cuando haya respuesta, te avisamos."],
-      alerta: { tipo: "info", texto: "Verificación de la DGII: de 3 a 24 horas." },
-      boton: { texto: "Ver el estado", url: d.urlAsistente },
-    }),
-  },
   cert_rechazo_dgii: {
     meta: { categoria: "certificacion", nombre: "La DGII rechazó un paso", cuando: "Cuando la DGII rechaza algo del proceso", destino: "usuario", naturaleza: "aviso" },
     render: (d) => ({
@@ -196,17 +172,6 @@ export const CATALOGO: Catalogo = {
   },
 
   // ───────────────────────── FACTURACIÓN ─────────────────────────
-  ecf_cliente: {
-    meta: { categoria: "facturacion", nombre: "Factura al cliente", cuando: "Al emitir un comprobante, si hay correo del cliente", destino: "cliente_final", naturaleza: "transaccional", adjuntos: "PDF (representación impresa) y XML firmado" },
-    render: (d) => ({
-      asunto: `Tu comprobante ${d.eNCF} de ${d.negocio}`, preheader: `Total ${rd(d.total)}. Adjuntamos el PDF y el XML.`,
-      titulo: `Tu comprobante de ${d.negocio}`,
-      parrafos: [d.cliente ? `Hola, ${d.cliente}.` : "Hola.", `Adjuntamos tu comprobante fiscal electrónico emitido por ${d.negocio}.`, ...(d.mensaje ? [d.mensaje] : [])],
-      datos: [["Comprobante", d.tipo], ["e-NCF", d.eNCF], ["Fecha", fecha(d.fecha)], ["Total", rd(d.total)]],
-      notaFinal: "Conserva este correo: el PDF y el XML adjuntos son tu comprobante válido ante la DGII.",
-      enNombreDe: d.negocio,
-    }),
-  },
   ecf_rechazado_dgii: {
     meta: { categoria: "facturacion", nombre: "Factura rechazada por la DGII", cuando: "Cuando la DGII rechaza un comprobante emitido", destino: "usuario", naturaleza: "aviso" },
     render: (d) => ({
@@ -233,16 +198,6 @@ export const CATALOGO: Catalogo = {
       parrafos: [saludo(d.nombre), `A ${d.negocio} le quedan ${d.restantes} números autorizados para comprobantes ${d.tipo}. Cuando se acaben, no podrás emitir ese tipo hasta pedir una nueva autorización en la DGII.`],
       alerta: { tipo: "aviso", texto: `Quedan ${d.restantes} secuencias de ${d.tipo}.` },
       boton: { texto: "Ver mis secuencias", url: d.urlPanel ?? PANEL },
-    }),
-  },
-  cotizacion_cliente: {
-    meta: { categoria: "facturacion", nombre: "Cotización al cliente", cuando: "Cuando el negocio envía una cotización", destino: "cliente_final", naturaleza: "transaccional", adjuntos: "PDF de la cotización" },
-    render: (d) => ({
-      asunto: `Cotización ${d.numero} de ${d.negocio}`, titulo: `Cotización de ${d.negocio}`,
-      parrafos: [d.cliente ? `Hola, ${d.cliente}.` : "Hola.", `${d.negocio} te envía la cotización ${d.numero}. La encuentras adjunta.`, ...(d.mensaje ? [d.mensaje] : [])],
-      datos: [["Cotización", d.numero], ["Total", rd(d.total)], ...(d.vigencia ? [["Válida hasta", d.vigencia] as [string, string]] : [])],
-      notaFinal: "Esta cotización no es un comprobante fiscal.",
-      enNombreDe: d.negocio,
     }),
   },
   stock_bajo: {
@@ -391,14 +346,6 @@ export const CATALOGO: Catalogo = {
   },
 
   // ───────────────────────── INTERNOS (llegan a contacto@) ─────────────────────────
-  interno_nuevo_registro: {
-    meta: { categoria: "interno", nombre: "Nuevo registro", cuando: "Al crearse una cuenta", destino: "interno", naturaleza: "aviso" },
-    render: (d) => ({
-      asunto: `Nuevo registro: ${d.negocio}`, titulo: "Se registró un negocio",
-      parrafos: ["Entró una cuenta nueva a Facturacon."],
-      datos: [["Nombre", d.nombre], ["Correo", d.correo], ["Negocio", d.negocio], ["RNC", d.rnc]],
-    }),
-  },
   interno_contacto_web: {
     meta: { categoria: "interno", nombre: "Mensaje del formulario de contacto", cuando: "Cuando alguien escribe desde la web", destino: "interno", naturaleza: "transaccional" },
     render: (d) => ({
