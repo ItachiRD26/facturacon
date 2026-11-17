@@ -65,11 +65,20 @@ export interface CertificadoGuardado {
   passwordCiphertext:  string;
   fingerprint:         string;
   subidoEn:            string;
+  // Datos públicos del certificado (no secretos): para mostrar su estado y avisar antes de que venza.
+  titular?:            string;
+  emisor?:             string;
+  validoDesde?:        string;
+  venceEn?:            string;
+  // El certificado al que reemplazó la última renovación (solo para historial).
+  anterior?:           { fingerprint: string; venceEn?: string; reemplazadoEn: string };
 }
+
+export type MetaCertificado = Pick<CertificadoGuardado, "titular" | "emisor" | "validoDesde" | "venceEn" | "anterior">;
 
 // Cifra el .p12 + password y los guarda en tenants/{tenantId}/config/certificado.
 export async function guardarCertificado(
-  tenantId: string, p12Buffer: Buffer, password: string, fingerprint: string,
+  tenantId: string, p12Buffer: Buffer, password: string, fingerprint: string, meta: MetaCertificado = {},
 ): Promise<void> {
   const [p12Ciphertext, passwordCiphertext] = await Promise.all([
     encrypt(p12Buffer, tenantId),
@@ -78,6 +87,7 @@ export async function guardarCertificado(
   const data: CertificadoGuardado = {
     p12Ciphertext, passwordCiphertext, fingerprint,
     subidoEn: new Date().toISOString(),
+    ...meta,
   };
   await adminDb.collection("tenants").doc(tenantId).collection("config").doc("certificado").set(data);
 }

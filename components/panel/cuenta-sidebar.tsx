@@ -30,6 +30,7 @@ const GRUPOS: { titulo?: string; items: ItemNav[] }[] = [
       { seg: "equipo", label: "Equipo y accesos", icon: "user", roles: ["owner", "admin"] },
       { seg: "contabilidad", label: "Contabilidad", icon: "chart", roles: ["owner", "admin", "contador"] },
       { seg: "secuencias", label: "Secuencias fiscales", icon: "invoice", roles: ["owner", "admin"], solo: ["activo", "suspendido"] },
+      { seg: "certificado", label: "Certificado digital", icon: "sello", roles: ["owner", "admin"], solo: ["pendiente_certificacion", "certificando", "activo", "suspendido"] },
     ],
   },
   {

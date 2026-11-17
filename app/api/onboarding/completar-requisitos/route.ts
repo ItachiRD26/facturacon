@@ -7,6 +7,7 @@ import { getTenantById } from "@/lib/tenant/resolve-tenant";
 import { adminDb } from "@/lib/firebase-admin";
 import { loadCertAndKey, extraerRncDelCertificado } from "@/lib/dgii/xml-signer";
 import { guardarCertificado } from "@/lib/kms/p12-vault";
+import { leerInfoCertificado } from "@/lib/dgii/certificado-info";
 import { consultarRncODGII } from "@/lib/dgii/validar-rnc-cedula";
 import { generarSlugUnico } from "@/lib/tenant/slug";
 
@@ -72,7 +73,8 @@ export async function POST(req: NextRequest) {
   }
 
   const fingerprint = createHash("sha256").update(p12Buffer).digest("hex").slice(0, 16).toUpperCase();
-  await guardarCertificado(tenantId, p12Buffer, password, fingerprint);
+  const info = leerInfoCertificado(p12Buffer, password);
+  await guardarCertificado(tenantId, p12Buffer, password, fingerprint, { titular: info.titular, emisor: info.emisor, validoDesde: info.validoDesde, venceEn: info.venceEn });
 
   await adminDb.collection("tenants").doc(tenantId).collection("certificacion").doc("requisitos").set({
     cedula: consulta.rnc ?? cedula.replace(/\D/g, ""),

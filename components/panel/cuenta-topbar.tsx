@@ -9,6 +9,7 @@ const LABELS: Record<string, string> = {
   equipo: "Equipo y accesos",
   contabilidad: "Contabilidad",
   secuencias: "Secuencias fiscales",
+  certificado: "Certificado digital",
   plan: "Plan y facturación",
   soporte: "Ayuda y soporte",
 };
