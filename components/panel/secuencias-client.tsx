@@ -16,7 +16,7 @@ const input: React.CSSProperties = {
 
 const hoy = () => new Date().toISOString().slice(0, 10);
 
-export default function SecuenciasClient({ tenantId }: { tenantId: string }) {
+export default function SecuenciasClient({ tenantId, embebido = false }: { tenantId: string; embebido?: boolean }) {
   const [sec, setSec] = useState<Secuencias | null>(null);
   const [error, setError] = useState("");
   const [editando, setEditando] = useState<TipoECF | null>(null);
@@ -62,6 +62,8 @@ export default function SecuenciasClient({ tenantId }: { tenantId: string }) {
 
   return (
     <div>
+      {!embebido && (
+        <>
       <PageHeader
         titulo="Secuencias fiscales"
         descripcion="Los números de comprobante (e-NCF) que la DGII te autorizó. Facturacon los asigna uno por uno, en orden, y te avisa cuando se acaban o vencen."
@@ -75,6 +77,9 @@ export default function SecuenciasClient({ tenantId }: { tenantId: string }) {
           Solo registra los tipos que vas a emitir.
         </div>
       </Card>
+
+        </>
+      )}
 
       {error && <p style={{ fontSize: 13, color: "var(--c-red)", marginBottom: 12 }}>{error}</p>}
 

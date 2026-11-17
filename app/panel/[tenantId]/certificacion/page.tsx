@@ -8,6 +8,7 @@ import type { FilaSetPrueba, ItemAC, FacturaPrueba } from "@/lib/certificacion/t
 import { planSimulacion, marcaSimulacion, type ItemSimulacion } from "@/lib/certificacion/plan-simulacion";
 import VideoPlaceholder from "@/components/marketing/video-placeholder";
 import RepresentacionesImpresas from "@/components/certificacion/representaciones-impresas";
+import SecuenciasClient from "@/components/panel/secuencias-client";
 import { CATEGORIAS_RI } from "@/lib/certificacion/categorias-ri";
 import InfoTooltip from "@/components/panel/info-tooltip";
 import JornadaProgreso from "@/components/panel/jornada-progreso";
@@ -18,7 +19,7 @@ const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-type Paso = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+type Paso = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 interface EstadoReceptor {
   autenticaciones: number;
@@ -38,7 +39,8 @@ const PASOS: { n: Paso; t: string; dgii: string }[] = [
   { n: 5, t: "Representación impresa", dgii: "pasos 5-6" },
   { n: 6, t: "Pruebas de recepción", dgii: "pasos 7-11" },
   { n: 7, t: "URLs de producción", dgii: "paso 12" },
-  { n: 8, t: "Cierre", dgii: "paso 13" },
+  { n: 8, t: "Declaración jurada", dgii: "paso 13" },
+  { n: 9, t: "Numeración (e-NCF)", dgii: "OFV, al terminar" },
 ];
 
 function Card({ children }: { children: React.ReactNode }) {
@@ -184,6 +186,7 @@ const EQUIVALENCIA = [
   { rango: "7-11", que: "Registrar tus URLs y que la DGII pruebe recepción y aprobaciones", quien: "Tú pulsas los botones en el portal; los servicios que responden son de Facturacon" },
   { rango: "12", que: "URLs de producción (las mismas de pruebas)", quien: "Tú las pegas en el portal; las direcciones son de Facturacon" },
   { rango: "13", que: "Declaración jurada", quien: "Tú en el portal; Facturacon firma la declaración" },
+  { rango: "OFV", que: "Solicitar tu numeración (e-NCF) para poder facturar", quien: "Tú la pides en la OFV y registras aquí lo que la DGII te autorizó" },
 ];
 
 function EquivalenciaPasos() {
@@ -239,6 +242,13 @@ export default function CertificacionPage() {
   const [urlsProdListas, setUrlsProdListas] = useState<boolean>(() => {
     try { return localStorage.getItem(`cert-urls-prod-${tenantId}`) === "1"; } catch { return false; }
   });
+  const [declaracionLista, setDeclaracionLista] = useState<boolean>(() => {
+    try { return localStorage.getItem(`cert-declaracion-${tenantId}`) === "1"; } catch { return false; }
+  });
+  function marcarDeclaracion(v: boolean) {
+    setDeclaracionLista(v);
+    try { localStorage.setItem(`cert-declaracion-${tenantId}`, v ? "1" : "0"); } catch { /* sin almacenamiento */ }
+  }
   function marcarUrlsProd(v: boolean) {
     setUrlsProdListas(v);
     try { localStorage.setItem(`cert-urls-prod-${tenantId}`, v ? "1" : "0"); } catch { /* sin almacenamiento */ }
@@ -749,11 +759,11 @@ export default function CertificacionPage() {
       return { texto: "Registra tus URLs en el portal y lanza las pruebas de recepción y de aprobaciones comerciales (Paso 6). Aquí verás llegar las llamadas de la DGII.", ir: 6 };
     }
     if (!confirmoPortal) {
-      return urlsProdListas
-        ? { texto: "Firma la declaración jurada (Paso 8) y confirma para activar tu cuenta.", ir: 8 }
-        : { texto: "Pega las URLs de producción en el portal (Paso 7) y luego firma la declaración jurada (Paso 8).", ir: 7 };
+      if (!urlsProdListas) return { texto: "Pega las URLs de producción en el portal (Paso 7) y luego firma la declaración jurada (Paso 8).", ir: 7 };
+      if (!declaracionLista) return { texto: "Firma la declaración jurada y envíala en el portal (Paso 8).", ir: 8 };
+      return { texto: "La certificación en la DGII está lista. Pide tu numeración en la Oficina Virtual, regístrala y finaliza (Paso 9).", ir: 9 };
     }
-    return { texto: "Todo listo — dale clic en \"Finalizar certificación\" en el Paso 8.", ir: 8 };
+    return { texto: "Todo listo — dale clic en \"Finalizar y empezar a facturar\" en el Paso 9.", ir: 9 };
   }
   const siguiente = proximoPaso();
 
@@ -768,7 +778,8 @@ export default function CertificacionPage() {
     5: riCompletas,
     6: !!receptor && receptor.autenticaciones > 0 && receptor.recepcion.total > 0 && receptor.aprobaciones.total > 0,
     7: urlsProdListas,
-    8: false,
+    8: declaracionLista,
+    9: false,
   };
 
   return (
@@ -1445,13 +1456,50 @@ export default function CertificacionPage() {
             </div>
           )}
 
-          <label style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "flex-start", marginTop: 20, marginBottom: 16 }}>
+          <label style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "flex-start", marginTop: 20, marginBottom: 6 }}>
+            <input type="checkbox" checked={declaracionLista} onChange={(e) => marcarDeclaracion(e.target.checked)} style={{ marginTop: 2 }} />
+            Ya subí el archivo firmado y pulsé «Enviar archivo» en el portal. El portal me mostró «Ha completado de manera exitosa el proceso de certificación».
+          </label>
+          <SiguientePaso n={9} onClick={() => setPaso(9)} />
+        </Card>
+      )}
+
+      {paso === 9 && (
+        <Card>
+          <PasoTitulo n={9} ayuda="Ya estás certificado, pero para emitir comprobantes reales la DGII también tiene que autorizarte la numeración: los números de e-NCF (secuencias) que vas a usar, por tipo de comprobante. Esa solicitud se hace en tu Oficina Virtual. La DGII te responde con un rango de números y una fecha de vencimiento, y esos datos se registran aquí.">
+            Paso 9 — Pide tu numeración (e-NCF) y empieza a facturar
+          </PasoTitulo>
+          <div style={{ fontSize: 12, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 12px", marginBottom: 14, color: "#166534" }}>
+            <strong>¡Felicidades!</strong> La DGII ya te certificó como emisor electrónico. Solo falta pedir tus números de comprobante.
+          </div>
+          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 12 }}>
+            Antes de emitir tu primera factura real tienes que entrar a tu <strong>Oficina Virtual (OFV)</strong> y
+            <strong> solicitar la numeración</strong> (secuencias de e-NCF) de los comprobantes que vas a usar. Sin esos números, el sistema no te deja emitir.
+          </p>
+          <ol style={{ margin: "0 0 14px", paddingLeft: 18, fontSize: 13, lineHeight: 1.75 }}>
+            <li>Entra a tu <a href="https://www.dgii.gov.do/ofv/login.aspx" target="_blank" rel="noopener noreferrer" style={{ color: "var(--c-brand)", fontWeight: 600 }}>Oficina Virtual</a> y busca la solicitud de autorización de numeración (secuencias) de comprobantes fiscales electrónicos.</li>
+            <li>
+              Pide, como mínimo, los tipos que más vas a usar: <strong>E31</strong> (crédito fiscal), <strong>E32</strong> (consumo),
+              <strong> E33</strong> (nota de débito) y <strong>E34</strong> (nota de crédito). Otros tipos (E41, E43, E44, E45, E46, E47) solo si los vas a emitir.
+              Indica <strong>cuántos números</strong> pides de cada uno.
+            </li>
+            <li>La DGII te responde con un <strong>rango</strong> (del número inicial al final) y una <strong>fecha de vencimiento</strong> por cada tipo.</li>
+            <li>Regístralos aquí abajo, tal cual te los dieron. Facturacon los asigna uno por uno, en orden, y te avisa cuando se acaben o venzan.</li>
+          </ol>
+          <TuYNosotros tu="Pedir la numeración en la OFV y copiar aquí el rango y el vencimiento de cada tipo." nosotros="Asignar cada número en orden al emitir, y avisarte antes de que se agoten o venzan." />
+
+          <SecuenciasClient tenantId={tenantId} embebido />
+
+          <div style={{ height: 1, background: "var(--c-border)", margin: "20px 0 14px" }} />
+          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 10 }}>
+            Puedes finalizar ahora y registrar la numeración después desde <strong>Secuencias fiscales</strong> en tu panel, pero no podrás emitir comprobantes reales hasta registrarla.
+          </p>
+          <label style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 14 }}>
             <input type="checkbox" checked={confirmoPortal} onChange={(e) => setConfirmoPortal(e.target.checked)} style={{ marginTop: 2 }} />
-            Confirmo que subí las representaciones impresas, registré las URLs de producción y subí la
-            declaración jurada firmada en el portal de la DGII.
+            Confirmo que completé la certificación en el portal de la DGII (representaciones impresas, URLs de producción y declaración jurada).
           </label>
           <Boton onClick={finalizar} disabled={!confirmoPortal || finalizando}>
-            {finalizando ? "Activando…" : "Finalizar certificación →"}
+            {finalizando ? "Activando…" : "Finalizar y empezar a facturar →"}
           </Boton>
         </Card>
       )}
