@@ -1406,17 +1406,33 @@ export default function CertificacionPage() {
           <PasoTitulo n={8} ayuda="El último paso del portal es una declaración jurada: un archivo XML que la DGII te entrega para que lo firmes con tu certificado y lo subas de vuelta. Facturacon lo firma por ti.">
             Paso 8 — Cerrar la certificación (declaración jurada)
           </PasoTitulo>
-          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
-            Último paso del portal: la <strong>declaración jurada</strong>. Descárgala, fírmala aquí y súbela de vuelta.
-            Cuando termines, confirma para activar tu cuenta.
+          <div style={{ fontSize: 12, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 12px", marginBottom: 14 }}>
+            <strong>Antes de empezar:</strong> recuerda que este paso se hace con tu <strong>Oficina Virtual (OFV) de la DGII abierta
+            y con tu sesión iniciada</strong>. Vas a ir y volver entre el portal y esta pantalla.
+          </div>
+          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 12 }}>
+            Último paso del portal (el paso 13, <strong>Declaración Jurada</strong>). Son cuatro pasos, en este orden:
           </p>
-          <TuYNosotros tu="Descargar la declaración jurada, subirla aquí y volver a subirla firmada al portal." nosotros="Firmar la declaración jurada con tu certificado y activar tu cuenta cuando confirmes." />
+          <ol style={{ margin: "0 0 14px", paddingLeft: 18, fontSize: 13, lineHeight: 1.75 }}>
+            <li><strong>En el portal de la DGII</strong>, pulsa <strong>«Generar archivo»</strong> (marca 1 en la captura). Se descarga un archivo XML.</li>
+            <li><strong>Aquí en Facturacon</strong>, sube ese XML en el espacio de abajo. Nosotros lo firmamos con tu certificado y <strong>se descarga el archivo ya firmado</strong>.</li>
+            <li><strong>De vuelta en el portal</strong>, en «Envío de archivo de declaración jurada firmado», pulsa <strong>«Browse»</strong> y elige el archivo firmado que se acaba de descargar (marca 3).</li>
+            <li>Pulsa <strong>«Enviar archivo»</strong> (marca 4). Con eso termina el proceso.</li>
+          </ol>
+          {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+          <img
+            src="/certificacion/declaracion-jurada-paso-13.webp" alt="Portal de la DGII, paso 13 Declaración Jurada: el botón Generar archivo (1), el campo para elegir el archivo firmado con Browse (3) y el botón Enviar archivo (4)"
+            style={{ width: "100%", borderRadius: 10, border: "1px solid var(--c-border)", boxShadow: "0 12px 30px rgba(17,20,57,0.10)", marginBottom: 6 }}
+          />
+          <p style={{ fontSize: 11, color: "var(--c-text-3)", margin: "0 0 14px" }}>
+            Los números rojos son los pasos 1, 3 y 4 de la lista. El paso 2 lo haces aquí.
+          </p>
+          <TuYNosotros tu="Generar el archivo en el portal, subirlo aquí, y volver al portal a subir el firmado y enviarlo." nosotros="Firmar la declaración jurada con tu certificado y activar tu cuenta cuando confirmes." />
           <VideoPlaceholder titulo="Cómo cerrar la certificación en el portal" descripcion="Recorrido por los últimos pasos dentro del portal de la DGII." />
 
-          <div style={{ marginTop: 16, marginBottom: 6, fontSize: 13, fontWeight: 700 }}>Firmar la declaración jurada</div>
+          <div style={{ marginTop: 16, marginBottom: 6, fontSize: 13, fontWeight: 700 }}>Paso 2: firmar la declaración jurada aquí</div>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 10 }}>
-            Descarga el XML de la declaración jurada desde el portal, súbelo aquí y te devolvemos
-            el archivo firmado para que lo subas de vuelta al portal.
+            Sube el XML que generaste en el portal. Te devolvemos el archivo firmado para que lo subas de vuelta (pasos 3 y 4).
           </p>
           <SubidaArchivo
             onFile={firmarDeclaracion} cargando={firmandoDeclaracion} accept=".xml" grande
