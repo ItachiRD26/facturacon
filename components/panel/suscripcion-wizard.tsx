@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Script from "next/script";
-import { PLANES } from "@/lib/payments/planes";
+import { PLANES, montoPeriodoRD } from "@/lib/payments/planes";
 import Modal from "@/components/modals/modal";
 import { Boton, Campo, Input } from "@/components/sandbox/ui";
 import InfoTooltip from "./info-tooltip";
@@ -85,7 +85,7 @@ export default function SuscripcionWizard({
       const res = await fetch("/api/payments/tokenizacion/suscribir", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tenantId, planId: plan.id, deviceFingerprintID,
+          tenantId, planId: plan.id, periodo, deviceFingerprintID,
           card: {
             number: form.numero.replace(/\D/g, ""),
             expirationDate: `${form.vencMes.padStart(2, "0")}/${form.vencAnio}`,
@@ -139,14 +139,8 @@ export default function SuscripcionWizard({
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <Boton variant="secondary" onClick={onClose}>Cancelar</Boton>
-              <Boton onClick={() => setPaso(2)} disabled={!planId || periodo === "anual"}>Continuar →</Boton>
+              <Boton onClick={() => setPaso(2)} disabled={!planId}>Continuar →</Boton>
             </div>
-            {periodo === "anual" && (
-              <div style={{ fontSize: 12, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 12px" }}>
-                <strong>El pago anual todavía no está activo.</strong> Estamos confirmando con nuestra pasarela de pagos el cobro una vez al año.
-                Por ahora puedes comparar los precios; para empezar a facturar elige <strong>Mensual</strong>.
-              </div>
-            )}
           </div>
         )}
 
@@ -154,7 +148,9 @@ export default function SuscripcionWizard({
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <p style={{ fontSize: 12, color: "var(--c-text-3)", margin: 0 }}>
-                Se cobrará RD$ {plan?.montoRD.toLocaleString("es-DO")}/mes a esta tarjeta, automáticamente, hasta que canceles.
+                {plan && (periodo === "anual"
+                  ? `Se cobrará RD$ ${montoPeriodoRD(plan, "anual").toLocaleString("es-DO")} una vez al año (2 meses gratis) a esta tarjeta, automáticamente, hasta que canceles.`
+                  : `Se cobrará RD$ ${plan.montoRD.toLocaleString("es-DO")}/mes a esta tarjeta, automáticamente, hasta que canceles.`)}
               </p>
               <InfoTooltip texto="Tu número de tarjeta se envía directo a Pagadito (nuestra pasarela de pago) — nunca pasa ni se guarda en los servidores de Facturacon." />
               <TutorialButton titulo="Cómo activar tu cobro recurrente" />
@@ -212,7 +208,7 @@ export default function SuscripcionWizard({
             </div>
             <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>¡Listo! Tu cobro recurrente está activo</div>
             <p style={{ fontSize: 13, color: "var(--c-text-3)", marginBottom: 20 }}>
-              Plan de {activada.facturasMes.toLocaleString("es-DO")} facturas/mes
+              Plan de {activada.facturasMes.toLocaleString("es-DO")} facturas/mes{periodo === "anual" ? " (pago anual)" : ""}
               {activada.ultimos4 ? ` — tarjeta terminada en ${activada.ultimos4}` : ""}.
               Ya puedes emitir comprobantes fiscales reales.
             </p>

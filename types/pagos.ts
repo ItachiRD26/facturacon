@@ -10,7 +10,8 @@ export interface Suscripcion {
   subscriptionCode:  string;
   planId:            string;
   facturasMes:       number;
-  montoUSD:          string;
+  montoUSD:          string;   // lo que se cobra cada vez (una mensualidad, o el año completo)
+  periodo?:          "mensual" | "anual";   // ausente = mensual (suscripciones anteriores)
   estado:            EstadoSuscripcion;
   cardHolderName?:   string;
   ultimos4?:         string;

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Modal from "@/components/modals/modal";
 import { Button, Card, CardTitle, PageHeader, Pill, ProgressBar } from "@/components/ui/kit";
 import { useSuscripcion } from "@/hooks/use-suscripcion";
-import { PLANES, VOLUMEN_EMPRESA, textoUsuarios, type Plan } from "@/lib/payments/planes";
+import { PLANES, VOLUMEN_EMPRESA, montoPeriodoRD, textoUsuarios, type Plan } from "@/lib/payments/planes";
 import type { EstadoTenant } from "@/types/tenant";
 import SuscripcionWizard from "./suscripcion-wizard";
 import TutorialButton from "./tutorial-button";
@@ -127,7 +127,7 @@ export default function PlanClient({
   if (loading) return <div style={{ maxWidth: 820, margin: "0 auto", fontSize: 13, color: "var(--c-text-3)" }}>Cargando…</div>;
 
   const proximoCobro = suscripcion?.ultimoPagoEn
-    ? new Date(new Date(suscripcion.ultimoPagoEn).setMonth(new Date(suscripcion.ultimoPagoEn).getMonth() + 1)).toLocaleDateString("es-DO", { day: "numeric", month: "long" })
+    ? new Date(new Date(suscripcion.ultimoPagoEn).setMonth(new Date(suscripcion.ultimoPagoEn).getMonth() + (suscripcion.periodo === "anual" ? 12 : 1))).toLocaleDateString("es-DO", { day: "numeric", month: "long", ...(suscripcion.periodo === "anual" ? { year: "numeric" } : {}) })
     : null;
   const estado = suscripcion ? ESTADO_PILL[suscripcion.estado] : null;
   const sinPlanActivo = !suscripcion || suscripcion.estado === "cancelada";
@@ -204,7 +204,7 @@ export default function PlanClient({
                   {estado && <Pill tono={estado.tono}>{estado.texto}</Pill>}
                 </div>
                 <div className="num" style={{ fontSize: 13, color: "var(--c-text-3)" }}>
-                  {plan ? `RD$ ${plan.montoRD.toLocaleString("es-DO")} al mes` : null}
+                  {plan ? (suscripcion.periodo === "anual" ? `RD$ ${montoPeriodoRD(plan, "anual").toLocaleString("es-DO")} al año (pago anual)` : `RD$ ${plan.montoRD.toLocaleString("es-DO")} al mes`) : null}
                   {plan && plan.usuarios ? ` · ${plan.soloUnUsuario ? "1 usuario" : `hasta ${textoUsuarios(plan.usuarios)}`}` : null}
                 </div>
               </div>

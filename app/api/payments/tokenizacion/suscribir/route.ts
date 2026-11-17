@@ -6,6 +6,7 @@ import type { TarjetaPagadito } from "@/lib/payments/pagadito-tokenizacion";
 interface Body {
   tenantId: string;
   planId: string;
+  periodo?: "mensual" | "anual";
   card: TarjetaPagadito;
   deviceFingerprintID: string;
 }
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
     const suscripcion = await activarCobroRecurrente({
       tenantId: body.tenantId,
       planId: body.planId,
+      periodo: body.periodo === "anual" ? "anual" : "mensual",
       card: body.card,
       browserInfo: { deviceFingerprintID: body.deviceFingerprintID, customerIp },
     });

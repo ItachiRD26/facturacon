@@ -30,6 +30,16 @@ export interface Plan {
   soloUnUsuario?: boolean;
 }
 
+// Frecuencia de cobro. El anual es "paga 10 meses, usa 12" (2 meses gratis). Pagadito cobra recurrente
+// por semana, mes o año (confirmado por su soporte); aquí solo se ofrecen mensual y anual.
+export type PeriodoPlan = "mensual" | "anual";
+export const MESES_COBRADOS_ANUAL = 10;
+export const mesesCobrados = (p: PeriodoPlan) => (p === "anual" ? MESES_COBRADOS_ANUAL : 1);
+/** Lo que se cobra cada vez (RD$): una mensualidad, o 10 mensualidades por el año. */
+export const montoPeriodoRD = (plan: Plan, p: PeriodoPlan) => plan.montoRD * mesesCobrados(p);
+/** Igual en USD (Pagadito cobra siempre en USD), con 2 decimales como lo pide su API. */
+export const montoPeriodoUSD = (plan: Plan, p: PeriodoPlan) => (Number(plan.montoUSD) * mesesCobrados(p)).toFixed(2);
+
 /** "1 usuario" / "2 usuarios". */
 export function textoUsuarios(n: number): string {
   return `${n} usuario${n === 1 ? "" : "s"}`;

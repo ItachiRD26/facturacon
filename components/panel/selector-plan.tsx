@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { PLANES, TARIFAS_ADICIONALES, textoUsuarios, type Plan } from "@/lib/payments/planes";
+import { MESES_COBRADOS_ANUAL, PLANES, TARIFAS_ADICIONALES, montoPeriodoRD, textoUsuarios, type Plan, type PeriodoPlan } from "@/lib/payments/planes";
 
 // Selector de plan (Paso 1 del alta de suscripción): tarjetas con el desglose de cada plan, una guía
 // para saber cuál conviene según cuántos comprobantes se emiten, y el resumen de lo que se va a pagar.
@@ -23,10 +23,8 @@ const costoMes = (p: Plan, n: number) => p.montoRD + Math.max(0, n - p.facturas)
 // Por seguridad, el sistema pausa la emisión al triple del plan (ver /api/facturas/emitir).
 const alcanza = (p: Plan, n: number) => n <= p.facturas * 3;
 
-export type PeriodoPlan = "mensual" | "anual";
-// "Paga 10 meses, usa 12": el plan anual cuesta 10 veces la mensualidad.
-const MESES_COBRADOS_ANUAL = 10;
-const precioAnual = (p: Plan) => p.montoRD * MESES_COBRADOS_ANUAL;
+export type { PeriodoPlan };
+const precioAnual = (p: Plan) => montoPeriodoRD(p, "anual");
 
 export default function SelectorPlan({ planId, onElegir, periodo, onPeriodo }: {
   planId: string | null; onElegir: (id: string) => void; periodo: PeriodoPlan; onPeriodo: (p: PeriodoPlan) => void;

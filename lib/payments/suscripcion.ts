@@ -7,7 +7,7 @@ import "server-only";
 import { adminDb } from "@/lib/firebase-admin";
 import { crearSuscripcion, cancelarSuscripcion as cancelarEnPagadito } from "./pagadito-tokenizacion";
 import type { TarjetaPagadito, BrowserInfoPagadito } from "./pagadito-tokenizacion";
-import { buscarPlan } from "./planes";
+import { buscarPlan, montoPeriodoUSD, type PeriodoPlan } from "./planes";
 import type { Suscripcion } from "@/types/pagos";
 
 // El API de Pagadito exige un número fijo de ciclos por suscripción (no hay
@@ -17,6 +17,8 @@ import type { Suscripcion } from "@/types/pagos";
 // forma de renovación automática al agotarse los ciclos, o si hay que
 // re-suscribir manualmente antes de que termine este bloque.
 const CICLOS_SUSCRIPCION = 120;
+// Anual: el mismo bloque de 10 años = 10 cobros anuales.
+const CICLOS_SUSCRIPCION_ANUAL = 10;
 
 // El merchantTransactionId que identifica cada suscripción ante Pagadito se
 // arma como "sub-{tenantId}" — así el webhook puede recuperar a qué tenant
@@ -45,9 +47,10 @@ export async function obtenerSuscripcion(tenantId: string): Promise<Suscripcion 
 // todo el producto: sin esta suscripción activa, /api/facturas/emitir
 // rechaza cualquier intento de emitir un comprobante real.
 export async function activarCobroRecurrente(params: {
-  tenantId: string; planId: string;
+  tenantId: string; planId: string; periodo?: PeriodoPlan;
   card: TarjetaPagadito; browserInfo: BrowserInfoPagadito;
 }): Promise<Suscripcion> {
+  const periodo: PeriodoPlan = params.periodo === "anual" ? "anual" : "mensual";
   const plan = buscarPlan(params.planId);
   if (!plan) throw new Error("Plan inválido.");
 
@@ -59,10 +62,12 @@ export async function activarCobroRecurrente(params: {
   const resultado = await crearSuscripcion({
     card: params.card,
     recurring: {
-      interval: "month", interval_count: CICLOS_SUSCRIPCION, first_interval_free: false,
+      interval: periodo === "anual" ? "year" : "month",
+      interval_count: periodo === "anual" ? CICLOS_SUSCRIPCION_ANUAL : CICLOS_SUSCRIPCION,
+      first_interval_free: false,
       merchantTransactionId: ernSuscripcion(params.tenantId),
-      description: `Plan ${plan.facturas} facturas/mes — Facturacon`,
-      interval_amount: plan.montoUSD,
+      description: `Plan ${plan.facturas} facturas/mes — Facturacon${periodo === "anual" ? " (pago anual)" : ""}`,
+      interval_amount: montoPeriodoUSD(plan, periodo),
     },
     browserInfo: params.browserInfo,
   });
@@ -70,7 +75,7 @@ export async function activarCobroRecurrente(params: {
   const suscripcion: Suscripcion = {
     paymentToken: resultado.payment_token,
     subscriptionCode: resultado.recurring.subscription_code,
-    planId: plan.id, facturasMes: plan.facturas, montoUSD: plan.montoUSD,
+    planId: plan.id, facturasMes: plan.facturas, montoUSD: montoPeriodoUSD(plan, periodo), periodo,
     estado: "activa",
     cardHolderName: params.card.cardHolderName,
     ultimos4: params.card.number.slice(-4),
