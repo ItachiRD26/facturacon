@@ -47,6 +47,25 @@ function diagnosticoAcceso(recurso: string, res: Response): string {
   return JSON.stringify({ ambiente: info.ambiente, host: info.host });
 }
 
+// Códigos de respuesta de Pagadito (apéndice «List of Response Codes of REST API») traducidos para quien paga.
+const MENSAJES_PAGADITO: Record<string, string> = {
+  "PG400-02": "Algún dato tiene un formato que Pagadito no acepta (revisa nombre, dirección y teléfono).",
+  "PG400-03": "Pagadito solo acepta tarjetas Visa y Mastercard. Usa otra tarjeta.",
+  "PG400-04": "El vencimiento de la tarjeta no es válido.",
+  "PG400-05": "El código de seguridad (CVV) no es válido.",
+  "PG400-06": "Pagadito no procesa pagos de ese país.",
+  "PG400-09": "El monto es menor al mínimo que acepta Pagadito (US$ 1).",
+  "PG400-11": "La tarjeta guardada ya no es válida. Registra la tarjeta de nuevo.",
+  "PG400-13": "La tarjeta guardada venció. Registra la tarjeta de nuevo.",
+  "PG402-01": "Pagadito no pudo aprobar el pago (análisis de riesgo). Prueba con otra tarjeta o contacta a tu banco.",
+  "PG402-02": "El banco rechazó el pago. Prueba con otra tarjeta o contacta a tu banco.",
+};
+
+/** Error de Pagadito con su código; `mensajeUsuario` es seguro para mostrarlo en pantalla. */
+export class ErrorPagadito extends Error {
+  constructor(public codigo: string, mensaje: string, public mensajeUsuario: string) { super(mensaje); this.name = "ErrorPagadito"; }
+}
+
 export interface RespuestaTokenizacion<T> {
   response_code: string;
   response_message: string;
@@ -126,7 +145,10 @@ async function llamarTokenizacion<T>(recurso: string, body: unknown): Promise<Re
   }
 
   if (data.response_code !== "PG200-00") {
-    throw new Error(`Pagadito Tokenización (${recurso}) falló: ${data.response_code} — ${data.response_message}`);
+    throw new ErrorPagadito(
+      data.response_code, `Pagadito Tokenización (${recurso}) falló: ${data.response_code} — ${data.response_message}`,
+      MENSAJES_PAGADITO[data.response_code] ?? "Pagadito no pudo procesar el pago. Inténtalo de nuevo o prueba con otra tarjeta.",
+    );
   }
   return data;
 }

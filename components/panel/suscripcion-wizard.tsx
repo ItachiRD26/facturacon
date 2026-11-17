@@ -7,7 +7,7 @@ import Modal from "@/components/modals/modal";
 import { Boton } from "@/components/sandbox/ui";
 import TutorialButton from "./tutorial-button";
 import FormularioTarjeta, { AvisoError, FORM_TARJETA_VACIO, erroresTarjeta, type FormTarjeta } from "./formulario-tarjeta";
-import { parseVencimiento, soloDigitos, telefonoParaPagadito } from "@/lib/payments/tarjeta";
+import { limpiarDireccion, limpiarLugar, limpiarNombrePersona, limpiarTitular, parseVencimiento, soloDigitos, telefonoParaPagadito } from "@/lib/payments/tarjeta";
 
 // País fijo: República Dominicana (ISO 3166 numérico 214, único mercado que
 // atiende Facturacon hoy — ver APPENDIX List of ISO 3166 Country Codes de
@@ -66,12 +66,12 @@ export default function SuscripcionWizard({
             number: soloDigitos(form.numero),
             expirationDate: `${venc.mes}/${venc.anio}`,
             cvv: soloDigitos(form.cvv),
-            cardHolderName: form.nombreTitular.trim(),
-            firstName: form.nombre.trim(), lastName: form.apellido.trim(),
+            cardHolderName: limpiarTitular(form.nombreTitular),
+            firstName: limpiarNombrePersona(form.nombre), lastName: limpiarNombrePersona(form.apellido),
             email: form.email.trim(),
             billingAddress: {
-              city: form.ciudad.trim(), state: form.provincia, zip: "",
-              countryId: COUNTRY_ID_RD, line1: form.direccion.trim(), phone: telefonoParaPagadito(form.telefono),
+              city: limpiarLugar(form.ciudad), state: limpiarLugar(form.provincia), zip: "",
+              countryId: COUNTRY_ID_RD, line1: limpiarDireccion(form.direccion), phone: telefonoParaPagadito(form.telefono),
             },
           },
         }),

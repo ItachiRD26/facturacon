@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAccesoFacturacion } from "@/lib/tenant/auth";
 import { activarCobroRecurrente } from "@/lib/payments/cobros";
-import type { TarjetaPagadito } from "@/lib/payments/pagadito-tokenizacion";
+import { ErrorPagadito, type TarjetaPagadito } from "@/lib/payments/pagadito-tokenizacion";
 import { marcaAceptada, TEXTO_MARCAS_ACEPTADAS } from "@/lib/payments/tarjeta";
 
 interface Body {
@@ -52,6 +52,10 @@ export async function POST(req: NextRequest) {
       estado: suscripcion.estado, ultimos4: suscripcion.ultimos4, facturasMes: suscripcion.facturasMes, proximoCobroEn: suscripcion.proximoCobroEn,
     });
   } catch (e) {
+    if (e instanceof ErrorPagadito) {
+      console.error("[suscribir]", e.message);   // el detalle técnico queda en los logs, no en pantalla
+      return NextResponse.json({ error: e.mensajeUsuario, codigo: e.codigo }, { status: e.codigo.startsWith("PG402") ? 402 : 400 });
+    }
     const mensaje = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: `No se pudo activar el cobro recurrente: ${mensaje}` }, { status: 502 });
   }

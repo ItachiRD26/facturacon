@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Lock, CreditCard, Warning } from "@phosphor-icons/react/dist/ssr";
 import {
   detectarMarca, formatearNumero, formatearTelefono, formatearVencimiento, longitudCvv, longitudNumero, marcaRechazada, NOMBRE_MARCA,
-  numeroValido, TEXTO_MARCAS_ACEPTADAS, parseVencimiento, PROVINCIAS_RD, separarNombre, soloDigitos, telefonoValido, type MarcaTarjeta,
+  filtrarTitular, LIMITES_PAGADITO, numeroValido, TEXTO_MARCAS_ACEPTADAS, parseVencimiento, PROVINCIAS_RD, separarNombre, soloDigitos, telefonoValido, type MarcaTarjeta,
 } from "@/lib/payments/tarjeta";
 
 // Formulario de la tarjeta del asistente de pago: vista previa de la tarjeta en vivo, formato mientras se escribe
@@ -218,7 +218,8 @@ export default function FormularioTarjeta({ valor, onCambio, deshabilitado }: {
             id="tj-titular" ref={refTitular} autoComplete="cc-name" placeholder="NOMBRE APELLIDO"
             value={valor.nombreTitular} aria-invalid={!!err("nombreTitular")} style={{ ...base(!!err("nombreTitular")), textTransform: "uppercase" }}
             onKeyDown={(e) => { if (e.key === "Backspace" && e.currentTarget.value === "") refCvv.current?.focus(); }}
-            onChange={(e) => cambiar({ nombreTitular: e.target.value.toUpperCase().replace(/[^A-ZÁÉÍÓÚÜÑ .'-]/g, "").slice(0, 60) })}
+            maxLength={LIMITES_PAGADITO.titular}
+            onChange={(e) => cambiar({ nombreTitular: filtrarTitular(e.target.value) })}
             onBlur={() => {
               tocar("nombreTitular");
               // Precarga nombre y apellido de facturación con lo que escribió, si aún están vacíos.
@@ -232,15 +233,15 @@ export default function FormularioTarjeta({ valor, onCambio, deshabilitado }: {
         <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--c-text-3)" }}>Datos de facturación</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Campo id="tj-nombre" label="Nombre" error={err("nombre")}>
-            <input id="tj-nombre" autoComplete="given-name" value={valor.nombre} aria-invalid={!!err("nombre")} style={base(!!err("nombre"))} onChange={(e) => cambiar({ nombre: e.target.value })} onBlur={() => tocar("nombre")} />
+            <input id="tj-nombre" maxLength={LIMITES_PAGADITO.nombre} autoComplete="given-name" value={valor.nombre} aria-invalid={!!err("nombre")} style={base(!!err("nombre"))} onChange={(e) => cambiar({ nombre: e.target.value })} onBlur={() => tocar("nombre")} />
           </Campo>
           <Campo id="tj-apellido" label="Apellido" error={err("apellido")}>
-            <input id="tj-apellido" autoComplete="family-name" value={valor.apellido} aria-invalid={!!err("apellido")} style={base(!!err("apellido"))} onChange={(e) => cambiar({ apellido: e.target.value })} onBlur={() => tocar("apellido")} />
+            <input id="tj-apellido" maxLength={LIMITES_PAGADITO.apellido} autoComplete="family-name" value={valor.apellido} aria-invalid={!!err("apellido")} style={base(!!err("apellido"))} onChange={(e) => cambiar({ apellido: e.target.value })} onBlur={() => tocar("apellido")} />
           </Campo>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 12 }}>
           <Campo id="tj-email" label="Correo" error={err("email")} ayuda="Aquí llegan tus recibos">
-            <input id="tj-email" type="email" autoComplete="email" inputMode="email" placeholder="tucorreo@ejemplo.com" value={valor.email} aria-invalid={!!err("email")} style={base(!!err("email"))} onChange={(e) => cambiar({ email: e.target.value })} onBlur={() => tocar("email")} />
+            <input id="tj-email" type="email" maxLength={LIMITES_PAGADITO.email} autoComplete="email" inputMode="email" placeholder="tucorreo@ejemplo.com" value={valor.email} aria-invalid={!!err("email")} style={base(!!err("email"))} onChange={(e) => cambiar({ email: e.target.value })} onBlur={() => tocar("email")} />
           </Campo>
           <Campo id="tj-tel" label="Teléfono" error={err("telefono")}>
             <div style={{ position: "relative" }}>
@@ -251,11 +252,11 @@ export default function FormularioTarjeta({ valor, onCambio, deshabilitado }: {
           </Campo>
         </div>
         <Campo id="tj-dir" label="Dirección" error={err("direccion")}>
-          <input id="tj-dir" autoComplete="address-line1" placeholder="Calle, número, sector" value={valor.direccion} aria-invalid={!!err("direccion")} style={base(!!err("direccion"))} onChange={(e) => cambiar({ direccion: e.target.value })} onBlur={() => tocar("direccion")} />
+          <input id="tj-dir" maxLength={LIMITES_PAGADITO.direccion} autoComplete="address-line1" placeholder="Calle, número, sector" value={valor.direccion} aria-invalid={!!err("direccion")} style={base(!!err("direccion"))} onChange={(e) => cambiar({ direccion: e.target.value })} onBlur={() => tocar("direccion")} />
         </Campo>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Campo id="tj-ciudad" label="Ciudad" error={err("ciudad")}>
-            <input id="tj-ciudad" autoComplete="address-level2" placeholder="Santo Domingo" value={valor.ciudad} aria-invalid={!!err("ciudad")} style={base(!!err("ciudad"))} onChange={(e) => cambiar({ ciudad: e.target.value })} onBlur={() => tocar("ciudad")} />
+            <input id="tj-ciudad" maxLength={LIMITES_PAGADITO.ciudad} autoComplete="address-level2" placeholder="Santo Domingo" value={valor.ciudad} aria-invalid={!!err("ciudad")} style={base(!!err("ciudad"))} onChange={(e) => cambiar({ ciudad: e.target.value })} onBlur={() => tocar("ciudad")} />
           </Campo>
           <Campo id="tj-prov" label="Provincia" error={err("provincia")}>
             <select id="tj-prov" autoComplete="address-level1" value={valor.provincia} aria-invalid={!!err("provincia")} style={{ ...base(!!err("provincia")), cursor: "pointer" }} onChange={(e) => { cambiar({ provincia: e.target.value }); tocar("provincia"); }}>

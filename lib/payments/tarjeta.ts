@@ -89,8 +89,8 @@ export function formatearTelefono(texto: string): string {
   return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 10)].filter(Boolean).join(" ");
 }
 export const telefonoValido = (texto: string) => soloDigitos(texto).length === 10;
-/** Como lo espera Pagadito: "+1 809 555 5555". */
-export const telefonoParaPagadito = (texto: string) => `+1 ${formatearTelefono(texto)}`;
+/** Como lo permite el formato de Pagadito (números y guiones, con el código de área): "809-555-5555". */
+export const telefonoParaPagadito = (texto: string) => formatearTelefono(texto).replace(/ /g, "-");
 
 /** "juan carlos pérez" → { nombre: "juan", apellido: "carlos pérez" }. Solo para precargar; se puede corregir. */
 export function separarNombre(completo: string): { nombre: string; apellido: string } {
@@ -99,6 +99,24 @@ export function separarNombre(completo: string): { nombre: string; apellido: str
   if (partes.length === 0) return { nombre: "", apellido: "" };
   return { nombre: capital(partes[0]), apellido: partes.slice(1).map(capital).join(" ") };
 }
+
+// ── Límites y caracteres permitidos por Pagadito (PG-TokenizationPayment.pdf, «Card Object» y «billingAddress Object») ──
+export const LIMITES_PAGADITO = { titular: 26, nombre: 30, apellido: 30, email: 60, ciudad: 30, estado: 30, direccion: 60, telefono: 15 } as const;
+
+const sinAcentos = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const compactar = (s: string) => s.replace(/\s+/g, " ").trim();
+
+/** Mientras se escribe el nombre de la tarjeta: máx. 26, SIN acentos ni ñ; solo letras, punto, guion y apóstrofe (no recorta espacios para poder seguir escribiendo). */
+export const filtrarTitular = (s: string) =>
+  sinAcentos(s).toUpperCase().replace(/[^A-Z .'-]/g, "").replace(/\s{2,}/g, " ").replace(/^\s+/, "").slice(0, LIMITES_PAGADITO.titular);
+/** Valor final que se envía a Pagadito. */
+export const limpiarTitular = (s: string) => filtrarTitular(s).trim();
+/** Nombre/apellido: máx. 30, letras (con acento sí), espacios, punto y apóstrofe. */
+export const limpiarNombrePersona = (s: string) => compactar(s.replace(/[^\p{L} .']/gu, " ")).slice(0, LIMITES_PAGADITO.nombre);
+/** Ciudad y provincia: máx. 30, letras, números, espacios, punto, apóstrofe, paréntesis y guion. */
+export const limpiarLugar = (s: string) => compactar(s.replace(/[^\p{L}\p{N} .'()-]/gu, " ")).slice(0, LIMITES_PAGADITO.ciudad);
+/** Dirección: máx. 60, alfanumérica con . , # ; - ° & *. */
+export const limpiarDireccion = (s: string) => compactar(s.replace(/[^\p{L}\p{N} .,#;°&*-]/gu, " ")).slice(0, LIMITES_PAGADITO.direccion);
 
 export const PROVINCIAS_RD = [
   "Distrito Nacional", "Santo Domingo", "Santiago", "La Altagracia", "La Romana", "San Pedro de Macorís", "San Cristóbal", "Puerto Plata",

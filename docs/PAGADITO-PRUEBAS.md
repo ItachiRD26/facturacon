@@ -87,3 +87,16 @@ node scripts/pagadito-sandbox.cjs limpiar
   Nuestro verificador coincide con esto (probado con un evento firmado localmente).
 - Monto por cobro: mínimo US$1, máximo US$50,000 (el plan más caro anual = US$1,716.70).
 - Cada ERN (`merchantTransactionId`) solo puede usarse **una vez** (`PG3018`).
+
+## Hallazgos de la documentación (revisión completa, 2026-11-17)
+- **Cada servicio se habilita por separado** (Pago con Tokenización, Pago con Tarjeta Tokenizada, Suscripción con Tokenización, Suscripción con Tarjeta
+  Tokenizada, Reembolso). Facturacon usa `/customer`, `/payment` y `/refund`; si solo habilitaron «Suscripción…», responden 401. Código 401 = «Access not
+  authorized. Incorrect credentials». La documentación no menciona restricción por dominio ni IP: preguntárselo a Pagadito.
+- **Solo Visa y MasterCard** (`PG400-03`). Moneda solo USD; mínimo US$ 1.
+- **Formatos** (apéndice «List of Parameters»): `cardHolderName` máx. 26, sin acentos/ñ (solo letras, `.`, `-`, `'`); `firstName`/`lastName` máx. 30 (letras con
+  acento sí; `.` y `'`); `email` máx. 60; `city`/`state` máx. 30; `line1` máx. 60 (alfanumérica y `. , # ; - ° & *`); `phone` máx. 15 (números, `( ) - *`) →
+  se envía como `809-555-5555`; `merchantTransactionId` máx. 100 (alfanumérico, `.` y `-`); `customerIp` = IP pública del navegador del cliente.
+- País República Dominicana = `214` (correcto en el código). La huella del dispositivo se genera con `cybs_dfprofiler("pagadito", "SANDBOX"|"LIVE")`.
+- Códigos de respuesta traducidos para el cliente en `lib/payments/pagadito-tokenizacion.ts` (`PG400-0x`, `PG402-0x`).
+- Pagadito envía un correo de confirmación al cliente en cada cobro.
+- Las URL de la documentación llevan `/` final (`.../v1/customer/`); nuestro código las usa sin `/`, como la colección Postman de Pagadito (no se ha podido comprobar cuál prefieren).
