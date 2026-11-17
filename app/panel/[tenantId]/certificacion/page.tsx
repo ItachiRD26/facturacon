@@ -1506,9 +1506,9 @@ export default function CertificacionPage() {
               {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
               <img src="/certificacion/ofv-numeracion-4-enviar.webp" alt="Lista de comprobantes agregados en la OFV y el botón Enviar Solicitud resaltado" style={{ display: "block", width: "100%", maxWidth: 494, marginTop: 8, borderRadius: 8, border: "1px solid var(--c-border)" }} />
             </li>
-            <li>Aquí abajo <strong>solo dices cuántos comprobantes solicitaste de cada tipo</strong>: pulsa «Registrar» en la fila del tipo y escribe la cantidad. Facturacon calcula la numeración (desde el 1, en orden) y el vencimiento (31 de diciembre del año siguiente), los asigna uno por uno y te avisa cuando se acaben o venzan.</li>
+            <li>Aquí abajo <strong>solo dices cuántos comprobantes te autorizó la DGII de cada tipo</strong> (míralo en tu OFV: puede ser menos de lo que pediste): pulsa «Registrar» en la fila del tipo y escribe la cantidad. Facturacon calcula la numeración (desde el 1, en orden) y el vencimiento (31 de diciembre del año siguiente), los asigna uno por uno y te avisa cuando se acaben o venzan.</li>
           </ol>
-          <TuYNosotros tu="Pedir la numeración en la OFV y decir aquí cuántos comprobantes solicitaste de cada tipo." nosotros="Asignar cada número en orden al emitir, y avisarte antes de que se agoten o venzan." />
+          <TuYNosotros tu="Pedir la numeración en la OFV y decir aquí cuántos comprobantes te autorizó la DGII de cada tipo." nosotros="Asignar cada número en orden al emitir, y avisarte antes de que se agoten o venzan." />
 
           <SecuenciasClient tenantId={tenantId} embebido />
 

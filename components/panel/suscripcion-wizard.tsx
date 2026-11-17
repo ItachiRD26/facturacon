@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Script from "next/script";
-import { PLANES, textoUsuarios } from "@/lib/payments/planes";
+import { PLANES } from "@/lib/payments/planes";
 import Modal from "@/components/modals/modal";
 import { Boton, Campo, Input } from "@/components/sandbox/ui";
 import InfoTooltip from "./info-tooltip";
 import TutorialButton from "./tutorial-button";
+import SelectorPlan, { type PeriodoPlan } from "./selector-plan";
 
 // País fijo: República Dominicana (ISO 3166 numérico 214, único mercado que
 // atiende Facturacon hoy — ver APPENDIX List of ISO 3166 Country Codes de
@@ -52,6 +53,7 @@ export default function SuscripcionWizard({
 }) {
   const [paso, setPaso] = useState<Paso>(1);
   const [planId, setPlanId] = useState<string | null>(null);
+  const [periodo, setPeriodo] = useState<PeriodoPlan>("mensual");
   const [form, setForm] = useState<FormTarjeta>(VACIO);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
@@ -60,7 +62,7 @@ export default function SuscripcionWizard({
 
   useEffect(() => {
     if (!open) return;
-    setPaso(saltarPlan && planIdActual ? 2 : 1); setPlanId(planIdActual ?? null); setForm(VACIO); setError(""); setActivada(null);
+    setPaso(saltarPlan && planIdActual ? 2 : 1); setPlanId(planIdActual ?? null); setPeriodo("mensual"); setForm(VACIO); setError(""); setActivada(null);
   }, [open, planIdActual, saltarPlan]);
 
   const set = <K extends keyof FormTarjeta>(k: K, v: FormTarjeta[K]) => setForm((f) => ({ ...f, [k]: v }));
@@ -115,7 +117,7 @@ export default function SuscripcionWizard({
       {/* Requerido por Pagadito para evaluar el riesgo de la transacción —
           ver documentacion-pagadito/PG-TokenizationPayment.pdf. */}
       <Script src="/cybs_devicefingerprint.js" strategy="afterInteractive" onReady={() => setScriptListo(true)} />
-      <Modal open={open} onClose={onClose} title={titulo} maxWidth={560}>
+      <Modal open={open} onClose={onClose} title={titulo} maxWidth={paso === 1 ? 820 : 560}>
         {paso < 3 && (
           <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
             {[1, 2].map((n) => (
@@ -133,26 +135,18 @@ export default function SuscripcionWizard({
               <InfoTooltip texto="El plan define cuántas facturas electrónicas puedes emitir al mes y cuántos usuarios/cajeros puedes tener. Si te quedas corto, puedes subir de plan más adelante." />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {PLANES.map((p) => (
-                <button key={p.id} type="button" onClick={() => setPlanId(p.id)} style={{
-                  textAlign: "left", padding: 14, borderRadius: 8, cursor: "pointer",
-                  border: `2px solid ${planId === p.id ? "var(--c-brand)" : "var(--c-border)"}`,
-                  background: planId === p.id ? "var(--c-brand-bg)" : "#fff",
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{p.facturas.toLocaleString("es-DO")} facturas/mes</div>
-                  <div style={{ fontSize: 11, color: "var(--c-text-3)", marginBottom: 6 }}>{p.soloUnUsuario ? "1 usuario · todo en uno" : `Hasta ${textoUsuarios(p.usuarios)}`}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700 }}>
-                    RD$ {p.montoRD.toLocaleString("es-DO")}<span style={{ fontSize: 11, fontWeight: 400 }}>/mes</span>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <SelectorPlan planId={planId} onElegir={setPlanId} periodo={periodo} onPeriodo={setPeriodo} />
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <Boton variant="secondary" onClick={onClose}>Cancelar</Boton>
-              <Boton onClick={() => setPaso(2)} disabled={!planId}>Continuar →</Boton>
+              <Boton onClick={() => setPaso(2)} disabled={!planId || periodo === "anual"}>Continuar →</Boton>
             </div>
+            {periodo === "anual" && (
+              <div style={{ fontSize: 12, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 12px" }}>
+                <strong>El pago anual todavía no está activo.</strong> Estamos confirmando con nuestra pasarela de pagos el cobro una vez al año.
+                Por ahora puedes comparar los precios; para empezar a facturar elige <strong>Mensual</strong>.
+              </div>
+            )}
           </div>
         )}
 

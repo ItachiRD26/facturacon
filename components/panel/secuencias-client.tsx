@@ -77,7 +77,7 @@ export default function SecuenciasClient({ tenantId, embebido = false }: { tenan
       <Card style={{ marginBottom: 20, background: "var(--c-brand-bg)", borderColor: "var(--c-brand-border)" }}>
         <div style={{ fontSize: 13, lineHeight: 1.6 }}>
           <strong>¿De dónde salen estos números?</strong> Después de certificarte, en la Oficina Virtual de la DGII
-          solicitas cuántos comprobantes quieres de cada tipo. Aquí solo dices <strong>cuántos solicitaste</strong>: Facturacon calcula la
+          solicitas cuántos comprobantes quieres de cada tipo y la DGII te autoriza una cantidad (a veces menos de la que pediste). Aquí solo dices <strong>cuántos te autorizó</strong>: Facturacon calcula la
           numeración (empieza en 1 y continúa en orden) y el vencimiento (31 de diciembre del año siguiente). Solo registra los tipos que vas a emitir.
         </div>
       </Card>
@@ -134,7 +134,7 @@ export default function SecuenciasClient({ tenantId, embebido = false }: { tenan
           const fmtF = (iso: string) => `${iso.slice(8, 10)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}`;
           return (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <label style={{ fontSize: 13, fontWeight: 600 }}>¿Cuántos comprobantes de este tipo solicitaste a la DGII?
+              <label style={{ fontSize: 13, fontWeight: 600 }}>¿Cuántos comprobantes de este tipo te AUTORIZÓ la DGII?
                 <input style={{ ...input, marginTop: 6 }} inputMode="numeric" autoFocus placeholder="Ej.: 500" value={cantidad}
                   onChange={(e) => setCantidad(e.target.value.replace(/\D/g, ""))} disabled={avanzado} />
               </label>
@@ -144,6 +144,10 @@ export default function SecuenciasClient({ tenantId, embebido = false }: { tenan
                   {prev.modo === "amplia" && " (se suma a la que ya tenías)"}, con vencimiento el <strong>{fmtF(prev.vencimiento)}</strong> (31 de diciembre del año siguiente).
                 </div>
               )}
+              <p style={{ fontSize: 12, color: "var(--c-text-3)", lineHeight: 1.5, margin: 0 }}>
+                Escribe lo que la DGII <strong>autorizó</strong>, no lo que pediste: puede aprobarte menos (por ejemplo, pediste 500 y te aprobó 100).
+                Míralo en tu Oficina Virtual.
+              </p>
               <details onToggle={(e) => setAvanzado((e.currentTarget as HTMLDetailsElement).open)}>
                 <summary style={{ fontSize: 12, color: "var(--c-text-3)", cursor: "pointer" }}>Avanzado: la DGII me autorizó un rango distinto</summary>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
