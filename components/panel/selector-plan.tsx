@@ -26,8 +26,11 @@ const alcanza = (p: Plan, n: number) => n <= p.facturas * 3;
 export type { PeriodoPlan };
 const precioAnual = (p: Plan) => montoPeriodoRD(p, "anual");
 
-export default function SelectorPlan({ planId, onElegir, periodo, onPeriodo }: {
-  planId: string | null; onElegir: (id: string) => void; periodo: PeriodoPlan; onPeriodo: (p: PeriodoPlan) => void;
+export default function SelectorPlan({ planId, onElegir, onContinuar, periodo, onPeriodo }: {
+  planId: string | null; onElegir: (id: string) => void;
+  /** Botón al pie de cada plan: elige ese plan y pasa directo al pago, sin bajar hasta el final. */
+  onContinuar?: (id: string) => void;
+  periodo: PeriodoPlan; onPeriodo: (p: PeriodoPlan) => void;
 }) {
   const [cantidad, setCantidad] = useState("");
   const [equipo, setEquipo] = useState(false);
@@ -100,12 +103,12 @@ export default function SelectorPlan({ planId, onElegir, periodo, onPeriodo }: {
       </div>
 
       {/* Planes */}
-      <div role="radiogroup" aria-label="Planes" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(215px, 1fr))", gap: 12 }}>
+      <div role="group" aria-label="Planes" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(215px, 1fr))", gap: 12 }}>
         {PLANES.map((p) => {
           const activo = planId === p.id;
           const reco = recomendado?.id === p.id;
           return (
-            <button key={p.id} type="button" role="radio" aria-checked={activo} onClick={() => onElegir(p.id)} style={{
+            <div key={p.id} onClick={() => onElegir(p.id)} style={{
               position: "relative", textAlign: "left", padding: "16px 14px 14px", borderRadius: 12, cursor: "pointer",
               border: `2px solid ${activo ? "var(--c-brand)" : reco ? "var(--c-brand-border)" : "var(--c-border)"}`,
               background: activo ? "var(--c-brand-bg)" : "#fff", display: "flex", flexDirection: "column", gap: 10,
@@ -140,10 +143,13 @@ export default function SelectorPlan({ planId, onElegir, periodo, onPeriodo }: {
                 <li>Si te pasas: {rd(p.extraRD)} por comprobante extra</li>
                 <li>{p.soloUnUsuario ? "Sin usuarios adicionales" : `Usuario adicional: ${rd(TARIFAS_ADICIONALES.usuarioRD)}/mes`}</li>
               </ul>
-              <div style={{ marginTop: "auto", fontSize: 12, fontWeight: 700, color: activo ? "var(--c-brand)" : "var(--c-text-3)" }}>
-                {activo ? "✓ Plan elegido" : "Elegir este plan"}
-              </div>
-            </button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); onElegir(p.id); onContinuar?.(p.id); }} aria-label={`Elegir ${nombreDe(p)}`} style={{
+                marginTop: "auto", width: "100%", padding: "10px 12px", fontSize: 13, fontWeight: 700, borderRadius: 8, cursor: "pointer",
+                border: `1.5px solid var(--c-brand)`, background: activo || reco ? "var(--c-brand)" : "#fff", color: activo || reco ? "#fff" : "var(--c-brand)",
+              }}>
+                {activo ? "Continuar con este plan →" : "Elegir este plan →"}
+              </button>
+            </div>
           );
         })}
       </div>
@@ -155,8 +161,8 @@ export default function SelectorPlan({ planId, onElegir, periodo, onPeriodo }: {
             Tu plan: {nombreDe(elegido)} · {periodo === "mensual" ? `${rd(elegido.montoRD)}/mes` : `${rd(precioAnual(elegido))} al año (2 meses gratis)`}
           </div>
           Incluye <strong>{elegido.facturas.toLocaleString("es-DO")} comprobantes al mes</strong> y {elegido.soloUnUsuario ? "1 usuario" : textoUsuarios(elegido.usuarios)}.
-          Si un mes emites más, cada comprobante extra cuesta {rd(elegido.extraRD)} y se cobra al cerrar el mes (sin bloqueos, hasta {(elegido.facturas * 3).toLocaleString("es-DO")} al mes por seguridad).
-          Los comprobantes incluidos son de cada mes. {periodo === "anual" ? "El plan anual se paga una sola vez al año; los extras del mes se cobran aparte. " : ""}Puedes cambiar de plan o cancelar cuando quieras.
+          Si un mes emites más, cada comprobante extra cuesta {rd(elegido.extraRD)} y se suma a tu siguiente cobro (sin bloqueos, hasta {(elegido.facturas * 3).toLocaleString("es-DO")} al mes por seguridad).
+          Los comprobantes incluidos son de cada mes. {periodo === "anual" ? "El plan anual se paga una sola vez al año; los adicionales se acumulan y se suman al pago del año siguiente. " : ""}Al elegir el plan se cobra el primer periodo; después, cada aniversario. Puedes cancelar cuando quieras.
         </div>
       ) : (
         <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>Elige un plan para ver el resumen de lo que pagarás.</div>

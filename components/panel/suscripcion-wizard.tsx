@@ -135,7 +135,7 @@ export default function SuscripcionWizard({
               <InfoTooltip texto="El plan define cuántas facturas electrónicas puedes emitir al mes y cuántos usuarios/cajeros puedes tener. Si te quedas corto, puedes subir de plan más adelante." />
             </div>
 
-            <SelectorPlan planId={planId} onElegir={setPlanId} periodo={periodo} onPeriodo={setPeriodo} />
+            <SelectorPlan planId={planId} onElegir={setPlanId} onContinuar={(id) => { setPlanId(id); setPaso(2); }} periodo={periodo} onPeriodo={setPeriodo} />
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <Boton variant="secondary" onClick={onClose}>Cancelar</Boton>
