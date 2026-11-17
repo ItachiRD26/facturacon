@@ -16,6 +16,16 @@ export function detectarMarca(numero: string): MarcaTarjeta {
 
 export const NOMBRE_MARCA: Record<MarcaTarjeta, string> = { visa: "Visa", mastercard: "Mastercard", amex: "American Express", discover: "Discover", desconocida: "" };
 
+/** Pagadito solo procesa Visa y Mastercard (crédito o débito). */
+export const MARCAS_ACEPTADAS: MarcaTarjeta[] = ["visa", "mastercard"];
+export const TEXTO_MARCAS_ACEPTADAS = "Pagadito solo acepta tarjetas Visa y Mastercard";
+export const marcaAceptada = (numero: string) => MARCAS_ACEPTADAS.includes(detectarMarca(numero));
+/** Ya se escribieron los dígitos suficientes para saber que NO es Visa ni Mastercard. */
+export function marcaRechazada(numero: string): boolean {
+  const n = soloDigitos(numero);
+  return n.length >= 4 && !marcaAceptada(n);
+}
+
 /** Dígitos que tiene el número completo de esa marca. */
 export const longitudNumero = (marca: MarcaTarjeta) => (marca === "amex" ? 15 : 16);
 /** Dígitos del código de seguridad (American Express usa 4). */
@@ -43,10 +53,10 @@ export function luhnValido(numero: string): boolean {
   return suma % 10 === 0;
 }
 
-/** El número está completo para su marca y pasa Luhn. */
+/** El número es de una marca aceptada, está completo y pasa Luhn. */
 export function numeroValido(numero: string): boolean {
   const n = soloDigitos(numero);
-  return n.length === longitudNumero(detectarMarca(n)) && luhnValido(n);
+  return marcaAceptada(n) && n.length === longitudNumero(detectarMarca(n)) && luhnValido(n);
 }
 
 /** Mientras se escribe: "1" → "1", "3" → "03/", "1226" → "12/26". El mes se completa solo si no puede ser de dos dígitos. */

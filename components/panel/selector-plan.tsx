@@ -56,7 +56,7 @@ const GRUPOS: { icono: ReactNode; titulo: string; puntos: string[] }[] = [
 ];
 
 const PASOS = [
-  { t: "Eliges tu plan", d: "Pones tu tarjeta en un formulario seguro; nadie más la ve." },
+  { t: "Eliges tu plan", d: "Pagas con tarjeta Visa o Mastercard (crédito o débito) en un formulario seguro, procesado por Pagadito." },
   { t: "Se cobra el primer periodo", d: "El día que activas se cobra un mes (o el año, si lo eliges anual)." },
   { t: "Se renueva solo", d: "El mismo día de cada mes, hasta que cancelas. Te avisamos por correo antes si algo falla." },
   { t: "Si te pasas del tope", d: "Sigues facturando sin bloqueos; cada comprobante o usuario extra se suma al siguiente cobro." },

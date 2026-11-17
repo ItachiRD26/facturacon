@@ -173,7 +173,7 @@ export default function PlanClient({
           </div>
           <SelectorPlan onContinuar={(id) => abrir(id, periodoSel)} periodo={periodoSel} onPeriodo={setPeriodoSel} />
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 14, lineHeight: 1.55 }}>
-            Al elegir el plan se cobra el primer periodo y después se renueva solo, el mismo día, hasta que canceles. Tu tarjeta se envía a Pagadito, nuestra pasarela de pago, por una conexión cifrada; Facturacon no la guarda.
+            Al elegir el plan se cobra el primer periodo y después se renueva solo, el mismo día, hasta que canceles. Aceptamos tarjetas Visa y Mastercard. Tu tarjeta se envía a Pagadito, nuestra pasarela de pago, por una conexión cifrada; Facturacon no la guarda.
           </p>
         </>
       )}

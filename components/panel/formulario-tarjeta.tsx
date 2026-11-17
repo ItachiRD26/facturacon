@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import { Lock, CreditCard, Warning } from "@phosphor-icons/react/dist/ssr";
 import {
-  detectarMarca, formatearNumero, formatearTelefono, formatearVencimiento, longitudCvv, longitudNumero, NOMBRE_MARCA,
-  numeroValido, parseVencimiento, PROVINCIAS_RD, separarNombre, soloDigitos, telefonoValido, type MarcaTarjeta,
+  detectarMarca, formatearNumero, formatearTelefono, formatearVencimiento, longitudCvv, longitudNumero, marcaRechazada, NOMBRE_MARCA,
+  numeroValido, TEXTO_MARCAS_ACEPTADAS, parseVencimiento, PROVINCIAS_RD, separarNombre, soloDigitos, telefonoValido, type MarcaTarjeta,
 } from "@/lib/payments/tarjeta";
 
 // Formulario de la tarjeta del asistente de pago: vista previa de la tarjeta en vivo, formato mientras se escribe
@@ -22,7 +23,10 @@ export const FORM_TARJETA_VACIO: FormTarjeta = {
 export function erroresTarjeta(f: FormTarjeta): Partial<Record<keyof FormTarjeta, string>> {
   const marca = detectarMarca(f.numero);
   const e: Partial<Record<keyof FormTarjeta, string>> = {};
-  if (!numeroValido(f.numero)) e.numero = soloDigitos(f.numero).length < longitudNumero(marca) ? "Escribe el número completo de la tarjeta" : "Revisa el número: no parece válido";
+  if (!numeroValido(f.numero)) {
+    e.numero = marcaRechazada(f.numero) ? `${TEXTO_MARCAS_ACEPTADAS}. Usa otra tarjeta.`
+      : soloDigitos(f.numero).length < longitudNumero(marca) ? "Escribe el número completo de la tarjeta" : "Revisa el número: no parece válido";
+  }
   if (!parseVencimiento(f.venc)) e.venc = soloDigitos(f.venc).length < 4 ? "Escribe MM/AA" : "Fecha inválida o tarjeta vencida";
   if (soloDigitos(f.cvv).length !== longitudCvv(marca)) e.cvv = `${longitudCvv(marca)} dígitos`;
   if (f.nombreTitular.trim().length < 3) e.nombreTitular = "Escribe el nombre como sale en la tarjeta";
@@ -100,6 +104,38 @@ const base = (malo: boolean): React.CSSProperties => ({
   border: `1.5px solid ${malo ? "var(--c-red)" : "var(--c-border)"}`, outline: "none",
 });
 
+function ChipMarca({ children }: { children: ReactNode }) {
+  return <span style={{ display: "inline-flex", alignItems: "center", height: 26, padding: "0 9px", border: "1px solid var(--c-border)", borderRadius: 6, background: "#fff" }}>{children}</span>;
+}
+
+/** Franja de confianza: quién procesa el pago y qué tarjetas se aceptan. */
+function FranjaPagadito() {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "10px 14px", borderRadius: 12, background: "#fff", border: "1px solid var(--c-border)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <Lock size={16} weight="bold" color="var(--c-green)" aria-hidden="true" />
+        <div style={{ lineHeight: 1.25 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--c-text-3)", letterSpacing: 0.3 }}>PAGO SEGURO PROCESADO POR</div>
+          <Image src="/marca/pagadito/pagadito-logo.png" alt="Pagadito" width={92} height={18} priority />
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 11.5, color: "var(--c-text-3)" }}>Aceptamos</span>
+        <ChipMarca><span style={{ fontSize: 14, fontWeight: 800, fontStyle: "italic", color: "#1A1F71", letterSpacing: 0.3 }}>VISA</span></ChipMarca>
+        <ChipMarca>
+          <span aria-label="Mastercard" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <span style={{ display: "inline-flex" }}>
+              <span style={{ width: 15, height: 15, borderRadius: "50%", background: "#EB001B" }} />
+              <span style={{ width: 15, height: 15, borderRadius: "50%", background: "#F79E1B", marginLeft: -6, mixBlendMode: "multiply" }} />
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--c-text-2)" }}>Mastercard</span>
+          </span>
+        </ChipMarca>
+      </div>
+    </div>
+  );
+}
+
 export default function FormularioTarjeta({ valor, onCambio, deshabilitado }: {
   valor: FormTarjeta; onCambio: (f: FormTarjeta) => void; deshabilitado?: boolean;
 }) {
@@ -109,14 +145,16 @@ export default function FormularioTarjeta({ valor, onCambio, deshabilitado }: {
   const refCvv = useRef<HTMLInputElement>(null);
   const refTitular = useRef<HTMLInputElement>(null);
   const marca = detectarMarca(valor.numero);
+  const rechazada = marcaRechazada(valor.numero);
   const errores = erroresTarjeta(valor);
   const cambiar = (parche: Partial<FormTarjeta>) => onCambio({ ...valor, ...parche });
   const tocar = (k: keyof FormTarjeta) => setTocados((t) => (t[k] ? t : { ...t, [k]: true }));
-  const err = (k: keyof FormTarjeta) => (tocados[k] ? errores[k] : undefined);
+  const err = (k: keyof FormTarjeta) => (tocados[k] || (k === "numero" && rechazada) ? errores[k] : undefined);
   const saltar = (r: React.RefObject<HTMLInputElement | null>) => setTimeout(() => r.current?.focus(), 0);
 
   return (
     <fieldset disabled={deshabilitado} style={{ border: "none", padding: 0, margin: 0, minWidth: 0, display: "flex", flexDirection: "column", gap: 18 }}>
+      <FranjaPagadito />
       <div style={{ display: "flex", justifyContent: "center" }}><VistaTarjeta f={valor} marca={marca} /></div>
 
       <section aria-label="Datos de la tarjeta" style={{ display: "flex", flexDirection: "column", gap: 13 }}>
@@ -127,7 +165,7 @@ export default function FormularioTarjeta({ valor, onCambio, deshabilitado }: {
         <Campo id="tj-numero" label="Número de tarjeta" error={err("numero")}>
           <div style={{ position: "relative" }}>
             <input
-              id="tj-numero" ref={refNumero} inputMode="numeric" autoComplete="cc-number" placeholder="1234 5678 9012 3456"
+              id="tj-numero" ref={refNumero} inputMode="numeric" autoComplete="cc-number" placeholder="Visa o Mastercard"
               value={formatearNumero(valor.numero)} aria-invalid={!!err("numero")} aria-describedby={err("numero") ? "tj-numero-err" : undefined}
               className="num-sans" style={{ ...base(!!err("numero")), paddingRight: 110, letterSpacing: 1 }}
               onChange={(e) => {
@@ -139,8 +177,8 @@ export default function FormularioTarjeta({ valor, onCambio, deshabilitado }: {
               }}
               onBlur={() => tocar("numero")}
             />
-            <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 12, fontWeight: 700, color: marca === "desconocida" ? "var(--c-text-4)" : "var(--c-brand)", pointerEvents: "none" }}>
-              {NOMBRE_MARCA[marca] || "Visa · MC · Amex"}
+            <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 12, fontWeight: 700, color: rechazada ? "var(--c-red)" : marca === "desconocida" ? "var(--c-text-4)" : "var(--c-brand)", pointerEvents: "none" }}>
+              {rechazada ? "No aceptada" : NOMBRE_MARCA[marca] || "Visa · Mastercard"}
             </span>
           </div>
         </Campo>
@@ -230,7 +268,7 @@ export default function FormularioTarjeta({ valor, onCambio, deshabilitado }: {
 
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 11.5, lineHeight: 1.5, color: "var(--c-text-3)" }}>
         <Lock size={15} weight="bold" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true" />
-        <span>Pago procesado por Pagadito. Tu tarjeta viaja cifrada y Facturacon no la guarda: solo conserva un código seguro y los últimos 4 dígitos.</span>
+        <span>Solo se aceptan tarjetas Visa y Mastercard (crédito o débito). Tu tarjeta viaja cifrada hasta Pagadito y Facturacon no la guarda: solo conserva un código seguro y los últimos 4 dígitos.</span>
       </div>
     </fieldset>
   );

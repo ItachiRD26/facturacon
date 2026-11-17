@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAccesoFacturacion } from "@/lib/tenant/auth";
 import { activarCobroRecurrente } from "@/lib/payments/cobros";
 import type { TarjetaPagadito } from "@/lib/payments/pagadito-tokenizacion";
+import { marcaAceptada, TEXTO_MARCAS_ACEPTADAS } from "@/lib/payments/tarjeta";
 
 interface Body {
   tenantId: string;
@@ -22,6 +23,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null) as Body | null;
   if (!body?.tenantId || !body.planId || !body.card || !body.deviceFingerprintID) {
     return NextResponse.json({ error: "Faltan datos requeridos." }, { status: 400 });
+  }
+
+  if (!marcaAceptada(String(body.card.number ?? ""))) {
+    return NextResponse.json({ error: `${TEXTO_MARCAS_ACEPTADAS}. Usa otra tarjeta.` }, { status: 400 });
   }
 
   const verif = await requireAccesoFacturacion(body.tenantId);
