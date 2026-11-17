@@ -97,7 +97,6 @@ export default function PlanClient({
   const { suscripcion, loading } = useSuscripcion(tenantId);
   // El plan se elige en la propia página (selector con Mensual/Anual); el modal solo se abre para pagar.
   const [wizard, setWizard] = useState<{ abierto: boolean; planId: string | null; periodo: PeriodoPlan }>({ abierto: false, planId: null, periodo: "mensual" });
-  const [planSel, setPlanSel] = useState<string | null>(null);
   const [periodoSel, setPeriodoSel] = useState<PeriodoPlan>("mensual");
   const [confirmarCancelar, setConfirmarCancelar] = useState(false);
   const [cancelando, setCancelando] = useState(false);
@@ -133,7 +132,7 @@ export default function PlanClient({
   const sinPlanActivo = !suscripcion || suscripcion.estado === "cancelada";
 
   return (
-    <div style={{ maxWidth: 860, margin: "0 auto", fontFamily: "var(--font-sans)" }}>
+    <div style={{ maxWidth: certificado && sinPlanActivo ? 1160 : 860, margin: "0 auto", fontFamily: "var(--font-sans)" }}>
       <PageHeader
         titulo="Plan y facturación"
         descripcion="La certificación ante la DGII es gratis. Pagas una mensualidad según cuántos comprobantes emites, solo desde que estás certificado."
@@ -172,7 +171,7 @@ export default function PlanClient({
             <div style={{ fontSize: 15, fontWeight: 700 }}>Elige cuántos comprobantes necesitas al mes</div>
             <TutorialButton titulo="Cómo activar tu cobro recurrente" />
           </div>
-          <SelectorPlan planId={planSel} onElegir={setPlanSel} onContinuar={(id) => abrir(id, periodoSel)} periodo={periodoSel} onPeriodo={setPeriodoSel} />
+          <SelectorPlan onContinuar={(id) => abrir(id, periodoSel)} periodo={periodoSel} onPeriodo={setPeriodoSel} />
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 14, lineHeight: 1.55 }}>
             Al elegir el plan se cobra el primer periodo y después se renueva solo, el mismo día, hasta que canceles. Tu tarjeta se envía a Pagadito, nuestra pasarela de pago, por una conexión cifrada; Facturacon no la guarda.
           </p>
