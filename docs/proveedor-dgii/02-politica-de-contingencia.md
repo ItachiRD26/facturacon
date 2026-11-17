@@ -1,7 +1,7 @@
 # Anexo 1.2 — Política de Contingencia y Continuidad Operativa
 
-**Organización:** Facturacon — [razón social y RNC]
-**Versión:** 0.1 (borrador) · **Fecha:** [fecha de aprobación] · **Responsable:** [nombre y cargo]
+**Organización:** ABC FACTURACON (nombre comercial de PETER JETER GARCIA RODRIGUEZ) — RNC/Cédula 40212171397
+**Versión:** 0.1 (borrador) · **Fecha:** [fecha de aprobación] · **Responsable:** Peter Jeter García Rodríguez, Dueño
 
 > Lo marcado `[PENDIENTE]` aún no está implementado o falta decidirlo.
 
@@ -11,9 +11,9 @@ Asegurar que los contribuyentes puedan seguir facturando y que ningún comproban
 ## 2. Objetivos de recuperación
 | Concepto | Meta | Nota |
 |---|---|---|
-| Disponibilidad mensual de la plataforma | `[DEFINIR, por ejemplo 99.5 %]` | Basada en las garantías de Vercel y Google Cloud |
-| RTO (tiempo máximo para restablecer el servicio) | `[DEFINIR, por ejemplo 4 horas]` | |
-| RPO (pérdida máxima de datos aceptable) | `[DEFINIR, por ejemplo 24 horas; menos con recuperación a un punto en el tiempo]` | Depende de activar los respaldos |
+| Disponibilidad mensual de la plataforma | 99.5 % mensual (propuesta; confirmar) | Basada en las garantías de Vercel y Google Cloud |
+| RTO (tiempo máximo para restablecer el servicio) | 4 horas (propuesta; confirmar) | |
+| RPO (pérdida máxima de datos aceptable) | 24 horas con respaldo diario (propuesta; menos con recuperación a un punto en el tiempo) | Depende de activar los respaldos |
 
 ## 3. Escenarios y respuesta
 

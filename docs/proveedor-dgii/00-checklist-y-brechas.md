@@ -9,7 +9,7 @@ Estado al 2026-11-17. **Los textos de esta carpeta son borradores**: describen l
 | RNC activo y clave de la Oficina Virtual | Listo | — |
 | Autorizado y certificado como **Emisor Electrónico** | Listo (certificado el 2026-11-17) | — |
 | Certificado digital de **persona física** (Ley 126-02) | Listo | Vigencia: se avisa por correo antes de vencer |
-| Actividad económica de **venta/desarrollo de software** | Verificar | Revisar en la OFV (Actualización del RNC); si no figura, agregarla |
+| Actividad económica de **venta/desarrollo de software** | Listo según Peter («Diseño y Desarrollo de Software») | Confirmar que figure así en la OFV |
 | Al día en obligaciones formales y sustantivas | Verificar | Peter, con su contador |
 | Cumplir exigencias técnicas de la DGII | En curso | Sets de pruebas como proveedor (pasos 2–13 del portal) |
 | Posible mínimo de contribuyentes certificados (¿3?) | **Preguntar** | Aparece en un resultado de búsqueda, no en las guías oficiales. Preguntar a la Gerencia de Facturación si exige un mínimo y si cuentan los certificados con sistemas a la medida |
@@ -20,8 +20,8 @@ Estado al 2026-11-17. **Los textos de esta carpeta son borradores**: describen l
 | 1.1 | Política de Seguridad | Borrador listo: `01-politica-de-seguridad.md` |
 | 1.2 | Política de Contingencia | Borrador listo: `02-politica-de-contingencia.md` |
 | 1.3 | Política de Protección de Datos **pública** (Ley 172-13) con la URL | Borrador listo: `03-politica-de-proteccion-de-datos.md`. Falta revisión de un abogado y publicarla (hoy `/privacidad` es un borrador distinto) |
-| 1.4 | Vías de asistencia y tiempos de respuesta | Borrador listo: `04-vias-de-asistencia.md`. Peter debe confirmar los tiempos |
-| 1.5 | Contacto para la DGII (nombre, cargo, correo, teléfono directo) | Plantilla: `05-contacto-dgii.md` |
+| 1.4 | Vías de asistencia y tiempos de respuesta | Listo con los tiempos de Peter (30 min a 1 h en urgentes). Falta confirmar el horario de atención |
+| 1.5 | Contacto para la DGII (nombre, cargo, correo, teléfono directo) | Completado con los datos de Peter: `05-contacto-dgii.md` |
 | 1.6 | Certificación de seguridad (ISO 27001 u otra) | Opcional; no se tiene |
 
 ## 3. Consideraciones técnicas exigidas

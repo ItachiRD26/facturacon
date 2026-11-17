@@ -1,7 +1,7 @@
 # Anexo 1.1 — Política de Seguridad de la Información
 
-**Organización:** Facturacon — [razón social y RNC]
-**Versión:** 0.1 (borrador) · **Fecha:** [fecha de aprobación] · **Responsable:** [nombre y cargo]
+**Organización:** ABC FACTURACON (nombre comercial de PETER JETER GARCIA RODRIGUEZ) — RNC/Cédula 40212171397
+**Versión:** 0.1 (borrador) · **Fecha:** [fecha de aprobación] · **Responsable:** Peter Jeter García Rodríguez, Dueño
 **Alcance:** la plataforma web de facturación electrónica Facturacon (www.facturacon.com.do), sus bases de datos, la custodia de certificados digitales y todo el personal y proveedores que intervienen en el servicio.
 
 > Los puntos marcados `[PENDIENTE]` no están implementados todavía y deben quedar resueltos (o retirados del texto) antes de entregar este documento a la DGII.
@@ -10,7 +10,7 @@
 Proteger la confidencialidad, integridad y disponibilidad de la información de los contribuyentes (comprobantes fiscales electrónicos, datos de clientes y productos, credenciales y certificados digitales) y cumplir con la Ley 32-23 de Facturación Electrónica, la Ley 172-13 de Protección de Datos Personales y las normas de la DGII.
 
 ## 2. Responsabilidades
-- **Responsable de seguridad:** [nombre, cargo]. Aprueba esta política, decide sobre incidentes y revisa los accesos.
+- **Responsable de seguridad:** Peter Jeter García Rodríguez, Dueño. Aprueba esta política, decide sobre incidentes y revisa los accesos.
 - **Todo el personal y colaboradores:** guardar confidencialidad, no compartir credenciales y reportar de inmediato cualquier sospecha de incidente.
 - **Contribuyentes (clientes):** custodian sus usuarios y contraseñas y la contraseña de su certificado digital.
 

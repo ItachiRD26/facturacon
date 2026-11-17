@@ -6,7 +6,7 @@
 **Última actualización:** [fecha]
 
 ## 1. Quién es el responsable
-**Facturacon**, [razón social], RNC [COMPLETAR], domicilio [COMPLETAR], correo `contacto@facturacon.com.do`. Para los datos de las empresas que usan la plataforma, Facturacon actúa como proveedor de servicios (encargado del tratamiento) y cada contribuyente es el responsable de los datos de sus propios clientes.
+**ABC FACTURACON** (plataforma Facturacon), nombre comercial de **PETER JETER GARCIA RODRIGUEZ**, RNC/Cédula 40212171397, domicilio Playa Juan de Bolanos Bugalow #3, Montecristi, correo `contacto@facturacon.com.do`. Para los datos de las empresas que usan la plataforma, Facturacon actúa como proveedor de servicios (encargado del tratamiento) y cada contribuyente es el responsable de los datos de sus propios clientes.
 
 ## 2. Qué datos tratamos
 - **De la cuenta:** nombre, correo, teléfono y método de acceso (correo o cuenta de Google).
@@ -61,4 +61,4 @@ El servicio es para contribuyentes y empresas; no está dirigido a menores de ed
 Publicaremos aquí cualquier cambio y, si es importante, te avisaremos por correo.
 
 ## 13. Contacto
-`contacto@facturacon.com.do` · [teléfono]
+`contacto@facturacon.com.do` · 809-962-2259
