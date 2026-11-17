@@ -1476,15 +1476,37 @@ export default function CertificacionPage() {
             Antes de emitir tu primera factura real tienes que entrar a tu <strong>Oficina Virtual (OFV)</strong> y
             <strong> solicitar la numeración</strong> (secuencias de e-NCF) de los comprobantes que vas a usar. Sin esos números, el sistema no te deja emitir.
           </p>
-          <ol style={{ margin: "0 0 14px", paddingLeft: 18, fontSize: 13, lineHeight: 1.75 }}>
-            <li>Entra a tu <a href="https://www.dgii.gov.do/ofv/login.aspx" target="_blank" rel="noopener noreferrer" style={{ color: "var(--c-brand)", fontWeight: 600 }}>Oficina Virtual</a> y busca la solicitud de autorización de numeración (secuencias) de comprobantes fiscales electrónicos.</li>
+          <div style={{ fontSize: 13, fontWeight: 700, margin: "4px 0 8px" }}>Cómo pedirla, paso a paso en la OFV</div>
+          <ol style={{ margin: "0 0 18px", paddingLeft: 18, fontSize: 13, lineHeight: 1.75, display: "flex", flexDirection: "column", gap: 14 }}>
             <li>
-              Pide, como mínimo, los tipos que más vas a usar: <strong>E31</strong> (crédito fiscal), <strong>E32</strong> (consumo),
-              <strong> E33</strong> (nota de débito) y <strong>E34</strong> (nota de crédito). Otros tipos (E41, E43, E44, E45, E46, E47) solo si los vas a emitir.
-              Indica <strong>cuántos números</strong> pides de cada uno.
+              Entra a tu <a href="https://www.dgii.gov.do/ofv/login.aspx" target="_blank" rel="noopener noreferrer" style={{ color: "var(--c-brand)", fontWeight: 600 }}>Oficina Virtual</a>, abre el menú <strong>Solicitudes</strong> y pulsa <strong>«Comprobantes Fiscales»</strong>.
+              {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+              <img src="/certificacion/ofv-numeracion-1-menu.webp" alt="Menú Solicitudes de la OFV con la opción Comprobantes Fiscales resaltada" style={{ display: "block", width: "100%", maxWidth: 230, marginTop: 8, borderRadius: 8, border: "1px solid var(--c-border)" }} />
             </li>
-            <li>La DGII te responde con un <strong>rango</strong> (del número inicial al final) y una <strong>fecha de vencimiento</strong> por cada tipo.</li>
-            <li>Regístralos aquí abajo, tal cual te los dieron. Facturacon los asigna uno por uno, en orden, y te avisa cuando se acaben o venzan.</li>
+            <li>
+              En <strong>«Tipo Comprobante»</strong> elige el tipo que quieres autorizar. <strong>Ojo: todos tienen que decir «ELECTRÓNICO» o «ELECTRÓNICA»</strong>.
+              Los de arriba de la lista que no dicen eso son los de papel y no sirven para facturación electrónica. Empieza con
+              <strong> Factura de Crédito Fiscal Electrónico</strong>.
+              {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+              <img src="/certificacion/ofv-numeracion-2-tipos.webp" alt="Lista de tipos de comprobante de la OFV con el bloque de los que dicen electrónico resaltado" style={{ display: "block", width: "100%", maxWidth: 420, marginTop: 8, borderRadius: 8, border: "1px solid var(--c-border)" }} />
+            </li>
+            <li>En <strong>«Cantidad»</strong> escribe cuántos comprobantes quieres que te autoricen de ese tipo (la cantidad que prefieras, según cuántos vas a emitir).</li>
+            <li>En <strong>«Para uso con»</strong> deja marcada la opción <strong>«Electrónica»</strong>.</li>
+            <li>
+              Pulsa <strong>«Agregar»</strong>.
+              {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+              <img src="/certificacion/ofv-numeracion-3-formulario.webp" alt="Formulario de la OFV con la cantidad (3), la opción Electrónica (4) y el botón Agregar (5) resaltados" style={{ display: "block", width: "100%", maxWidth: 620, marginTop: 8, borderRadius: 8, border: "1px solid var(--c-border)" }} />
+            </li>
+            <li>
+              <strong>Repite</strong> con los demás: <strong>Factura de Consumo Electrónica</strong>, <strong>Nota de Débito Electrónica</strong> y
+              <strong> Nota de Crédito Electrónica</strong> (y otros tipos electrónicos solo si los vas a emitir). Se van juntando en una lista debajo del formulario.
+            </li>
+            <li>
+              Cuando estén todos en la lista, pulsa <strong>«Enviar Solicitud»</strong>.
+              {/* eslint-disable-next-line @next/next/no-img-element -- captura estática en /public, no requiere optimización de Next/Image */}
+              <img src="/certificacion/ofv-numeracion-4-enviar.webp" alt="Lista de comprobantes agregados en la OFV y el botón Enviar Solicitud resaltado" style={{ display: "block", width: "100%", maxWidth: 494, marginTop: 8, borderRadius: 8, border: "1px solid var(--c-border)" }} />
+            </li>
+            <li>La DGII te responde con un <strong>rango</strong> (número inicial y final) y una <strong>fecha de vencimiento</strong> por cada tipo. <strong>Regístralos aquí abajo</strong>, tal cual te los dieron. Facturacon los asigna uno por uno, en orden, y te avisa cuando se acaben o venzan.</li>
           </ol>
           <TuYNosotros tu="Pedir la numeración en la OFV y copiar aquí el rango y el vencimiento de cada tipo." nosotros="Asignar cada número en orden al emitir, y avisarte antes de que se agoten o venzan." />
 
