@@ -311,7 +311,7 @@ export function EquipoDemo() {
           <div className="eq-body">
             <div className="eq-izq">
               <div className="vt-card eq-plan">
-                <div className="eq-plan-t"><b>Usas 4 de 5 usuarios de tu plan</b><span>Plan de 500 comprobantes al mes</span></div>
+                <div className="eq-plan-t"><b>Usas 4 de 5 usuarios de caja de tu plan</b><span>Plan de 500 comprobantes al mes</span></div>
                 <div className="eq-barra"><i style={{ width: "80%" }} /></div>
               </div>
               <div className="eq-tabs"><span className="on">Cajeros y personal</span><span>Administradores y contador</span><span>Qué puede hacer cada rol</span></div>

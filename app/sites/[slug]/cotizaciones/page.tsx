@@ -33,7 +33,7 @@ export default function CotizacionesPage() {
   // de la conversión — pero useFacturas igual abre un onSnapshot, así que
   // hay que filtrarlo igual que en /facturas o un cajero se topa con un
   // permission-denied silencioso en la consola (ver firestore.rules).
-  const filtroCreadoPor = tenant.rol === "vendedor" ? (firebaseUser?.uid ?? null) : undefined;
+  const filtroCreadoPor = (tenant.rol === "vendedor" || tenant.rol === "operador") ? (firebaseUser?.uid ?? null) : undefined;
   const { agregar: agregarFactura } = useFacturas(tenant.tenantId, filtroCreadoPor);
   const { agregar: agregarCuenta } = useCuentasPorCobrar(tenant.tenantId);
   const { personalizacion } = usePersonalizacion(tenant.tenantId);

@@ -82,7 +82,7 @@ export default function CuentaSidebar({
   const visibles = (items: ItemNav[]) =>
     items.filter((i) => (!i.roles || i.roles.includes(rol)) && (!i.solo || i.solo.includes(tenant.estado)));
 
-  const puedeOperar = rol === "owner" || rol === "admin" || rol === "vendedor";
+  const puedeOperar = rol === "owner" || rol === "admin" || rol === "vendedor" || rol === "operador";
 
   return (
     <>

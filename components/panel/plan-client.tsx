@@ -26,9 +26,9 @@ function TarjetaPlan({ plan, onElegir, destacada, soloVer }: { plan: Plan; onEle
   return (
     <Card padding={18} style={{ display: "flex", flexDirection: "column", gap: 4, borderColor: destacada ? "var(--c-brand)" : undefined, boxShadow: destacada ? "0 0 0 3px var(--c-brand-bg)" : undefined }}>
       <div className="num" style={{ fontSize: 22, fontWeight: 700 }}>{plan.facturas.toLocaleString("es-DO")}</div>
-      <div style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 10 }}>comprobantes al mes · {plan.soloUnUsuario ? "1 usuario (todo en uno)" : `hasta ${textoUsuarios(plan.usuarios)}`}{plan.nombre ? ` · ${plan.nombre}` : ""}</div>
+      <div style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 10 }}>comprobantes al mes · {textoUsuarios(plan.usuarios)}{plan.nombre ? ` · ${plan.nombre}` : ""}</div>
       <div className="num" style={{ fontSize: 18, fontWeight: 700, marginBottom: 14 }}>
-        RD$ {plan.montoRD.toLocaleString("es-DO")}<span style={{ fontSize: 12, fontWeight: 500, color: "var(--c-text-3)" }}> /mes</span>
+        RD$ {plan.montoRD.toLocaleString("es-DO")}<span style={{ fontSize: 12, fontWeight: 500, color: "var(--c-text-3)" }}> /mes · ITBIS incluido</span>
       </div>
       {!soloVer && <Button variante={destacada ? "primary" : "secondary"} onClick={onElegir} full>Elegir este plan</Button>}
     </Card>
@@ -74,7 +74,7 @@ function AdicionalesCard({ tenantId }: { tenantId: string }) {
           <b className="num">{rd(r.comprobantes.costoRD)}</b>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-          <span>Usuarios adicionales <span style={{ color: "var(--c-text-3)" }}>({r.usuarios.extra} × {rd(r.usuarios.costoUnitarioRD)})</span></span>
+          <span>Usuarios de caja adicionales <span style={{ color: "var(--c-text-3)" }}>({r.usuarios.extra} × {rd(r.usuarios.costoUnitarioRD)})</span></span>
           <b className="num">{rd(r.usuarios.costoRD)}</b>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, paddingTop: 10, borderTop: "1px solid var(--c-border)", fontSize: 15 }}>
@@ -82,8 +82,8 @@ function AdicionalesCard({ tenantId }: { tenantId: string }) {
         </div>
       </div>
       <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 12, lineHeight: 1.55 }}>
-        Tu plan incluye {r.comprobantes.incluidos.toLocaleString("es-DO")} comprobantes y {textoUsuarios(r.usuarios.incluidos)} al mes. Pasado el tope puedes seguir emitiendo: cada comprobante
-        extra cuesta {rd(r.comprobantes.costoUnitarioRD)} y cada usuario extra {rd(r.usuarios.costoUnitarioRD)} al mes. Estos adicionales se suman al total de tu próximo cobro (el plan más lo adicional del mes que cerró). Si lo necesitas seguido, subir de plan sale más barato.
+        Tu plan incluye {r.comprobantes.incluidos.toLocaleString("es-DO")} comprobantes y {textoUsuarios(r.usuarios.incluidos)} (el dueño y los administradores no cuentan). Pasado el tope puedes seguir emitiendo: cada comprobante
+        extra cuesta {rd(r.comprobantes.costoUnitarioRD)} y cada usuario de caja extra {rd(r.usuarios.costoUnitarioRD)} al mes. Los precios incluyen ITBIS. Estos adicionales se suman al total de tu próximo cobro (el plan más lo adicional del mes que cerró). Si lo necesitas seguido, subir de plan sale más barato.
       </div>
     </Card>
   );
@@ -206,7 +206,7 @@ export default function PlanClient({
                 </div>
                 <div className="num" style={{ fontSize: 13, color: "var(--c-text-3)" }}>
                   {plan ? (suscripcion.periodo === "anual" ? `RD$ ${montoPeriodoRD(plan, "anual").toLocaleString("es-DO")} al año (pago anual)` : `RD$ ${plan.montoRD.toLocaleString("es-DO")} al mes`) : null}
-                  {plan && plan.usuarios ? ` · ${plan.soloUnUsuario ? "1 usuario" : `hasta ${textoUsuarios(plan.usuarios)}`}` : null}
+                  {plan && plan.usuarios ? ` · ${textoUsuarios(plan.usuarios)} · ITBIS incluido` : null}
                 </div>
               </div>
               {urlSistema && <Button href={urlSistema}>Abrir mi sistema →</Button>}

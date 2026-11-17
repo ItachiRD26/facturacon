@@ -14,7 +14,7 @@ import type { Tenant, RolMembership } from "@/types/tenant";
 export type VerificacionOk = { ok: true; uid: string; tenant: Tenant; rol: RolMembership };
 export type VerificacionError = { ok: false; response: NextResponse };
 
-const ROLES_OPERATIVOS: RolMembership[] = ["owner", "admin", "vendedor"];
+const ROLES_OPERATIVOS: RolMembership[] = ["owner", "admin", "vendedor", "operador"];
 
 export async function requireTenantActivo(
   tenantId: string,

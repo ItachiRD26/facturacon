@@ -28,6 +28,9 @@ export const MODULOS_POR_ROL: Record<RolMembership, Modulo[]> = {
   // Encargado de almacén: maneja la mercancía (productos, precios, stock, compras) pero no
   // vende ni ve cuánto factura el negocio. Las facturas recibidas son sus compras a proveedores.
   almacen:  ["inventario", "recibidas"],
+  // Caja y almacén en una sola cuenta: lo de un cajero más lo de un encargado de almacén. Sin dashboard ni cuentas por
+  // cobrar (no ve cuánto factura el negocio).
+  operador: ["facturas", "cotizaciones", "clientes", "inventario", "recibidas"],
   contador: ["dashboard", "facturas", "cuentas-por-cobrar", "recibidas", "clientes"],
   viewer:   ["dashboard"],
 };
@@ -37,13 +40,23 @@ export const ROL_LABEL: Record<RolMembership, string> = {
   admin:    "Administrador",
   vendedor: "Cajero / Vendedor",
   almacen:  "Encargado de almacén",
+  operador: "Caja y almacén",
   contador: "Contador",
   viewer:   "Solo lectura",
 };
 
 // Roles que un owner puede asignar al invitar — no se puede invitar a
 // alguien como "owner" (solo hay uno, el que creó el tenant).
-export const ROLES_INVITABLES: RolMembership[] = ["admin", "vendedor", "almacen", "contador", "viewer"];
+export const ROLES_INVITABLES: RolMembership[] = ["admin", "operador", "vendedor", "almacen", "contador", "viewer"];
+
+// Los «usuarios» de un plan son las CAJAS: cuentas del personal que opera con un código de acceso (cajeros y encargado de
+// almacén). El dueño y los administradores, que gestionan la cuenta y certifican, NO cuentan; el contador y el lector
+// (asesores externos) tampoco.
+export const ROLES_QUE_CUENTAN_COMO_USUARIO: RolMembership[] = ["operador", "vendedor", "almacen"];
+
+/** Roles que atienden la caja: facturan y solo ven lo que ellos mismos emitieron. */
+export const esRolDeCaja = (rol: RolMembership | string) => rol === "vendedor" || rol === "operador";
+export const cuentaComoUsuario = (rol: RolMembership | string) => (ROLES_QUE_CUENTAN_COMO_USUARIO as string[]).includes(rol);
 
 // Quién puede EMITIR facturas (ver y emitir son cosas distintas: el dueño y el administrador
 // ven todas las facturas del negocio, pero la factura la hace el cajero):
@@ -57,7 +70,7 @@ export function puedeEmitir(
   tenant: { duenoFactura?: boolean; adminFactura?: boolean },
   soloUnUsuario = false,
 ): boolean {
-  if (rol === "vendedor") return true;
+  if (rol === "vendedor" || rol === "operador") return true;
   if (rol === "owner") return soloUnUsuario || tenant.duenoFactura !== false;
   if (rol === "admin") return tenant.adminFactura === true;
   return false;

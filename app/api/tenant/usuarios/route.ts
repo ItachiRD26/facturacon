@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { requireOwnerOAdmin } from "@/lib/tenant/auth";
+import { cuentaComoUsuario } from "@/lib/tenant/roles";
 import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { listMembershipsForTenant, createMembership } from "@/lib/tenant/get-memberships";
 import { ROLES_INVITABLES } from "@/lib/tenant/roles";
@@ -66,15 +67,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Esa persona ya es parte de tu equipo." }, { status: 400 });
   }
 
+  // Administradores, contadores y lectores no son «usuarios» del plan: solo las cajas ocupan cupo.
   const cupo = await cupoUsuarios(body.tenantId);
-  if (cupo.soloUnUsuario && cupo.lleno) return NextResponse.json({ error: MENSAJE_SOLO_UN_USUARIO }, { status: 403 });
-  if (cupo.lleno && !(body as { confirmoExtra?: boolean }).confirmoExtra) {
+  if (cuentaComoUsuario(body.rol) && cupo.soloUnUsuario && cupo.lleno) return NextResponse.json({ error: MENSAJE_SOLO_UN_USUARIO }, { status: 403 });
+  if (cuentaComoUsuario(body.rol) && cupo.lleno && !(body as { confirmoExtra?: boolean }).confirmoExtra) {
     // No se bloquea: se pide confirmar el costo del usuario adicional.
     return NextResponse.json({ requiereConfirmacion: true, costoRD: cupo.costoExtraRD, error: mensajeUsuarioAdicional(cupo) }, { status: 409 });
   }
 
   await createMembership(usuario.uid, body.tenantId, body.rol);
-  if (body.rol === "vendedor") await apagarFacturacionDuenoPorEquipo(body.tenantId);
+  if (body.rol === "vendedor" || body.rol === "operador") await apagarFacturacionDuenoPorEquipo(body.tenantId);
   await registrarAuditoria({ tenantId: body.tenantId, uid: verif.uid, accion: "usuario.agregado", recurso: usuario.uid, detalle: { rol: body.rol, correo: body.email.trim() }, req });
   return NextResponse.json({ ok: true });
 }

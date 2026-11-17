@@ -17,7 +17,7 @@ export default function Tarifario() {
     <div>
       <div className="tarifa-panel">
         <div className="tarifa-cab" aria-hidden="true">
-          <span>Comprobantes al mes</span><span>Usuarios incluidos</span><span>Comprobante adicional</span><span className="der">Precio mensual</span>
+          <span>Comprobantes al mes</span><span>Usuarios de caja incluidos</span><span>Comprobante adicional</span><span className="der">Precio mensual (ITBIS incluido)</span>
         </div>
         <Reveal as="ul" stagger className="tarifa-filas" style={{ listStyle: "none" }}>
           {PLANES.map((p) => (
@@ -26,7 +26,7 @@ export default function Tarifario() {
                 <div className="tc-vol-t"><b className="num-sans">{p.facturas.toLocaleString("es-DO")}</b><span>comprobantes</span>{p.nombre && <em style={{ fontStyle: "normal", fontSize: 11, fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase", background: "var(--c-yellow-bg)", color: "var(--c-yellow)", border: "1px solid var(--c-yellow-border)", borderRadius: 6, padding: "1px 7px", marginLeft: 8 }}>{p.nombre}</em>}</div>
                 <div className="tarifa-barra" aria-hidden="true"><i style={{ width: `${Math.sqrt(p.facturas / maxPlan) * 100}%` }} /></div>
               </div>
-              <div className="tc" data-label="Usuarios incluidos">{textoUsuarios(p.usuarios)}</div>
+              <div className="tc" data-label="Usuarios de caja incluidos">{textoUsuarios(p.usuarios)}</div>
               <div className="tc" data-label="Comprobante adicional">RD$ {dinero(p.extraRD)}</div>
               <div className="tc-precio">
                 <b className="num-sans">RD$ {p.montoRD.toLocaleString("es-DO")}</b><span>/mes</span>
@@ -47,9 +47,9 @@ export default function Tarifario() {
       <Reveal stagger className="cols-3 adicionales">
         <div className="adicional hov-lift">
           <UserPlus size={34} weight="duotone" color="var(--c-ticket)" aria-hidden="true" />
-          <h4>Usuario adicional</h4>
+          <h4>Usuario de caja adicional</h4>
           <div className="adicional-valor"><b className="num-sans">RD$ {TARIFAS_ADICIONALES.usuarioRD.toLocaleString("es-DO")}</b><span>/mes por usuario</span></div>
-          <p>Suma un cajero, administrador o contador sin cambiar de plan.</p>
+          <p>Suma otro cajero o personal de almacén sin cambiar de plan. Tú y tus administradores no cuentan como usuarios.</p>
         </div>
         <div className="adicional hov-lift">
           <Receipt size={34} weight="duotone" color="var(--c-ticket)" aria-hidden="true" />

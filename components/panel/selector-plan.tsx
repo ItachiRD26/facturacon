@@ -49,7 +49,7 @@ const GRUPOS: { icono: ReactNode; titulo: string; puntos: string[] }[] = [
     "Con tu logo o, si no tienes, el nombre de tu negocio",
   ] },
   { icono: <ShieldCheck size={20} weight="duotone" />, titulo: "Equipo y seguridad", puntos: [
-    "Roles con permisos: cada quien ve solo lo suyo",
+    "Roles con permisos: cada quien ve solo lo suyo (el dueño y los administradores no cuentan como usuarios del plan)",
     "Los cajeros entran con un código, sin necesitar correo",
     "Tu certificado digital se guarda cifrado",
   ] },
@@ -162,13 +162,13 @@ export default function SelectorPlan({ onContinuar, periodo, onPeriodo }: {
                 {periodo === "mensual" ? (
                   <>
                     <div className="num-sans" style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.05 }}>{rd(p.montoRD)}<span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-3)" }}> /mes</span></div>
-                    <div style={{ fontSize: 11.5, color: "var(--c-text-3)", marginTop: 3 }}>≈ {rd(p.montoRD / p.facturas)} por comprobante</div>
+                    <div style={{ fontSize: 11.5, color: "var(--c-text-3)", marginTop: 3 }}>ITBIS incluido · ≈ {rd(p.montoRD / p.facturas)} por comprobante</div>
                   </>
                 ) : (
                   <>
                     <div className="num-sans" style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.05 }}>{rd(precioAnual(p))}<span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text-3)" }}> /año</span></div>
                     <div style={{ fontSize: 11.5, color: "var(--c-text-3)", marginTop: 3 }}>
-                      Equivale a {rd(Math.round(precioAnual(p) / 12))}/mes · <span style={{ color: "var(--c-green)", fontWeight: 700 }}>ahorras {rd(p.montoRD * (12 - MESES_COBRADOS_ANUAL))}</span>
+                      ITBIS incluido · equivale a {rd(Math.round(precioAnual(p) / 12))}/mes · <span style={{ color: "var(--c-green)", fontWeight: 700 }}>ahorras {rd(p.montoRD * (12 - MESES_COBRADOS_ANUAL))}</span>
                     </div>
                   </>
                 )}
@@ -184,19 +184,19 @@ export default function SelectorPlan({ onContinuar, periodo, onPeriodo }: {
               <ul style={{ margin: "16px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 9 }}>
                 <Punto fuerte><b className="num-sans">{p.facturas.toLocaleString("es-DO")}</b> comprobantes al mes <span style={{ color: "var(--c-text-3)" }}>(unas {porDia(p)} ventas por día)</span></Punto>
                 {solo ? (
-                  <Punto fuerte><b>1 usuario:</b> tú eres dueño y cajero a la vez. Facturas, cotizas y manejas tu inventario desde la misma cuenta</Punto>
+                  <Punto fuerte><b>1 usuario de Caja y almacén</b> con su código de acceso: factura, cotiza y maneja el inventario, en el mostrador o el celular. Tú, como dueño, entras con tu cuenta aparte y no cuentas como usuario</Punto>
                 ) : (
-                  <Punto fuerte><b>Hasta {p.usuarios} usuarios:</b> tú y {p.usuarios - 1} {p.usuarios - 1 === 1 ? "persona más" : "personas más"} (cajeros, almacén o contador), cada uno con su acceso</Punto>
+                  <Punto fuerte><b>{p.usuarios} usuarios de caja</b> (cajeros o personal de almacén), cada uno con su código de acceso. Tú y tus administradores no cuentan</Punto>
                 )}
                 <Punto>Todas las funciones del sistema incluidas (detalle más abajo)</Punto>
                 <Punto>Si te pasas del tope: {rd(p.extraRD)} por comprobante extra, sin bloqueos</Punto>
-                {!solo && <Punto>Usuario adicional: {rd(TARIFAS_ADICIONALES.usuarioRD)} al mes</Punto>}
+                {!solo && <Punto>Usuario de caja adicional: {rd(TARIFAS_ADICIONALES.usuarioRD)} al mes</Punto>}
               </ul>
 
               {solo && (
                 <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 14, padding: "9px 10px", borderRadius: 9, background: "var(--c-yellow-bg)", border: "1px solid var(--c-yellow-border)", color: "var(--c-yellow)", fontSize: 11.5, lineHeight: 1.45 }}>
                   <Info size={15} weight="bold" style={{ flexShrink: 0, marginTop: 1 }} aria-hidden="true" />
-                  <span>Pensado para negocios pequeños de una sola persona. No admite más usuarios; si tienes cajeros o un equipo, elige el plan de 250.</span>
+                  <span>Pensado para negocios pequeños con una sola caja. No admite más usuarios de caja; si tienes varios cajeros, elige el plan de 250.</span>
                 </div>
               )}
             </article>

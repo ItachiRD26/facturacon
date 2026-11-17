@@ -11,7 +11,7 @@ import BarChart from "@/components/ui/bar-chart";
 import { Button, Card, CardTitle, PageHeader, Pill, ProgressBar, StatCard, th, td, tablaWrap } from "@/components/ui/kit";
 import JornadaProgreso from "@/components/panel/jornada-progreso";
 
-const TODOS = ["owner", "admin", "vendedor", "contador", "viewer"] as const;
+const TODOS = ["owner", "admin", "vendedor", "operador", "contador", "viewer"] as const;
 
 export default async function CuentaResumenPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const { tenantId } = await params;

@@ -13,10 +13,10 @@ Una plataforma web por suscripción para emitir, firmar, enviar a la DGII y cons
 ## 3. Cuenta y seguridad
 - Debes dar datos verdaderos y mantenerlos al día, y ser contribuyente con capacidad para obligarte.
 - Eres responsable de tus claves, de tu equipo y de lo que se haga con tu cuenta. Avísanos de inmediato si sospechas un uso indebido.
-- Cada plan incluye cierta cantidad de usuarios; los adicionales se cobran según la tarifa vigente.
+- Los «usuarios» de cada plan son las **cajas** (cajeros y personal con código de acceso). El dueño y los administradores de la cuenta no cuentan como usuarios. Las cajas adicionales se cobran según la tarifa vigente.
 
 ## 4. Planes, precios y pagos
-- Los planes, sus topes de comprobantes y sus tarifas se muestran en el sitio y en tu panel. Los precios están en pesos dominicanos; el cobro se procesa en dólares estadounidenses a través de Pagadito. `[ABOGADO: itbis y tasa de conversión aplicables.]`
+- Los planes, sus topes de comprobantes y sus tarifas se muestran en el sitio y en tu panel. Los precios están en pesos dominicanos e **incluyen el ITBIS (18 %)**; el cobro se procesa en dólares estadounidenses a través de Pagadito. `[ABOGADO: itbis y tasa de conversión aplicables.]`
 - **Cobro recurrente:** al activar el plan se cobra de inmediato el primer periodo y luego se renueva automáticamente, el mismo día de cada mes (o de cada año en el plan anual), con la tarjeta que registraste, hasta que canceles.
 - **Adicionales:** los comprobantes o usuarios por encima de lo incluido se suman al siguiente cobro, según la tarifa de tu plan.
 - **Cobros fallidos:** si un cobro no se completa, te avisamos y lo reintentamos a los 2 y a los 5 días. Si sigue sin completarse, la cuenta se suspende hasta que actualices tu pago. Los datos se conservan.

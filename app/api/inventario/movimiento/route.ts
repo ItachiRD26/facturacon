@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null) as {
     tenantId?: string; productoId?: string; tipo?: string; cantidad?: number; conteo?: number; motivo?: string; costo?: number;
   } | null;
-  const v = await requireRolEnTenant(body?.tenantId ?? "", ["owner", "admin", "almacen"]);
+  const v = await requireRolEnTenant(body?.tenantId ?? "", ["owner", "admin", "almacen", "operador"]);
   if (!v.ok) return v.response;
   const lim = await limitar(req, { nombre: "inventario-mov", id: v.uid, max: 120, ventanaSeg: 60 });
   if (lim) return lim;

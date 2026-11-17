@@ -12,11 +12,8 @@ export interface Plan {
   facturas:  number;
   montoRD:   number;
   montoUSD:  string;
-  // Usuarios/cajeros incluidos en el plan — escala con el volumen de
-  // comprobantes bajo el supuesto de que más facturación implica más
-  // personal operando. No se cobra por asiento aparte: si un tenant
-  // necesita más usuarios sin necesitar más comprobantes, la vía es subir
-  // de plan, no comprar usuarios sueltos (al menos por ahora).
+  // Usuarios de CAJA incluidos en el plan (cajeros y personal de almacén con código de acceso); escala con el volumen de
+  // comprobantes. El dueño y los administradores no cuentan como usuarios. Los precios (RD$) INCLUYEN el ITBIS (18 %).
   usuarios:  number;
   // Precio (RD$) de cada comprobante que excede el tope mensual del plan. Va
   // decreciendo con el tamaño del plan y siempre por encima del costo marginal de
@@ -24,9 +21,8 @@ export interface Plan {
   extraRD:   number;
   // Nombre comercial del plan cuando lo tiene (el resto se identifica por su volumen).
   nombre?:   string;
-  // Plan de una sola persona: no admite usuarios adicionales ni siquiera pagando
-  // (quien necesite equipo sube a un plan con más usuarios). El único usuario es
-  // dueño y cajero a la vez: puede facturar, cotizar y manejar inventario.
+  // Plan de una sola caja: no admite usuarios de caja adicionales ni siquiera pagando (quien necesite más cajas sube de
+  // plan). El dueño igual puede facturar, cotizar y manejar inventario con su propia cuenta.
   soloUnUsuario?: boolean;
   // Texto comercial del selector de plan: para quién es y ejemplos de negocios.
   paraQuien?: string;
@@ -43,9 +39,9 @@ export const montoPeriodoRD = (plan: Plan, p: PeriodoPlan) => plan.montoRD * mes
 /** Igual en USD (Pagadito cobra siempre en USD), con 2 decimales como lo pide su API. */
 export const montoPeriodoUSD = (plan: Plan, p: PeriodoPlan) => (Number(plan.montoUSD) * mesesCobrados(p)).toFixed(2);
 
-/** "1 usuario" / "2 usuarios". */
+/** "1 usuario de caja" / "2 usuarios de caja". Los usuarios de un plan son las cajas; el dueño y los administradores no cuentan. */
 export function textoUsuarios(n: number): string {
-  return `${n} usuario${n === 1 ? "" : "s"}`;
+  return `${n} ${n === 1 ? "usuario de caja" : "usuarios de caja"}`;
 }
 
 export const PLANES: Plan[] = [

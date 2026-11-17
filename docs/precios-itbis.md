@@ -30,3 +30,6 @@ Emprendedor 100    cliente paga     815.00 | tu ingreso     690.68 | ITBIS    12
 3,000              cliente paga   9,785.00 | tu ingreso   8,292.37 | ITBIS  1,492.63
 4,000              cliente paga  12,155.00 | tu ingreso  10,300.85 | ITBIS  1,854.15
 ```
+
+## Decisión (2026-11-17)
+Peter eligió el escenario **A**: los precios publicados YA INCLUYEN el ITBIS. En la factura de cada suscripción el precio se desglosa en base (precio / 1.18) + ITBIS. Los extras (comprobante y usuario de caja adicional) también incluyen ITBIS.

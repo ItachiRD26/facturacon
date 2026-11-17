@@ -80,7 +80,8 @@ export interface Personalizacion {
   actualizadoEn?:  string;
 }
 
-export type RolMembership = "owner" | "admin" | "vendedor" | "almacen" | "contador" | "viewer";
+// "operador" = Caja y almacén: un solo usuario que factura, cotiza y maneja el inventario (el usuario del plan Emprendedor).
+export type RolMembership = "owner" | "admin" | "vendedor" | "almacen" | "operador" | "contador" | "viewer";
 
 export interface Membership {
   uid:       string;

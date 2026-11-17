@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { requireOwnerOAdmin } from "@/lib/tenant/auth";
+import { cuentaComoUsuario } from "@/lib/tenant/roles";
 import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { createMembership } from "@/lib/tenant/get-memberships";
 import { generarCodigoEmpleado, generarTokenLinkEmpleado, hashCodigo } from "@/lib/tenant/codigo-empleado";
@@ -58,8 +59,8 @@ export async function POST(req: NextRequest) {
   }
 
   const cupo = await cupoUsuarios(tenantId);
-  if (cupo.soloUnUsuario && cupo.lleno) return NextResponse.json({ error: MENSAJE_SOLO_UN_USUARIO }, { status: 403 });
-  if (cupo.lleno && !(body as { confirmoExtra?: boolean }).confirmoExtra) {
+  if (cuentaComoUsuario(rol) && cupo.soloUnUsuario && cupo.lleno) return NextResponse.json({ error: MENSAJE_SOLO_UN_USUARIO }, { status: 403 });
+  if (cuentaComoUsuario(rol) && cupo.lleno && !(body as { confirmoExtra?: boolean }).confirmoExtra) {
     // No se bloquea: se pide confirmar el costo del usuario adicional.
     return NextResponse.json({ requiereConfirmacion: true, costoRD: cupo.costoExtraRD, error: mensajeUsuarioAdicional(cupo) }, { status: 409 });
   }
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
     uid, email: "", nombre, tipoCuenta: "individual", creadoEn: new Date().toISOString(),
   });
   await createMembership(uid, tenantId, rol);
-  if (rol === "vendedor") await apagarFacturacionDuenoPorEquipo(tenantId);
+  if (rol === "vendedor" || rol === "operador") await apagarFacturacionDuenoPorEquipo(tenantId);
 
   const empleado: Record<string, unknown> = {
     uid, nombre, rol, codigoHash, codigoUltimos4: codigo.slice(-4),

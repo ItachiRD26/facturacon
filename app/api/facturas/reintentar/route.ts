@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   };
 
   // Un cajero solo puede reintentar lo suyo.
-  if (verif.rol === "vendedor" && f.creadoPor !== verif.uid) {
+  if ((verif.rol === "vendedor" || verif.rol === "operador") && f.creadoPor !== verif.uid) {
     return NextResponse.json({ error: "No tienes permiso para este comprobante" }, { status: 403 });
   }
   if (f.estadoDGII !== "pendiente") return NextResponse.json({ error: "Este comprobante ya fue enviado a la DGII." }, { status: 409 });

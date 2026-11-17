@@ -15,6 +15,7 @@ type Pestana = "personal" | "admins" | "permisos";
 const DESCRIPCION_ROL: Record<RolMembership, string> = {
   owner: "Control total de la empresa, el plan y el equipo. Ve todas las facturas y cotiza; factura solo si activa «Yo también facturo».",
   admin: "Supervisa todo el sistema y administra el equipo. No factura salvo que el dueño lo active. No cambia el plan de pago.",
+  operador: "Un solo usuario que hace de cajero y de almacén: factura, cotiza, atiende clientes y maneja el inventario. No ve cuánto factura el negocio. Es el usuario del plan Emprendedor.",
   vendedor: "Solo factura, cotiza y atiende clientes. No ve cuánto factura el negocio.",
   almacen: "Maneja el inventario y las compras: productos, precios, entradas y ajustes de stock. No vende ni ve cuánto factura el negocio.",
   contador: "Consulta facturas, cuentas por cobrar y recibidas; descarga la contabilidad. No emite.",
@@ -101,7 +102,7 @@ export default function EquipoClient({ tenantId, esOwner, tabInicial }: { tenant
 
   const [modalPersonal, setModalPersonal] = useState(false);
   const [fNombre, setFNombre] = useState("");
-  const [fRol, setFRol] = useState<RolMembership>("vendedor");
+  const [fRol, setFRol] = useState<RolMembership>("operador");
   const [fHorario, setFHorario] = useState("");
   const [fNotas, setFNotas] = useState("");
 
@@ -151,7 +152,7 @@ export default function EquipoClient({ tenantId, esOwner, tabInicial }: { tenant
     const { ok, data } = await post("/api/tenant/empleados", { tenantId, nombre: fNombre, rol: fRol, horario: fHorario, notas: fNotas });
     if (!ok) throw new Error(String(data?.error ?? "No se pudo crear la cuenta."));
     setCodigoNuevo({ codigo: String(data?.codigo), nombre: fNombre });
-    setFNombre(""); setFHorario(""); setFNotas(""); setFRol("vendedor"); setModalPersonal(false);
+    setFNombre(""); setFHorario(""); setFNotas(""); setFRol("operador"); setModalPersonal(false);
     await cargar();
   });
 
@@ -215,7 +216,7 @@ export default function EquipoClient({ tenantId, esOwner, tabInicial }: { tenant
     <div style={{ maxWidth: 1040, margin: "0 auto", fontFamily: "var(--font-sans)" }}>
       <PageHeader
         titulo="Equipo y accesos"
-        descripcion="Quién puede entrar a tu sistema y qué puede hacer. Tus cajeros entran con un código, sin correo ni contraseña; tus administradores y contador, con su propia cuenta."
+        descripcion="Quién puede entrar a tu sistema y qué puede hacer. Los usuarios de tu plan son las cajas: tus cajeros entran con un código, sin correo ni contraseña. Tú, tus administradores y tu contador entran con su propia cuenta y no cuentan como usuarios."
         acciones={tab === "personal"
           ? <Button onClick={() => setModalPersonal(true)}>+ Agregar cajero o personal</Button>
           : tab === "admins" ? <Button onClick={() => setModalAdmin(true)}>+ Invitar administrador o contador</Button> : undefined}
@@ -226,8 +227,8 @@ export default function EquipoClient({ tenantId, esOwner, tabInicial }: { tenant
           <div style={{ flex: "1 1 260px" }}>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
               {cupo.incluidos
-                ? <>Usas <span className="num">{cupo.usados}</span> de <span className="num">{cupo.incluidos}</span> usuarios de tu plan</>
-                : <><span className="num">{cupo.usados}</span> personas con acceso</>}
+                ? <>Usas <span className="num">{cupo.usados}</span> de <span className="num">{cupo.incluidos}</span> usuarios de caja de tu plan</>
+                : <><span className="num">{cupo.usados}</span> usuarios de caja</>}
             </div>
             {cupo.incluidos ? <ProgressBar valor={cupo.usados} maximo={cupo.incluidos} /> : (
               <div style={{ fontSize: 12, color: "var(--c-text-3)" }}>Sin tope por ahora: el límite lo define el plan que actives después de certificarte.</div>
@@ -356,7 +357,7 @@ export default function EquipoClient({ tenantId, esOwner, tabInicial }: { tenant
                 {!permisos ? <p style={{ fontSize: 13, color: "var(--c-text-3)" }}>Cargando…</p> : (
                   <>
                     <Interruptor id="sw-dueno" titulo="Yo también facturo (dueño)"
-                      detalle={permisos.soloUnUsuario ? "Tu plan es de una sola persona: siempre puedes facturar." : "Actívalo si atiendes ventas tú mismo. Se apaga solo al agregar el primer cajero, si no lo habías decidido."}
+                      detalle={permisos.soloUnUsuario ? "Tu plan tiene una sola caja: tú también puedes facturar siempre." : "Actívalo si atiendes ventas tú mismo. Se apaga solo al agregar el primer cajero, si no lo habías decidido."}
                       activo={permisos.duenoFactura} deshabilitado={!esOwner || permisos.soloUnUsuario || guardandoPerm}
                       onCambio={(v) => void cambiarPermiso("duenoFactura", v)} />
                     {!permisos.soloUnUsuario && (

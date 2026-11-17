@@ -38,7 +38,7 @@ export default function FacturasPage() {
   const { productos } = useProductos(tenant.tenantId);
   // Un cajero (vendedor) solo puede leer sus propias facturas — ver
   // firestore.rules y hooks/use-facturas.ts. Los demás roles ven todas.
-  const filtroCreadoPor = tenant.rol === "vendedor" ? (firebaseUser?.uid ?? null) : undefined;
+  const filtroCreadoPor = (tenant.rol === "vendedor" || tenant.rol === "operador") ? (firebaseUser?.uid ?? null) : undefined;
   const { facturas, loading, agregar: agregarFactura, cambiarEstado } = useFacturas(tenant.tenantId, filtroCreadoPor);
   const { agregar: agregarCuenta } = useCuentasPorCobrar(tenant.tenantId);
   const { personalizacion } = usePersonalizacion(tenant.tenantId);
@@ -66,7 +66,7 @@ export default function FacturasPage() {
   // El cajero solo ve sus propias facturas (siempre él mismo), así que la
   // columna sería redundante para ese rol — solo tiene valor para
   // dueño/admin/contador revisando el trabajo del equipo.
-  const mostrarCajero = tenant.rol !== "vendedor";
+  const mostrarCajero = tenant.rol !== "vendedor" && tenant.rol !== "operador";
 
   const filtradas = facturas.filter((f) => {
     const cliente = clientePor(f.clienteId);
@@ -93,7 +93,7 @@ export default function FacturasPage() {
         <div>
           <h1 style={{ fontFamily: serif, fontSize: 24, fontWeight: 600, color: "var(--c-text-1)", marginBottom: 2 }}>Facturas</h1>
           <div style={{ fontSize: 13, color: "var(--c-text-3)", fontFamily: sans }}>
-            {tenant.rol === "vendedor" ? "Tus comprobantes emitidos — para reimprimir o revisar" : "Comprobantes fiscales electrónicos"}
+            {(tenant.rol === "vendedor" || tenant.rol === "operador") ? "Tus comprobantes emitidos — para reimprimir o revisar" : "Comprobantes fiscales electrónicos"}
           </div>
         </div>
         <button onClick={() => setModalAbierto(true)} disabled={productos.length === 0}
