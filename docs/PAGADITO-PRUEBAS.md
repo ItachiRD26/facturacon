@@ -16,9 +16,7 @@ Pagadito solo guarda la tarjeta (token) y ejecuta los cobros que Facturacon le p
   en `.env.local`; en `PAGADITO_ENV=live` no se puede simular fecha).
 
 ## Estado de la cuenta Sandbox (2026-11-17)
-- UID/WSK válidos: la API **Connect** los acepta. La API de **Tokenización** responde **401** con las mismas credenciales:
-  la doc de Pagadito dice que el «Pago con Tokenización» **lo habilita su equipo técnico por cuenta** → pedirlo a
-  `developers@pagadito.com` indicando la cuenta Sandbox. Hasta entonces las pruebas de la lista no se pueden correr.
+- UID/WSK válidos. La Tokenización ya está habilitada, pero **solo responde desde el dominio facturacon.com.do** (desde localhost da 401). Las pruebas se hacen en el sitio en vivo con `PAGADITO_ENV=sandbox` en Vercel.
 - El host `sandbox-api.pagadito.com` tarda ~11 s en conectar desde esta red (Node corta a los 10 s: «fetch failed»); con curl sí responde.
 
 Pagadito pide: cuenta Sandbox → credenciales → integrar → pruebas → **Certificación Técnica** (formulario a
@@ -47,6 +45,8 @@ Pagadito pide: cuenta Sandbox → credenciales → integrar → pruebas → **Ce
 | MasterCard | 5105 1051 0510 5100 | 12/2030 | 123 |
 
 ## Script de pruebas (`scripts/pagadito-sandbox.cjs`)
+> **Ojo:** la Tokenización de Pagadito solo responde desde el dominio facturacon.com.do, así que este script (que corre en tu computadora) ya no sirve para suscribir o cobrar. Las pruebas se hacen en el sitio en vivo; ver `docs/PAGADITO-PRUEBAS.pdf`.
+
 Cada prueba crea una empresa ficticia `PAGADITOPRUEBA<n>` (marcada `esPrueba`), nunca toca la empresa real.
 ```
 node scripts/pagadito-sandbox.cjs credenciales
