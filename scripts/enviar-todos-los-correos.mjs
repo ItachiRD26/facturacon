@@ -31,12 +31,10 @@ const MUESTRA = {
   invitacion_equipo: { nombre: "Laura", invitador: "Peter García", negocio: "ABC Facturacon", rol: "Cajera", urlAcceso: `${U}/login` },
   rol_cambiado: { nombre: "Laura", negocio: "ABC Facturacon", rolNuevo: "Encargada de almacén" },
   cert_iniciada: { nombre: "Peter", negocio: "ABC Facturacon", urlAsistente: `${U}/panel` },
-  cert_rechazo_dgii: { nombre: "Peter", negocio: "ABC Facturacon", paso: "Representación impresa", motivo: "El código de seguridad y la fecha de firma deben estar debajo del QR.", urlAsistente: `${U}/panel` },
   cert_inactiva: { nombre: "Peter", negocio: "ABC Facturacon", dias: 3, pasoActual: "Set de pruebas", urlAsistente: `${U}/panel` },
   cert_aprobada: { nombre: "Peter", negocio: "ABC Facturacon" },
   certificado_por_vencer: { nombre: "Peter", negocio: "ABC Facturacon", dias: 30, fechaVence: "15-12-2026" },
   certificado_vencido: { nombre: "Peter", negocio: "ABC Facturacon", fechaVencio: "15-12-2026" },
-  ecf_rechazado_dgii: { nombre: "Peter", negocio: "ABC Facturacon", eNCF: "E310000000012", motivo: "El RNC del comprador no es válido.", urlFactura: `${U}/panel` },
   contingencia_pendientes: { nombre: "Peter", negocio: "ABC Facturacon", cantidad: 3, horasMasAntigua: 40 },
   secuencias_por_agotarse: { nombre: "Peter", negocio: "ABC Facturacon", tipo: "E32", restantes: 25 },
   pago_recibido: { nombre: "Peter", plan: "Emprendedor", monto: 690, fecha: "16-11-2026", referencia: "PAG-12345", eNCF: "E320000000009", proximoCobro: "16-12-2026" },
@@ -55,9 +53,7 @@ const MUESTRA = {
   encuesta_opinion: { nombre: "Peter", urlEncuesta: `${U}/encuesta` },
   interno_contacto_web: { nombre: "Ana", correo: "ana@ejemplo.com", telefono: "809-555-1234", mensaje: "Hola, quiero saber cuánto cuesta certificar mi colmado." },
   interno_pago_fallido: { negocio: "ABC Facturacon", plan: "Emprendedor", monto: 690, motivo: "Fondos insuficientes" },
-  interno_error_dgii: { negocio: "ABC Facturacon", contexto: "No se pudo autenticar con la DGII", detalle: "Envío e-CF: 500 — servicio no disponible" },
   interno_cert_aprobada: { negocio: "ABC Facturacon", rnc: "40212171397", dias: 6 },
-  interno_cert_rechazo: { negocio: "ABC Facturacon", paso: "Simulación", motivo: "La propiedad Totales no coincide." },
 };
 
 const args = process.argv.slice(2);

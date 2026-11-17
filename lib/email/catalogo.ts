@@ -35,13 +35,11 @@ export interface DatosPorCorreo {
   rol_cambiado: { nombre: string; negocio: string; rolNuevo: string };
   // ── Certificación ──
   cert_iniciada: { nombre: string; negocio: string; urlAsistente: string };
-  cert_rechazo_dgii: { nombre: string; negocio: string; paso: string; motivo: string; urlAsistente: string };
   cert_inactiva: { nombre: string; negocio: string; dias: number; pasoActual: string; urlAsistente: string };
   cert_aprobada: { nombre: string; negocio: string; urlPanel?: string };
   certificado_por_vencer: { nombre: string; negocio: string; dias: number; fechaVence: string; urlPanel?: string };
   certificado_vencido: { nombre: string; negocio: string; fechaVencio: string; urlPanel?: string };
   // ── Facturación ──
-  ecf_rechazado_dgii: { nombre: string; negocio: string; eNCF: string; motivo: string; urlFactura: string };
   contingencia_pendientes: { nombre: string; negocio: string; cantidad: number; horasMasAntigua: number; urlPanel?: string };
   secuencias_por_agotarse: { nombre: string; negocio: string; tipo: string; restantes: number; urlPanel?: string };
   // ── Cobros ──
@@ -65,9 +63,7 @@ export interface DatosPorCorreo {
   // ── Internos (llegan a contacto@) ──
   interno_contacto_web: { nombre: string; correo: string; telefono?: string; mensaje: string };
   interno_pago_fallido: { negocio: string; plan: string; monto: number; motivo?: string };
-  interno_error_dgii: { negocio: string; contexto: string; detalle: string };
   interno_cert_aprobada: { negocio: string; rnc: string; dias?: number };
-  interno_cert_rechazo: { negocio: string; paso: string; motivo: string };
 }
 
 export type IdCorreo = keyof DatosPorCorreo;
@@ -123,16 +119,6 @@ export const CATALOGO: Catalogo = {
       boton: { texto: "Continuar mi certificación", url: d.urlAsistente },
     }),
   },
-  cert_rechazo_dgii: {
-    meta: { categoria: "certificacion", nombre: "La DGII rechazó un paso", cuando: "Cuando la DGII rechaza algo del proceso", destino: "usuario", naturaleza: "aviso" },
-    render: (d) => ({
-      asunto: `La DGII pidió corregir: ${d.paso}`, titulo: "La DGII pidió una corrección",
-      parrafos: [saludo(d.nombre), `En el paso «${d.paso}» de ${d.negocio}, la DGII indicó lo siguiente:`],
-      alerta: { tipo: "error", texto: d.motivo },
-      boton: { texto: "Corregirlo ahora", url: d.urlAsistente },
-      notaFinal: "Es normal que la DGII pida ajustes. Responde este correo si necesitas ayuda para entender el mensaje.",
-    }),
-  },
   cert_inactiva: {
     meta: { categoria: "certificacion", nombre: "Certificación sin terminar", cuando: "A los 3 y 7 días sin avance", destino: "usuario", naturaleza: "opcional" },
     render: (d) => ({
@@ -171,15 +157,6 @@ export const CATALOGO: Catalogo = {
   },
 
   // ───────────────────────── FACTURACIÓN ─────────────────────────
-  ecf_rechazado_dgii: {
-    meta: { categoria: "facturacion", nombre: "Factura rechazada por la DGII", cuando: "Cuando la DGII rechaza un comprobante emitido", destino: "usuario", naturaleza: "aviso" },
-    render: (d) => ({
-      asunto: `La DGII rechazó el comprobante ${d.eNCF}`, titulo: "Un comprobante fue rechazado",
-      parrafos: [saludo(d.nombre), `La DGII rechazó el comprobante ${d.eNCF} de ${d.negocio}.`],
-      alerta: { tipo: "error", texto: d.motivo },
-      boton: { texto: "Revisar el comprobante", url: d.urlFactura },
-    }),
-  },
   contingencia_pendientes: {
     meta: { categoria: "facturacion", nombre: "Comprobantes pendientes de enviar a la DGII", cuando: "Cuando hay comprobantes sin enviar (contingencia)", destino: "usuario", naturaleza: "aviso" },
     render: (d) => ({
@@ -354,15 +331,6 @@ export const CATALOGO: Catalogo = {
       datos: [["Negocio", d.negocio], ["Plan", d.plan], ["Monto", rd(d.monto)], ["Motivo", d.motivo ?? "—"]],
     }),
   },
-  interno_error_dgii: {
-    meta: { categoria: "interno", nombre: "Error con la DGII", cuando: "Cuando falla algo grave al hablar con la DGII", destino: "interno", naturaleza: "aviso" },
-    render: (d) => ({
-      asunto: `Error DGII en ${d.negocio}`, titulo: "Falla en la comunicación con la DGII",
-      parrafos: [d.contexto],
-      alerta: { tipo: "error", texto: d.detalle },
-      datos: [["Negocio", d.negocio]],
-    }),
-  },
   interno_cert_aprobada: {
     meta: { categoria: "interno", nombre: "Cliente certificado", cuando: "Cuando un negocio completa su certificación", destino: "interno", naturaleza: "aviso" },
     render: (d) => ({
@@ -370,15 +338,6 @@ export const CATALOGO: Catalogo = {
       parrafos: ["Un cliente completó el proceso ante la DGII."],
       datos: [["Negocio", d.negocio], ["RNC", d.rnc], ...(d.dias ? [["Días que tomó", String(d.dias)] as [string, string]] : [])],
       alerta: { tipo: "exito", texto: "Certificación completada." },
-    }),
-  },
-  interno_cert_rechazo: {
-    meta: { categoria: "interno", nombre: "Rechazo en certificación (cliente)", cuando: "Cuando la DGII rechaza un paso de un cliente", destino: "interno", naturaleza: "aviso" },
-    render: (d) => ({
-      asunto: `Rechazo DGII en ${d.negocio}: ${d.paso}`, titulo: "La DGII rechazó un paso",
-      parrafos: ["Un cliente recibió un rechazo durante su certificación."],
-      alerta: { tipo: "error", texto: d.motivo },
-      datos: [["Negocio", d.negocio], ["Paso", d.paso]],
     }),
   },
 };
