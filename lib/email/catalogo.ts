@@ -44,7 +44,7 @@ export interface DatosPorCorreo {
   secuencias_por_agotarse: { nombre: string; negocio: string; tipo: string; restantes: number; urlPanel?: string };
   // ── Cobros ──
   pago_recibido: { nombre: string; plan: string; monto: number; fecha: string; referencia: string; eNCF?: string; proximoCobro?: string };
-  pago_fallido: { nombre: string; plan: string; monto: number; motivo?: string; urlFacturacion?: string };
+  pago_fallido: { nombre: string; plan: string; monto: number; motivo?: string; fechaLimite?: string; proximoIntento?: string; urlFacturacion?: string };
   plan_por_vencer: { nombre: string; plan: string; dias: number; fecha: string; urlFacturacion?: string };
   cuenta_suspendida: { nombre: string; negocio: string; motivo: string; urlFacturacion?: string };
   limite_comprobantes: { nombre: string; negocio: string; usados: number; incluidos: number; extraRD: number; urlFacturacion?: string };
@@ -190,11 +190,18 @@ export const CATALOGO: Catalogo = {
     }),
   },
   pago_fallido: {
-    meta: { categoria: "cobros", nombre: "Pago fallido", cuando: "Cuando no se puede cobrar la mensualidad", destino: "usuario", naturaleza: "aviso" },
+    meta: { categoria: "cobros", nombre: "Pago fallido", cuando: "Cuando no se puede cobrar el plan (con la fecha límite para evitar la suspensión)", destino: "usuario", naturaleza: "aviso" },
     render: (d) => ({
-      asunto: "No pudimos cobrar tu plan", titulo: "No se pudo procesar tu pago",
-      parrafos: [saludo(d.nombre), `Intentamos cobrar ${rd(d.monto)} de tu plan ${d.plan} y no se pudo completar.${d.motivo ? ` Motivo: ${d.motivo}.` : ""}`, "Actualiza tu método de pago para no perder el acceso a la emisión de comprobantes."],
-      alerta: { tipo: "aviso", texto: "Si el pago no se completa, la cuenta podría suspenderse." },
+      asunto: d.fechaLimite ? `No pudimos cobrar tu plan: renueva antes del ${d.fechaLimite}` : "No pudimos cobrar tu plan",
+      titulo: "No se pudo procesar tu pago",
+      parrafos: [
+        saludo(d.nombre),
+        `Intentamos cobrar ${rd(d.monto)} de tu plan ${d.plan} y no se pudo completar.${d.motivo ? ` Motivo: ${d.motivo}.` : ""}`,
+        d.fechaLimite
+          ? `Renueva o actualiza tu método de pago antes del ${d.fechaLimite} para evitar la suspensión de tu cuenta.${d.proximoIntento ? ` Mientras tanto volveremos a intentar el cobro el ${d.proximoIntento}.` : ""}`
+          : "Actualiza tu método de pago para no perder el acceso a la emisión de comprobantes.",
+      ],
+      alerta: { tipo: "aviso", texto: d.fechaLimite ? `Si el pago no se completa antes del ${d.fechaLimite}, la cuenta se suspenderá y no podrás emitir comprobantes.` : "Si el pago no se completa, la cuenta podría suspenderse." },
       boton: { texto: "Actualizar mi pago", url: d.urlFacturacion ?? PANEL },
     }),
   },

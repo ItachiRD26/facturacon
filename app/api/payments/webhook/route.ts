@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verificarWebhookPagadito } from "@/lib/payments/pagadito-webhook";
 import type { EventoWebhookPagadito } from "@/lib/payments/pagadito-webhook";
-import { tenantIdDesdeErnSuscripcion, marcarPagoRecurrenteExitoso, marcarPagoRecurrenteFallido, obtenerSuscripcion } from "@/lib/payments/suscripcion";
+import { tenantIdDesdeErnSuscripcion, marcarPagoRecurrenteExitoso, marcarPagoRecurrenteFallido, obtenerSuscripcion, registrarEventoPagadito } from "@/lib/payments/suscripcion";
 
 // Receptor de webhooks de Pagadito — configurar esta URL en su panel
 // (Configuración Técnica -> Webhooks) una vez haya cuenta real. La
 // certificación es gratis (no hay pago que confirmar ahí) — el único cobro
 // que existe es la suscripción recurrente, así que solo se procesan eventos
-// con ern de prefijo "sub-" (ver ernSuscripcion() en lib/payments/
-// suscripcion.ts); cualquier otro ern se ignora sin error.
+// con ern de prefijo "sub-", "cob-" o "can-" (ver tenantIdDesdeErnSuscripcion en
+// lib/payments/suscripcion.ts); cualquier otro ern se ignora sin error.
 //
 // SIN PROBAR CONTRA UN EVENTO REAL — ver advertencia en pagadito-webhook.ts
 // sobre el header PAGADITO-AUTH-ALGO.
@@ -62,10 +62,18 @@ export async function POST(req: NextRequest) {
     // Pagadito puede entregar el mismo evento varias veces y fuera de orden (hasta 20 reintentos en 3 días):
     // todo aquí es idempotente, y un aviso de falla ANTERIOR a un pago ya registrado no suspende la cuenta.
     const estado = evento.resource.status;
+    const sus = await obtenerSuscripcion(tenantId);
+    if (sus?.cobroPropio) {
+      // Cobro propio: el resultado de cada cobro ya se conoce al hacerlo (lib/payments/cobros.ts) y los reintentos
+      // los maneja el cron. El aviso solo queda anotado, salvo que Pagadito REVOQUE el último cobro (contracargo):
+      // eso sí suspende. Un aviso viejo o repetido (otro ERN) nunca reactiva ni suspende la cuenta.
+      await registrarEventoPagadito(tenantId, evento.resource.ern, estado, evento.resource.update_timestamp ?? evento.event_create_timestamp);
+      if (estado === "REVOKED" && evento.resource.ern === sus.ultimoErn) await marcarPagoRecurrenteFallido(tenantId);
+      return NextResponse.json({ ok: true });
+    }
     if (estado === "COMPLETED") {
       await marcarPagoRecurrenteExitoso(tenantId);
     } else if (["REVOKED", "EXPIRED", "FAILED", "UNCOLLECTABLE"].includes(estado)) {
-      const sus = await obtenerSuscripcion(tenantId);
       const delEvento = Date.parse(evento.resource.update_timestamp ?? evento.event_create_timestamp ?? "");
       const ultimoPago = sus?.ultimoPagoEn ? Date.parse(sus.ultimoPagoEn) : NaN;
       if (Number.isFinite(delEvento) && Number.isFinite(ultimoPago) && delEvento < ultimoPago) {

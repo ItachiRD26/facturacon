@@ -7,6 +7,7 @@
 //   node scripts/pagadito-sandbox.cjs credenciales
 //   node scripts/pagadito-sandbox.cjs suscribir mensual [100] [visa|mc]
 //   node scripts/pagadito-sandbox.cjs suscribir anual [100]
+//   node scripts/pagadito-sandbox.cjs ciclo <tenantId> [YYYY-MM-DD]   (simula el cobro del ciclo en esa fecha; requiere npm run dev y CRON_SECRET)
 //   node scripts/pagadito-sandbox.cjs cobrar <tenantId> <usd>       (cobro suelto con el token: como los comprobantes adicionales)
 //   node scripts/pagadito-sandbox.cjs cancelar <tenantId>
 //   node scripts/pagadito-sandbox.cjs reembolsar <authorization> [motivo]
@@ -65,21 +66,23 @@ const [, , cmd, a1, a2, a3] = process.argv;
       ? "✘ Las credenciales no fueron aceptadas (revisa UID/WSK del SANDBOX)." : "✔ Las credenciales parecen válidas (Pagadito te atendió; el error es solo por el código falso).");
 
   } else if (cmd === "suscribir") {
+    // Igual que el sistema real (lib/payments/cobros.ts): tokeniza la tarjeta y hace el PRIMER cobro con /customer;
+    // los cobros siguientes los decide Facturacon (cron /api/cron/cobros), no Pagadito.
     const periodo = a1 === "anual" ? "anual" : "mensual";
     const plan = PLANES[a2 && PLANES[a2] ? a2 : "100"];
     const tarjeta = TARJETAS[a3] ?? TARJETAS.visa;
     const tenantId = "PAGADITOPRUEBA" + Date.now();
     const montoUSD = (plan.usd * (periodo === "anual" ? 10 : 1)).toFixed(2);
-    const r = await llamar("subscription", {
+    const ern = `sub-${tenantId}-${Date.now().toString(36)}`;
+    const r = await llamar("customer", {
       card: {
         number: tarjeta.number, expirationDate: "12/2030", cvv: "123", cardHolderName: "PRUEBA FACTURACON",
         firstName: "Prueba", lastName: "Facturacon", email: "pruebas@facturacon.com.do",
         billingAddress: { city: "Santo Domingo", state: "Distrito Nacional", zip: "", countryId: "214", line1: "Calle de prueba 1", phone: "+1 809 555 5555" },
       },
-      recurring: {
-        interval: periodo === "anual" ? "year" : "month", interval_count: periodo === "anual" ? 10 : 120, first_interval_free: false,
-        merchantTransactionId: `sub-${tenantId}`, description: `Prueba plan ${plan.facturas}${periodo === "anual" ? " (anual)" : ""} — Facturacon`.slice(0, 100),
-        interval_amount: montoUSD,
+      transaction: {
+        merchantTransactionId: ern, currencyId: "USD",
+        transactionDetails: [{ quantity: "1", description: `Prueba plan ${plan.facturas}${periodo === "anual" ? " (anual)" : ""} - Facturacon`.slice(0, 100), amount: montoUSD }],
       },
       browserInfo: BROWSER,
     });
@@ -87,14 +90,21 @@ const [, , cmd, a1, a2, a3] = process.argv;
     const cr = r.data.customer_reply;
     if (cr) {
       const d = db();
+      const hoy = new Date(Date.now() - 4 * 3600e3).toISOString().slice(0, 10);   // fecha en RD (UTC-4)
+      const [y, m, dia] = hoy.split("-").map(Number);
+      const prox = periodo === "anual" ? `${y + 1}-${String(m).padStart(2, "0")}-${String(dia).padStart(2, "0")}` : (m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`) + `-${String(Math.min(dia, 28)).padStart(2, "0")}`;
+      const mesAnt = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
       await d.collection("tenants").doc(tenantId).set({ estado: "activo", esPrueba: true, nombreNegocio: "Prueba Pagadito", creadoEn: new Date().toISOString() });
       await refSus(d, tenantId).set({
-        paymentToken: cr.payment_token, subscriptionCode: cr.recurring.subscription_code, planId: String(a2 && PLANES[a2] ? a2 : "100"), facturasMes: plan.facturas,
+        paymentToken: cr.payment_token, planId: String(a2 && PLANES[a2] ? a2 : "100"), facturasMes: plan.facturas,
         montoUSD, periodo, estado: "activa", ultimos4: tarjeta.number.slice(-4), creadoEn: new Date().toISOString(), ultimoPagoEn: new Date().toISOString(), browserInfo: BROWSER,
+        ern, ultimoErn: ern, autorizacion: cr.authorization,
+        cobroPropio: true, anclaCobro: hoy, cicloActual: 1, proximoCobroEn: prox, intentosFallidos: 0, adicionalesFacturadosHasta: mesAnt,
       });
-      console.log("✔ Suscripción creada. Empresa de prueba:", tenantId);
-      console.log("  period (según Pagadito):", cr.recurring.period, "| autorización:", cr.authorization, "| código:", cr.recurring.subscription_code);
-      console.log("  Siguiente: espera el webhook y mira el estado con →  node scripts/pagadito-sandbox.cjs estado " + tenantId);
+      console.log("✔ Primer cobro hecho. Empresa de prueba:", tenantId);
+      console.log("  autorización:", cr.authorization, "| ERN:", ern, "| próximo cobro:", prox);
+      console.log("  Simular el siguiente ciclo (con el servidor local y CRON_SECRET en .env.local):");
+      console.log(`    node scripts/pagadito-sandbox.cjs ciclo ${tenantId} ${prox}`);
     }
 
   } else if (cmd === "cobrar") {
@@ -107,12 +117,22 @@ const [, , cmd, a1, a2, a3] = process.argv;
     console.log("Cobro con token →", resumen(r));
     if (r.data.customer_reply) console.log("✔ autorización:", r.data.customer_reply.authorization);
 
+  } else if (cmd === "ciclo") {
+    // Pide al servidor local (npm run dev) que cobre el ciclo como si hoy fuera <fecha>; solo funciona fuera de "live".
+    if (!env.CRON_SECRET) { console.error("Falta CRON_SECRET en .env.local (y reiniciar el servidor)."); process.exit(1); }
+    const fecha = a2 || new Date().toISOString().slice(0, 10);
+    const res = await fetch(`http://localhost:3000/api/cron/cobros?tenant=${encodeURIComponent(a1)}&hoy=${fecha}`, { headers: { Authorization: `Bearer ${env.CRON_SECRET}` } });
+    console.log("Cron de cobros →", res.status, await res.text());
+    console.log("Mira el resultado con →  node scripts/pagadito-sandbox.cjs estado " + a1);
+
   } else if (cmd === "cancelar") {
     const d = db(); const s = (await refSus(d, a1).get()).data();
     if (!s) { console.error("No existe esa empresa de prueba."); process.exit(1); }
-    const r = await llamar("subscription-cancel", { subscription_code: s.subscriptionCode });
-    console.log("Cancelación →", resumen(r));
-    if (r.data.response_code === "PG200-00") await refSus(d, a1).set({ estado: "cancelada", actualizadoEn: new Date().toISOString() }, { merge: true });
+    // Con el cobro propio no hay suscripción en Pagadito que cancelar: basta con dejar de cobrar (en el panel,
+    // "Cancelar cobro recurrente" también cobra los adicionales acumulados). Aquí solo se marca como cancelada.
+    if (s.subscriptionCode) { const r = await llamar("subscription-cancel", { subscription_code: s.subscriptionCode }); console.log("Cancelación en Pagadito →", resumen(r)); }
+    await refSus(d, a1).set({ estado: "cancelada", actualizadoEn: new Date().toISOString() }, { merge: true });
+    console.log("✔ Marcada como cancelada.");
 
   } else if (cmd === "reembolsar") {
     const r = await llamar("refund", { authorization: a1, reason: a2 || "Prueba de reembolso" });
@@ -122,7 +142,7 @@ const [, , cmd, a1, a2, a3] = process.argv;
     const d = db();
     const t = (await d.collection("tenants").doc(a1).get()).data();
     const s = (await refSus(d, a1).get()).data();
-    console.log("tenant:", t ? t.estado : "no existe", "| suscripción:", s ? JSON.stringify({ estado: s.estado, periodo: s.periodo, ultimoPagoEn: s.ultimoPagoEn, actualizadoEn: s.actualizadoEn }) : "no existe");
+    console.log("tenant:", t ? t.estado : "no existe", "| suscripción:", s ? JSON.stringify({ estado: s.estado, periodo: s.periodo, ultimoPagoEn: s.ultimoPagoEn, proximoCobroEn: s.proximoCobroEn, proximoIntentoEn: s.proximoIntentoEn, intentosFallidos: s.intentosFallidos, cicloActual: s.cicloActual, hastaMes: s.adicionalesFacturadosHasta, error: s.ultimoError }) : "no existe");
 
   } else if (cmd === "limpiar") {
     const d = db(); const todos = await d.collection("tenants").where("esPrueba", "==", true).get();
@@ -130,6 +150,6 @@ const [, , cmd, a1, a2, a3] = process.argv;
     console.log("Empresas de prueba borradas:", todos.size);
 
   } else {
-    console.log("Comandos: credenciales | suscribir mensual|anual [plan] [visa|mc|mc2|mc3] | cobrar <tenantId> <usd> | cancelar <tenantId> | reembolsar <autorizacion> | estado <tenantId> | limpiar");
+    console.log("Comandos: credenciales | suscribir mensual|anual [plan] [visa|mc|mc2|mc3] | ciclo <tenantId> [fecha] | cobrar <tenantId> <usd> | cancelar <tenantId> | reembolsar <autorizacion> | estado <tenantId> | limpiar");
   }
 })().catch((e) => { console.error("Error:", e.message); process.exit(1); });

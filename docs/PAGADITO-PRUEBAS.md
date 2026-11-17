@@ -1,5 +1,26 @@
 # Pagadito — pruebas del cobro recurrente (Sandbox)
 
+## Cómo cobra Facturacon (cobro propio)
+Pagadito solo guarda la tarjeta (token) y ejecuta los cobros que Facturacon le pide; **Facturacon decide cada cobro**
+(`lib/payments/cobros.ts`, reglas de fechas y montos en `lib/payments/ciclo-cobro.ts`):
+- **Primer cobro** al activar: `POST /customer` (tokeniza y cobra). Después, `POST /payment` con el token en cada ciclo.
+- **Un cobro = plan + adicionales** de los meses ya cerrados (comprobantes y usuarios extra). Mensual: el cobro de
+  diciembre lleva los adicionales de noviembre. Anual: **un solo pago al año**; los adicionales se acumulan y van en el pago del año siguiente.
+- **Día de cobro** = aniversario de la activación (un 31 cae el último día de los meses cortos).
+- **Cron diario** `/api/cron/cobros` (12:00 UTC). Falla → correo `pago_fallido` con la **fecha límite**; reintento a los **+2 y +5 días**;
+  si falla el último: empresa `suspendido` + correo `cuenta_suspendida`. Pagar de nuevo (Cambiar tarjeta) reactiva al instante.
+- **Cancelar**: se cobran los adicionales acumulados con la tarjeta guardada (si llegan a US$ 1, el mínimo de Pagadito).
+- ERN: `sub-{tenant}-{t}` (primero), `cob-{tenant}-{fecha}-{intento}` (ciclo), `can-{tenant}-{t}` (cancelación). Webhook: solo anota el
+  aviso; un `REVOKED` del último cobro (contracargo) suspende.
+- Simulación local de un ciclo: `node scripts/pagadito-sandbox.cjs ciclo <tenantId> <YYYY-MM-DD>` (con `npm run dev` y `CRON_SECRET`
+  en `.env.local`; en `PAGADITO_ENV=live` no se puede simular fecha).
+
+## Estado de la cuenta Sandbox (2026-11-17)
+- UID/WSK válidos: la API **Connect** los acepta. La API de **Tokenización** responde **401** con las mismas credenciales:
+  la doc de Pagadito dice que el «Pago con Tokenización» **lo habilita su equipo técnico por cuenta** → pedirlo a
+  `developers@pagadito.com` indicando la cuenta Sandbox. Hasta entonces las pruebas de la lista no se pueden correr.
+- El host `sandbox-api.pagadito.com` tarda ~11 s en conectar desde esta red (Node corta a los 10 s: «fetch failed»); con curl sí responde.
+
 Pagadito pide: cuenta Sandbox → credenciales → integrar → pruebas → **Certificación Técnica** (formulario a
 `validaciones@pagadito.com`). Dudas técnicas: `developers@pagadito.com`.
 
@@ -46,10 +67,10 @@ node scripts/pagadito-sandbox.cjs limpiar
 | 3 | Suscripción **anual** (MasterCard) | `PG200-00`, `period` anual, monto = 10 mensualidades | ☐ |
 | 4 | Flujo completo en la pantalla (formulario, huella del dispositivo, tarjeta) | La empresa queda con plan activo | ☐ |
 | 5 | **Webhook** `COMPLETED` | Firma válida y estado `activa` | ☐ |
-| 6 | Webhook con falla (`REVOKED`/`FAILED`/`UNCOLLECTABLE`) | Empresa pasa a `suspendido` / `pago_fallido` | ☐ |
-| 7 | Webhook repetido o fuera de orden | Sin efectos dobles; un aviso viejo no suspende un pago posterior | ☐ |
-| 8 | Cobro de **adicionales** con token | `PG200-00` y autorización | ☐ |
-| 9 | **Cancelar** suscripción | `PG200-00`; ya no hay más cobros | ☐ |
+| 6 | Cobro fallido de un ciclo | `pago_fallido` + correo con fecha límite; reintentos +2/+5 días; al final `suspendido` (probado en local con un token falso) | ☐ |
+| 7 | Webhook repetido o fuera de orden | Sin efectos dobles; solo un `REVOKED` del último cobro suspende | ☐ |
+| 8 | **Ciclo** con adicionales (`ciclo <tenant> <fecha>`) | Cobro único plan + adicionales, `PG200-00`, siguiente fecha correcta | ☐ |
+| 9 | **Cancelar** (panel) | Se cobran los adicionales acumulados; ya no hay más cobros | ☐ |
 | 10 | **Reembolso** de un cobro | `PG200-00` y monto devuelto | ☐ |
 | 11 | Tarjeta rechazada | Mensaje claro al usuario; nada se activa | ☐ (preguntar a Pagadito por una tarjeta de rechazo) |
 

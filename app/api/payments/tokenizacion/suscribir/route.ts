@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAccesoFacturacion } from "@/lib/tenant/auth";
-import { activarCobroRecurrente } from "@/lib/payments/suscripcion";
+import { activarCobroRecurrente } from "@/lib/payments/cobros";
 import type { TarjetaPagadito } from "@/lib/payments/pagadito-tokenizacion";
 
 interface Body {

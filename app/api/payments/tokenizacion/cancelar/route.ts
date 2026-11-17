@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAccesoFacturacion } from "@/lib/tenant/auth";
-import { cancelarCobroRecurrente } from "@/lib/payments/suscripcion";
+import { cancelarCobroRecurrente } from "@/lib/payments/cobros";
 
 interface Body { tenantId: string }
 
@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
   if (!verif.ok) return verif.response;
 
   try {
-    await cancelarCobroRecurrente(body.tenantId);
-    return NextResponse.json({ ok: true });
+    const r = await cancelarCobroRecurrente(body.tenantId);
+    return NextResponse.json({ ok: true, ...r });
   } catch (e) {
     const mensaje = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: `No se pudo cancelar el cobro recurrente: ${mensaje}` }, { status: 502 });

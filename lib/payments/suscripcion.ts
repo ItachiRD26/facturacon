@@ -1,38 +1,22 @@
-// Orquestación del cobro recurrente mensual (Fase 8): activar/cancelar la
-// suscripción de un tenant ya certificado, y reaccionar a los webhooks de
-// Pagadito sobre cada ciclo de cobro. Vive separado de pagadito-tokenizacion.ts
-// (que solo habla HTTP con Pagadito) para mantener la lógica de negocio y la
-// persistencia en Firestore en un solo lugar.
+// Persistencia de la suscripción de un tenant y reacción a los webhooks de Pagadito.
+// El cobro en sí (activar, cobrar cada ciclo, cancelar) vive en lib/payments/cobros.ts; el HTTP con
+// Pagadito, en pagadito-tokenizacion.ts. Aquí queda solo lo que lee/escribe la suscripción.
 import "server-only";
+import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase-admin";
-import { crearSuscripcion, cancelarSuscripcion as cancelarEnPagadito } from "./pagadito-tokenizacion";
-import type { TarjetaPagadito, BrowserInfoPagadito } from "./pagadito-tokenizacion";
-import { buscarPlan, montoPeriodoUSD, type PeriodoPlan } from "./planes";
+import { cancelarSuscripcion as cancelarEnPagadito } from "./pagadito-tokenizacion";
 import type { Suscripcion } from "@/types/pagos";
 
-// El API de Pagadito exige un número fijo de ciclos por suscripción (no hay
-// "indefinido" nativo) — se pide un bloque grande (10 años) como sustituto
-// práctico de "recurrente para siempre".
-// PENDIENTE DE CONFIRMAR: preguntarle a soporte de Pagadito si existe alguna
-// forma de renovación automática al agotarse los ciclos, o si hay que
-// re-suscribir manualmente antes de que termine este bloque.
-const CICLOS_SUSCRIPCION = 120;
-// Anual: el mismo bloque de 10 años = 10 cobros anuales.
-const CICLOS_SUSCRIPCION_ANUAL = 10;
-
-// El merchantTransactionId que identifica cada suscripción ante Pagadito se
-// arma como "sub-{tenantId}" — así el webhook puede recuperar a qué tenant
-// pertenece un evento sin mantener un índice aparte. tenantId (autogenerado
-// por Firestore) nunca contiene guiones, así que el prefijo "sub-" es
-// inequívoco de separar.
-function ernSuscripcion(tenantId: string): string {
-  return `sub-${tenantId}`;
-}
+// Cada cobro lleva un número de comprobante (ERN) único hacia Pagadito: "sub-{tenantId}-…" el primero,
+// "cob-{tenantId}-{fecha}-{n}" cada ciclo y "can-{tenantId}-…" el de la cancelación. El webhook recupera el
+// tenant desde ahí sin mantener un índice aparte. El tenantId (autogenerado por Firestore) nunca lleva
+// guiones, así que el corte es inequívoco.
 export function tenantIdDesdeErnSuscripcion(ern: string): string | null {
-  return ern.startsWith("sub-") ? ern.slice(4) : null;
+  const m = /^(?:sub|cob|can)-([A-Za-z0-9]+)(?:-|$)/.exec(ern);
+  return m ? m[1] : null;
 }
 
-function refSuscripcion(tenantId: string) {
+export function refSuscripcion(tenantId: string) {
   return adminDb.collection("tenants").doc(tenantId).collection("facturacion").doc("suscripcion");
 }
 
@@ -41,79 +25,15 @@ export async function obtenerSuscripcion(tenantId: string): Promise<Suscripcion 
   return snap.exists ? (snap.data() as Suscripcion) : null;
 }
 
-// Tokeniza la tarjeta del cliente y crea la suscripción recurrente de su plan
-// en el mismo paso. Solo debe llamarse para un tenant ya "activo" (con
-// certificación completa y gratuita) — este es el ÚNICO cobro que existe en
-// todo el producto: sin esta suscripción activa, /api/facturas/emitir
-// rechaza cualquier intento de emitir un comprobante real.
-export async function activarCobroRecurrente(params: {
-  tenantId: string; planId: string; periodo?: PeriodoPlan;
-  card: TarjetaPagadito; browserInfo: BrowserInfoPagadito;
-}): Promise<Suscripcion> {
-  const periodo: PeriodoPlan = params.periodo === "anual" ? "anual" : "mensual";
-  const plan = buscarPlan(params.planId);
-  if (!plan) throw new Error("Plan inválido.");
-
-  const actual = await obtenerSuscripcion(params.tenantId);
-  if (actual?.estado === "activa") {
-    throw new Error("Este tenant ya tiene una suscripción activa. Cancélala antes de crear una nueva.");
-  }
-
-  const resultado = await crearSuscripcion({
-    card: params.card,
-    recurring: {
-      interval: periodo === "anual" ? "year" : "month",
-      interval_count: periodo === "anual" ? CICLOS_SUSCRIPCION_ANUAL : CICLOS_SUSCRIPCION,
-      first_interval_free: false,
-      merchantTransactionId: ernSuscripcion(params.tenantId),
-      description: `Plan ${plan.facturas} facturas/mes — Facturacon${periodo === "anual" ? " (pago anual)" : ""}`,
-      interval_amount: montoPeriodoUSD(plan, periodo),
-    },
-    browserInfo: params.browserInfo,
-  });
-
-  const suscripcion: Suscripcion = {
-    paymentToken: resultado.payment_token,
-    subscriptionCode: resultado.recurring.subscription_code,
-    planId: plan.id, facturasMes: plan.facturas, montoUSD: montoPeriodoUSD(plan, periodo), periodo,
-    estado: "activa",
-    cardHolderName: params.card.cardHolderName,
-    ultimos4: params.card.number.slice(-4),
-    ern: ernSuscripcion(params.tenantId), autorizacion: resultado.authorization,
-    creadoEn: new Date().toISOString(),
-    ultimoPagoEn: new Date().toISOString(),
-    browserInfo: params.browserInfo,
-  };
-  await refSuscripcion(params.tenantId).set(suscripcion);
-
-  // Si el tenant había quedado "suspendido" por un cobro fallido anterior,
-  // activar una suscripción nueva (con tarjeta nueva o la misma corregida) lo
-  // reactiva de inmediato — no tiene sentido esperarlo hasta el próximo ciclo
-  // de cobro si el cliente ya resolvió el problema ahora mismo.
-  const tenantRef = adminDb.collection("tenants").doc(params.tenantId);
-  await adminDb.runTransaction(async (tx) => {
-    const snap = await tx.get(tenantRef);
-    if (snap.exists && snap.data()?.estado === "suspendido") {
-      tx.set(tenantRef, { estado: "activo" }, { merge: true });
-    }
-  });
-
-  return suscripcion;
-}
-
-export async function cancelarCobroRecurrente(tenantId: string): Promise<void> {
-  const actual = await obtenerSuscripcion(tenantId);
-  if (!actual?.subscriptionCode) throw new Error("Este tenant no tiene una suscripción activa.");
-
-  await cancelarEnPagadito(actual.subscriptionCode);
-  await refSuscripcion(tenantId).set(
-    { estado: "cancelada", actualizadoEn: new Date().toISOString() }, { merge: true },
-  );
+/** Cancela en Pagadito una suscripción del modelo viejo (Pagadito cobraba un monto fijo por su cuenta). */
+export async function cancelarSuscripcionEnPagadito(subscriptionCode: string): Promise<void> {
+  await cancelarEnPagadito(subscriptionCode);
 }
 
 // Llamado desde el webhook cuando un ciclo de cobro se completa — refresca
 // ultimoPagoEn y, si el tenant había quedado "suspendido" por un cobro
 // fallido anterior, lo reactiva (recuperación automática al ponerse al día).
+// Solo para suscripciones del modelo viejo: con el cobro propio, el resultado se conoce al cobrar.
 export async function marcarPagoRecurrenteExitoso(tenantId: string): Promise<void> {
   const tenantRef = adminDb.collection("tenants").doc(tenantId);
   await refSuscripcion(tenantId).set(
@@ -128,16 +48,19 @@ export async function marcarPagoRecurrenteExitoso(tenantId: string): Promise<voi
   });
 }
 
-// Llamado cuando Pagadito notifica que un cobro recurrente fue rechazado,
-// revocado o expiró — el negocio decidió que esto suspende el acceso del
-// tenant hasta que se resuelva (activa el estado "suspendido" de
-// types/tenant.ts, que hasta ahora no lo asignaba nada).
+// Pagadito avisa que un cobro fue rechazado, revocado o expiró: se suspende el acceso
+// del tenant hasta que se resuelva (estado "suspendido" de types/tenant.ts).
 export async function marcarPagoRecurrenteFallido(tenantId: string): Promise<void> {
   const tenantRef = adminDb.collection("tenants").doc(tenantId);
   await Promise.all([
     refSuscripcion(tenantId).set(
-      { estado: "pago_fallido", actualizadoEn: new Date().toISOString() }, { merge: true },
+      { estado: "pago_fallido", proximoIntentoEn: FieldValue.delete(), actualizadoEn: new Date().toISOString() }, { merge: true },
     ),
     tenantRef.set({ estado: "suspendido" }, { merge: true }),
   ]);
+}
+
+/** Deja constancia del último aviso de Pagadito sobre un cobro (para revisar a mano; no cambia el estado). */
+export async function registrarEventoPagadito(tenantId: string, ern: string, estado: string, cuando?: string): Promise<void> {
+  await refSuscripcion(tenantId).set({ ultimoEventoPagadito: { ern, estado, cuando: cuando ?? new Date().toISOString() } }, { merge: true });
 }

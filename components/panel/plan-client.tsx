@@ -11,6 +11,7 @@ import SuscripcionWizard from "./suscripcion-wizard";
 import TutorialButton from "./tutorial-button";
 import JornadaProgreso from "./jornada-progreso";
 import { etapaActualPara } from "@/lib/tenant/jornada";
+import { fechaLimitePago } from "@/lib/payments/ciclo-cobro";
 
 const ESTADO_PILL = {
   activa:       { texto: "Activo",        tono: "success" },
@@ -49,7 +50,6 @@ function TarjetaEmpresa() {
 interface DatosAdicionales {
   resumen: { mes: string; comprobantes: { incluidos: number; emitidos: number; excedentes: number; costoUnitarioRD: number; costoRD: number };
     usuarios: { incluidos: number; usados: number; extra: number; costoUnitarioRD: number; costoRD: number }; totalRD: number } | null;
-  cargos: { mes: string; estado: "sin_cargo" | "cobrado" | "fallido" | "pendiente"; totalRD: number; excedentes: number; usuariosExtra: number }[];
 }
 const rd = (n: number) => "RD$ " + n.toLocaleString("es-DO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -57,20 +57,14 @@ function AdicionalesCard({ tenantId }: { tenantId: string }) {
   const [d, setD] = useState<DatosAdicionales | null>(null);
   useEffect(() => {
     let vivo = true;
-    fetch(`/api/tenant/adicionales?t=${tenantId}`).then((r) => r.json()).then((x) => { if (vivo && x?.cargos) setD(x); }).catch(() => {});
+    fetch(`/api/tenant/adicionales?t=${tenantId}`).then((r) => r.json()).then((x) => { if (vivo && x?.resumen !== undefined) setD(x); }).catch(() => {});
     return () => { vivo = false; };
   }, [tenantId]);
   if (!d?.resumen) return null;
   const r = d.resumen;
-  const fallido = d.cargos.find((c) => c.estado === "fallido" || c.estado === "pendiente");
   return (
     <Card style={{ marginBottom: 16 }}>
-      <CardTitle extra="Se cobran una sola vez, al cierre del mes">Adicionales de este mes</CardTitle>
-      {fallido && (
-        <div style={{ padding: "10px 12px", marginBottom: 14, borderRadius: "var(--radius-md)", fontSize: 13, background: "var(--c-red-bg)", border: "1px solid var(--c-red-border)", color: "var(--c-red)" }}>
-          No pudimos cobrar los adicionales de {fallido.mes} ({rd(fallido.totalRD)}). Confirma tu tarjeta y lo reintentamos.
-        </div>
-      )}
+      <CardTitle extra="Se suman a tu próximo cobro">Adicionales de este mes</CardTitle>
       <div style={{ display: "grid", gap: 10, fontSize: 13.5 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
           <span>Comprobantes adicionales <span style={{ color: "var(--c-text-3)" }}>({r.comprobantes.excedentes} × {rd(r.comprobantes.costoUnitarioRD)})</span></span>
@@ -86,7 +80,7 @@ function AdicionalesCard({ tenantId }: { tenantId: string }) {
       </div>
       <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 12, lineHeight: 1.55 }}>
         Tu plan incluye {r.comprobantes.incluidos.toLocaleString("es-DO")} comprobantes y {textoUsuarios(r.usuarios.incluidos)} al mes. Pasado el tope puedes seguir emitiendo: cada comprobante
-        extra cuesta {rd(r.comprobantes.costoUnitarioRD)} y cada usuario extra {rd(r.usuarios.costoUnitarioRD)} al mes. Si lo necesitas seguido, subir de plan sale más barato.
+        extra cuesta {rd(r.comprobantes.costoUnitarioRD)} y cada usuario extra {rd(r.usuarios.costoUnitarioRD)} al mes. Estos adicionales se suman al total de tu próximo cobro (el plan más lo adicional del mes que cerró). Si lo necesitas seguido, subir de plan sale más barato.
       </div>
     </Card>
   );
@@ -126,7 +120,8 @@ export default function PlanClient({
 
   if (loading) return <div style={{ maxWidth: 820, margin: "0 auto", fontSize: 13, color: "var(--c-text-3)" }}>Cargando…</div>;
 
-  const proximoCobro = suscripcion?.ultimoPagoEn
+  const fmtFecha = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" });
+  const proximoCobro = suscripcion?.proximoCobroEn ? fmtFecha(suscripcion.proximoCobroEn) : suscripcion?.ultimoPagoEn
     ? new Date(new Date(suscripcion.ultimoPagoEn).setMonth(new Date(suscripcion.ultimoPagoEn).getMonth() + (suscripcion.periodo === "anual" ? 12 : 1))).toLocaleDateString("es-DO", { day: "numeric", month: "long", ...(suscripcion.periodo === "anual" ? { year: "numeric" } : {}) })
     : null;
   const estado = suscripcion ? ESTADO_PILL[suscripcion.estado] : null;
@@ -185,9 +180,13 @@ export default function PlanClient({
       {/* ── Pago fallido ── */}
       {suscripcion?.estado === "pago_fallido" && (
         <Card style={{ marginBottom: 18, background: "var(--c-red-bg)", borderColor: "var(--c-red-border)" }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--c-red)", marginBottom: 6 }}>No pudimos cobrar tu última mensualidad</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--c-red)", marginBottom: 6 }}>No pudimos cobrar tu plan</div>
           <p style={{ fontSize: 13, color: "var(--c-red)", lineHeight: 1.55, marginBottom: 14 }}>
-            Tu cuenta está pausada para emitir comprobantes. Tus datos y facturas están a salvo; confirma tu tarjeta y se reactiva al instante.
+            {estadoTenant === "suspendido"
+              ? "Tu cuenta está pausada para emitir comprobantes. Tus datos y facturas están a salvo; confirma tu tarjeta y se reactiva al instante."
+              : suscripcion.proximoCobroEn
+                ? <>Renueva o actualiza tu tarjeta antes del <b>{fmtFecha(fechaLimitePago(suscripcion.proximoCobroEn))}</b> para evitar la suspensión de tu cuenta.{suscripcion.proximoIntentoEn ? <> Volveremos a intentar el cobro el {fmtFecha(suscripcion.proximoIntentoEn)}.</> : null}</>
+                : "Confirma tu tarjeta para que no se suspenda tu cuenta."}
           </p>
           <Button onClick={() => abrir(suscripcion.planId, true)}>Arreglar mi pago ahora →</Button>
         </Card>
@@ -232,8 +231,10 @@ export default function PlanClient({
             </Card>
             <Card padding={18}>
               <CardTitle>Próximo cobro</CardTitle>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>{proximoCobro ? `Alrededor del ${proximoCobro}` : "Se calcula con tu primer cobro"}</div>
-              <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 2 }}>Mensual, automático, en pesos al cambio del día.</div>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>{proximoCobro ? (suscripcion.proximoCobroEn ? proximoCobro : `Alrededor del ${proximoCobro}`) : "Se calcula con tu primer cobro"}</div>
+              <div style={{ fontSize: 12, color: "var(--c-text-3)", marginTop: 2 }}>
+                {suscripcion.periodo === "anual" ? "Un solo pago al año, automático." : "Automático, el mismo día de cada mes."} Incluye los adicionales del periodo anterior.
+              </div>
             </Card>
           </div>
 
@@ -258,7 +259,7 @@ export default function PlanClient({
 
       <Modal open={confirmarCancelar} onClose={() => setConfirmarCancelar(false)} title="¿Cancelar el cobro recurrente?" maxWidth={440}>
         <p style={{ fontSize: 13, color: "var(--c-text-2)", lineHeight: 1.6, marginBottom: 18 }}>
-          Tu plan dejará de renovarse y no podrás emitir comprobantes reales hasta que lo actives de nuevo. Tus facturas anteriores y tu certificación se conservan.
+          Tu plan dejará de renovarse y no podrás emitir comprobantes reales hasta que lo actives de nuevo. Si tienes comprobantes o usuarios adicionales sin cobrar, se cobrarán ahora a tu tarjeta. Tus facturas anteriores y tu certificación se conservan.
         </p>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <Button variante="secondary" onClick={() => setConfirmarCancelar(false)}>Mantener mi plan</Button>

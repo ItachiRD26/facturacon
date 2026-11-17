@@ -36,7 +36,7 @@ Catálogo de todos los correos que el sistema puede enviar. Está definido en `l
 | Correo | Cuándo se manda | Para | Se manda | Asunto de ejemplo |
 |---|---|---|---|---|
 | **Pago recibido** (`pago_recibido`) | Tras cada pago exitoso de la mensualidad _(adjunta: e-CF de Facturacon (PDF y XML), cuando esté activa la emisión propia)_ | Usuario | Siempre | Recibimos tu pago de RD$ 690.00 |
-| **Pago fallido** (`pago_fallido`) | Cuando no se puede cobrar la mensualidad | Usuario | Siempre (aviso) | No pudimos cobrar tu plan |
+| **Pago fallido** (`pago_fallido`) | Cuando no se puede cobrar el plan; trae la fecha límite para evitar la suspensión | Usuario | Siempre (aviso) | No pudimos cobrar tu plan: renueva antes del 22-12-2026 |
 | **Plan por vencer** (`plan_por_vencer`) | 5, 3 y 1 día antes del próximo cobro | Usuario | Siempre (aviso) | Tu plan Emprendedor se renueva en 3 días |
 | **Cuenta suspendida** (`cuenta_suspendida`) | Al suspender la cuenta por falta de pago | Usuario | Siempre (aviso) | La cuenta de ABC Facturacon fue suspendida |
 | **Límite de comprobantes** (`limite_comprobantes`) | Al llegar al 80 % y al 100 % de los comprobantes del plan | Usuario | Siempre (aviso) | Llevas el 82 % de los comprobantes de tu plan |

@@ -38,7 +38,7 @@ const MUESTRA = {
   contingencia_pendientes: { nombre: "Peter", negocio: "ABC Facturacon", cantidad: 3, horasMasAntigua: 40 },
   secuencias_por_agotarse: { nombre: "Peter", negocio: "ABC Facturacon", tipo: "E32", restantes: 25 },
   pago_recibido: { nombre: "Peter", plan: "Emprendedor", monto: 690, fecha: "16-11-2026", referencia: "PAG-12345", eNCF: "E320000000009", proximoCobro: "16-12-2026" },
-  pago_fallido: { nombre: "Peter", plan: "Emprendedor", monto: 690, motivo: "Tarjeta rechazada" },
+  pago_fallido: { nombre: "Peter", plan: "Emprendedor", monto: 690, motivo: "Tarjeta rechazada", fechaLimite: "22-12-2026", proximoIntento: "19-12-2026" },
   plan_por_vencer: { nombre: "Peter", plan: "Emprendedor", dias: 3, fecha: "19-11-2026" },
   cuenta_suspendida: { nombre: "Peter", negocio: "ABC Facturacon", motivo: "pago pendiente" },
   limite_comprobantes: { nombre: "Peter", negocio: "ABC Facturacon", usados: 82, incluidos: 100, extraRD: 3 },
