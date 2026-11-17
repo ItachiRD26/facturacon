@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { InstagramLogo } from "@phosphor-icons/react/dist/ssr";
 import Logo from "@/components/ui/logo";
 
 export default function SiteFooter() {
@@ -44,6 +45,14 @@ export default function SiteFooter() {
           <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
             <a href="mailto:contacto@facturacon.com.do" style={{ color: "inherit", textDecoration: "none" }}>
               contacto@facturacon.com.do
+            </a>
+            <a
+              href="https://www.instagram.com/facturacon/" target="_blank" rel="noopener noreferrer"
+              aria-label="Facturacon en Instagram"
+              style={{ color: "inherit", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}
+            >
+              <InstagramLogo size={18} weight="bold" aria-hidden="true" />
+              @facturacon
             </a>
           </div>
         </div>
