@@ -39,7 +39,6 @@ const MUESTRA = {
   ecf_rechazado_dgii: { nombre: "Peter", negocio: "ABC Facturacon", eNCF: "E310000000012", motivo: "El RNC del comprador no es válido.", urlFactura: `${U}/panel` },
   contingencia_pendientes: { nombre: "Peter", negocio: "ABC Facturacon", cantidad: 3, horasMasAntigua: 40 },
   secuencias_por_agotarse: { nombre: "Peter", negocio: "ABC Facturacon", tipo: "E32", restantes: 25 },
-  stock_bajo: { nombre: "Peter", negocio: "ABC Facturacon", productos: ["Acetaminofén 500 mg (3 und)", "Alcohol 70 % (1 und)"] },
   pago_recibido: { nombre: "Peter", plan: "Emprendedor", monto: 690, fecha: "16-11-2026", referencia: "PAG-12345", eNCF: "E320000000009", proximoCobro: "16-12-2026" },
   pago_fallido: { nombre: "Peter", plan: "Emprendedor", monto: 690, motivo: "Tarjeta rechazada" },
   plan_por_vencer: { nombre: "Peter", plan: "Emprendedor", dias: 3, fecha: "19-11-2026" },

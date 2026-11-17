@@ -44,7 +44,6 @@ export interface DatosPorCorreo {
   ecf_rechazado_dgii: { nombre: string; negocio: string; eNCF: string; motivo: string; urlFactura: string };
   contingencia_pendientes: { nombre: string; negocio: string; cantidad: number; horasMasAntigua: number; urlPanel?: string };
   secuencias_por_agotarse: { nombre: string; negocio: string; tipo: string; restantes: number; urlPanel?: string };
-  stock_bajo: { nombre: string; negocio: string; productos: string[]; urlInventario?: string };
   // ── Cobros ──
   pago_recibido: { nombre: string; plan: string; monto: number; fecha: string; referencia: string; eNCF?: string; proximoCobro?: string };
   pago_fallido: { nombre: string; plan: string; monto: number; motivo?: string; urlFacturacion?: string };
@@ -198,14 +197,6 @@ export const CATALOGO: Catalogo = {
       parrafos: [saludo(d.nombre), `A ${d.negocio} le quedan ${d.restantes} números autorizados para comprobantes ${d.tipo}. Cuando se acaben, no podrás emitir ese tipo hasta pedir una nueva autorización en la DGII.`],
       alerta: { tipo: "aviso", texto: `Quedan ${d.restantes} secuencias de ${d.tipo}.` },
       boton: { texto: "Ver mis secuencias", url: d.urlPanel ?? PANEL },
-    }),
-  },
-  stock_bajo: {
-    meta: { categoria: "facturacion", nombre: "Inventario bajo", cuando: "Resumen diario de productos bajo su mínimo", destino: "usuario", naturaleza: "opcional" },
-    render: (d) => ({
-      asunto: `${d.productos.length} producto${d.productos.length === 1 ? "" : "s"} con poco inventario`, titulo: "Productos por reponer",
-      parrafos: [saludo(d.nombre), `En ${d.negocio} estos productos están en o por debajo de su mínimo:`, ...d.productos.slice(0, 15).map((p) => `• ${p}`), ...(d.productos.length > 15 ? [`… y ${d.productos.length - 15} más.`] : [])],
-      boton: { texto: "Ver inventario", url: d.urlInventario ?? PANEL },
     }),
   },
 

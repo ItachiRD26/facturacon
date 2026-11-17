@@ -25,14 +25,13 @@ Catálogo de todos los correos que el sistema puede enviar. Está definido en `l
 | **Firma digital por vencer** (`certificado_por_vencer`) | A los 60, 30, 15 y 7 días del vencimiento | Usuario | Siempre (aviso) | Tu firma digital vence en 30 días |
 | **Firma digital vencida** (`certificado_vencido`) | El día que vence | Usuario | Siempre (aviso) | Tu firma digital venció: no puedes emitir |
 
-## Facturación e inventario (4)
+## Facturación e inventario (3)
 
 | Correo | Cuándo se manda | Para | Se manda | Asunto de ejemplo |
 |---|---|---|---|---|
 | **Factura rechazada por la DGII** (`ecf_rechazado_dgii`) | Cuando la DGII rechaza un comprobante emitido | Usuario | Siempre (aviso) | La DGII rechazó el comprobante E310000000012 |
 | **Comprobantes pendientes de enviar a la DGII** (`contingencia_pendientes`) | Cuando hay comprobantes sin enviar (contingencia) | Usuario | Siempre (aviso) | 3 comprobantes pendientes de enviar a la DGII |
 | **Secuencias por agotarse** (`secuencias_por_agotarse`) | Cuando quedan pocos eNCF autorizados de un tipo | Usuario | Siempre (aviso) | Te quedan 25 secuencias de E32 |
-| **Inventario bajo** (`stock_bajo`) | Resumen diario de productos bajo su mínimo | Usuario | Opcional (con baja) | 2 productos con poco inventario |
 
 ## Plan y cobros (7)
 
@@ -78,4 +77,4 @@ Catálogo de todos los correos que el sistema puede enviar. Está definido en `l
 | **Cliente certificado** (`interno_cert_aprobada`) | Cuando un negocio completa su certificación | Equipo Facturacon | Siempre (aviso) | ¡Certificado! ABC Facturacon |
 | **Rechazo en certificación (cliente)** (`interno_cert_rechazo`) | Cuando la DGII rechaza un paso de un cliente | Equipo Facturacon | Siempre (aviso) | Rechazo DGII en ABC Facturacon: Simulación |
 
-**Total: 32 correos.**
+**Total: 31 correos.**
