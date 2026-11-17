@@ -18,7 +18,7 @@ const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-type Paso = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type Paso = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 interface EstadoReceptor {
   autenticaciones: number;
@@ -37,7 +37,8 @@ const PASOS: { n: Paso; t: string; dgii: string }[] = [
   { n: 4, t: "Simulación", dgii: "paso 4" },
   { n: 5, t: "Representación impresa", dgii: "pasos 5-6" },
   { n: 6, t: "Pruebas de recepción", dgii: "pasos 7-11" },
-  { n: 7, t: "Cierre", dgii: "pasos 12-13" },
+  { n: 7, t: "URLs de producción", dgii: "paso 12" },
+  { n: 8, t: "Cierre", dgii: "paso 13" },
 ];
 
 function Card({ children }: { children: React.ReactNode }) {
@@ -181,7 +182,8 @@ const EQUIVALENCIA = [
   { rango: "4", que: "Simulación de otros tipos de comprobante", quien: "Tú completas el formulario, Facturacon firma y envía" },
   { rango: "5-6", que: "Representación impresa (un PDF por tipo) y validación de la DGII", quien: "Tú subes los PDF al portal; la DGII valida" },
   { rango: "7-11", que: "Registrar tus URLs y que la DGII pruebe recepción y aprobaciones", quien: "Tú pulsas los botones en el portal; los servicios que responden son de Facturacon" },
-  { rango: "12-13", que: "URLs de producción y declaración jurada", quien: "Tú en el portal; Facturacon firma la declaración" },
+  { rango: "12", que: "URLs de producción (las mismas de pruebas)", quien: "Tú las pegas en el portal; las direcciones son de Facturacon" },
+  { rango: "13", que: "Declaración jurada", quien: "Tú en el portal; Facturacon firma la declaración" },
 ];
 
 function EquivalenciaPasos() {
@@ -233,6 +235,14 @@ export default function CertificacionPage() {
   const [ofvIniciada, setOfvIniciada] = useState(false);
   const [slug, setSlug] = useState<string | null>(null);
   const [urlCopiada, setUrlCopiada] = useState<string | null>(null);
+  // Marca personal: ya registré las URLs de producción en el portal (la DGII no nos lo dice).
+  const [urlsProdListas, setUrlsProdListas] = useState<boolean>(() => {
+    try { return localStorage.getItem(`cert-urls-prod-${tenantId}`) === "1"; } catch { return false; }
+  });
+  function marcarUrlsProd(v: boolean) {
+    setUrlsProdListas(v);
+    try { localStorage.setItem(`cert-urls-prod-${tenantId}`, v ? "1" : "0"); } catch { /* sin almacenamiento */ }
+  }
   const [firmandoPostulacion, setFirmandoPostulacion] = useState(false);
   const [nombreArchivoPostulacion, setNombreArchivoPostulacion] = useState("");
   const [errorPostulacion, setErrorPostulacion] = useState("");
@@ -739,9 +749,11 @@ export default function CertificacionPage() {
       return { texto: "Registra tus URLs en el portal y lanza las pruebas de recepción y de aprobaciones comerciales (Paso 6). Aquí verás llegar las llamadas de la DGII.", ir: 6 };
     }
     if (!confirmoPortal) {
-      return { texto: "Registra tus URLs de producción y firma la declaración jurada (Paso 7), luego confirma para activar tu cuenta.", ir: 7 };
+      return urlsProdListas
+        ? { texto: "Firma la declaración jurada (Paso 8) y confirma para activar tu cuenta.", ir: 8 }
+        : { texto: "Pega las URLs de producción en el portal (Paso 7) y luego firma la declaración jurada (Paso 8).", ir: 7 };
     }
-    return { texto: "Todo listo — dale clic en \"Finalizar certificación\" en el Paso 7.", ir: 7 };
+    return { texto: "Todo listo — dale clic en \"Finalizar certificación\" en el Paso 8.", ir: 8 };
   }
   const siguiente = proximoPaso();
 
@@ -755,7 +767,8 @@ export default function CertificacionPage() {
     4: simulacionCompleta,
     5: riCompletas,
     6: !!receptor && receptor.autenticaciones > 0 && receptor.recepcion.total > 0 && receptor.aprobaciones.total > 0,
-    7: false,
+    7: urlsProdListas,
+    8: false,
   };
 
   return (
@@ -1343,15 +1356,61 @@ export default function CertificacionPage() {
 
       {paso === 7 && (
         <Card>
-          <PasoTitulo n={7} ayuda="Al terminar las pruebas, la DGII te pide registrar las direcciones definitivas de tu sistema (producción) y una declaración jurada, que es un archivo XML que ella te entrega para que lo firmes con tu certificado. Una vez registradas las URLs, cambiarlas implica un trámite nuevo, por eso las nuestras son fijas.">
-            Paso 7 — Cerrar la certificación
+          <PasoTitulo n={7} ayuda="La DGII guarda en su directorio público las direcciones definitivas (producción) de los tres servicios de tu sistema: autenticación, recepción y aprobación comercial. Son las mismas que usaste en las pruebas. Una vez registradas, cambiarlas implica un trámite nuevo, por eso las nuestras son fijas: no las cambies.">
+            Paso 7 — URLs de producción (paso 12 del portal)
+          </PasoTitulo>
+          <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 14 }}>
+            En el portal, el paso 12 te muestra tres campos. Cada uno ya trae el <code>https://</code> al inicio y la ruta
+            al final: <strong>solo pega la dirección de tu empresa en el espacio del medio</strong>. Es la misma de las
+            pruebas, pegada igual en los tres.
+          </p>
+          <TuYNosotros tu="Pegar tu dirección en los tres campos del paso 12 del portal y guardar." nosotros="Mantener los tres servicios activos en esa dirección, para siempre." />
+          {slug ? (
+            <>
+              <div style={{ margin: "14px 0 6px", fontSize: 11, fontWeight: 700, color: "var(--c-text-3)", textTransform: "uppercase" }}>
+                Pega esto en el espacio del medio (los 3 campos)
+              </div>
+              <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                <input readOnly value={`${slug}.${ROOT_DOMAIN}`} onFocus={(e) => e.target.select()}
+                  style={{ flex: 1, padding: "12px 12px", border: "2px solid var(--c-brand)", borderRadius: 6, fontSize: 15, fontWeight: 700, fontFamily: "var(--font-mono)", background: "var(--c-brand-bg)" }} />
+                <Boton onClick={() => copiarUrl("dominio-prod", `${slug}.${ROOT_DOMAIN}`)}>
+                  {urlCopiada === "dominio-prod" ? "✓ Copiado" : "Copiar"}
+                </Boton>
+              </div>
+              <div style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 6 }}>Así debe quedar cada servicio completo (solo para comparar):</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
+                {[
+                  { label: "Servicio de Autenticación", ruta: "/fe/autenticacion/api/[semilla|ValidacionCertificado]" },
+                  { label: "Servicio de Recepción", ruta: "/fe/recepcion/api/ecf" },
+                  { label: "Servicio de Aprobación Comercial", ruta: "/fe/aprobacioncomercial/api/ecf" },
+                ].map((u) => (
+                  <div key={u.label} style={{ fontSize: 12, padding: "8px 10px", background: "var(--c-bg)", border: "1px solid var(--c-border)", borderRadius: 6 }}>
+                    <strong>{u.label}:</strong> <span style={{ fontFamily: "var(--font-mono)" }}>https://{slug}.{ROOT_DOMAIN}{u.ruta}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>Cargando tu dirección…</p>
+          )}
+          <label style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
+            <input type="checkbox" checked={urlsProdListas} onChange={(e) => marcarUrlsProd(e.target.checked)} style={{ marginTop: 2 }} />
+            Ya pegué y guardé las URLs de producción en el portal de la DGII.
+          </label>
+          <SiguientePaso n={8} onClick={() => setPaso(8)} />
+        </Card>
+      )}
+
+      {paso === 8 && (
+        <Card>
+          <PasoTitulo n={8} ayuda="El último paso del portal es una declaración jurada: un archivo XML que la DGII te entrega para que lo firmes con tu certificado y lo subas de vuelta. Facturacon lo firma por ti.">
+            Paso 8 — Cerrar la certificación (declaración jurada)
           </PasoTitulo>
           <p style={{ fontSize: 12, color: "var(--c-text-3)", marginBottom: 16 }}>
-            Últimos dos pasos del portal: registrar las <strong>URLs de producción</strong> (usa las
-            mismas del Paso 0, no las cambies) y subir la <strong>declaración jurada</strong> firmada.
-            Cuando termines, confirma aquí para activar tu cuenta.
+            Último paso del portal: la <strong>declaración jurada</strong>. Descárgala, fírmala aquí y súbela de vuelta.
+            Cuando termines, confirma para activar tu cuenta.
           </p>
-          <TuYNosotros tu="Registrar las URLs de producción en el portal y subir la declaración jurada firmada." nosotros="Firmar la declaración jurada con tu certificado y activar tu cuenta cuando confirmes." />
+          <TuYNosotros tu="Descargar la declaración jurada, subirla aquí y volver a subirla firmada al portal." nosotros="Firmar la declaración jurada con tu certificado y activar tu cuenta cuando confirmes." />
           <VideoPlaceholder titulo="Cómo cerrar la certificación en el portal" descripcion="Recorrido por los últimos pasos dentro del portal de la DGII." />
 
           <div style={{ marginTop: 16, marginBottom: 6, fontSize: 13, fontWeight: 700 }}>Firmar la declaración jurada</div>
