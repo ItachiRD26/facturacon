@@ -27,7 +27,7 @@ Proteger la confidencialidad, integridad y disponibilidad de la información de 
 - **Roles con permisos mínimos:** Dueño, Administrador, Cajero/Vendedor, Encargado de almacén, Contador y Solo lectura. Cada rol ve solo los módulos que necesita (por ejemplo, el cajero no ve los totales del negocio ni el inventario).
 - Los cajeros pueden entrar con un código personal revocable; un cajero revocado deja de tener acceso de inmediato.
 - Limitación de intentos (rate limiting) en las rutas sensibles: inicio de sesión, registro, consultas a la DGII y escrituras públicas.
-- `[PENDIENTE]` Verificación en dos pasos (2FA) obligatoria para dueños y administradores.
+- `[EN PROCESO]` Verificación en dos pasos (app autenticadora) para dueños y administradores: disponible en la pantalla Seguridad; aviso permanente mientras no se active. Pasar a obligatoria cuando haya clientes reales.
 - Las reglas de la base de datos impiden que cajeros, contadores y lectores lean el código de la tarjeta guardada del plan.
 - Revisión de accesos de administración al menos cada 6 meses.
 

@@ -54,7 +54,7 @@ function destinoTrasRegistro(tipoCuenta: TipoCuenta): string {
 
 async function crearSesionYRedirigir(
   idToken: string, router: ReturnType<typeof useRouter>, destino: string,
-  perfil: { nombre: string; telefono?: string; tipoCuenta: TipoCuenta },
+  perfil: { nombre: string; telefono?: string; tipoCuenta: TipoCuenta; aceptaTerminos: boolean },
 ) {
   const res = await fetch("/api/auth/session", {
     method:  "POST",
@@ -85,11 +85,14 @@ export default function RegistroForm() {
   // mostramos un botón directo a /login con el correo precargado.
   const [yaExiste, setYaExiste] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Consentimiento expreso (Ley 172-13): sin marcarla no se crea la cuenta, ni con correo ni con Google.
+  const [acepta, setAcepta] = useState(false);
 
   const esIndividual = tipoCuenta === "individual";
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tipoCuenta) return;
+    if (!acepta) { setError("Marca la casilla para aceptar los términos y la política de privacidad."); return; }
     setError(""); setYaExiste(false); setLoading(true);
     try {
       const nombreCompleto = `${nombre.trim()} ${apellido.trim()}`.trim();
@@ -97,7 +100,7 @@ export default function RegistroForm() {
       await updateProfile(credential.user, { displayName: nombreCompleto });
       const idToken = await credential.user.getIdToken();
       await crearSesionYRedirigir(idToken, router, destinoTrasRegistro(tipoCuenta), {
-        nombre: nombreCompleto, telefono: telefono.trim() || undefined, tipoCuenta,
+        nombre: nombreCompleto, telefono: telefono.trim() || undefined, tipoCuenta, aceptaTerminos: true,
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
@@ -116,12 +119,13 @@ export default function RegistroForm() {
 
   const handleGoogle = async () => {
     if (!tipoCuenta) return;
+    if (!acepta) { setError("Marca la casilla para aceptar los términos y la política de privacidad."); return; }
     setError(""); setYaExiste(false); setLoading(true);
     try {
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
       const idToken = await credential.user.getIdToken();
       const nombreGoogle = credential.user.displayName ?? credential.user.email ?? "";
-      await crearSesionYRedirigir(idToken, router, destinoTrasRegistro(tipoCuenta), { nombre: nombreGoogle, tipoCuenta });
+      await crearSesionYRedirigir(idToken, router, destinoTrasRegistro(tipoCuenta), { nombre: nombreGoogle, tipoCuenta, aceptaTerminos: true });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
       if (!msg.includes("popup-closed-by-user")) setError(msg || "No pudimos registrarte con Google.");
@@ -158,6 +162,15 @@ export default function RegistroForm() {
           </button>
           <Encabezado titulo="Crea tu cuenta" texto="Gratis, sin tarjeta. Solo necesitas un correo." />
 
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 16, fontSize: 13.5, color: "var(--c-text-2)", lineHeight: 1.5, cursor: "pointer" }}>
+            <input type="checkbox" checked={acepta} onChange={(e) => { setAcepta(e.target.checked); setError(""); }}
+              style={{ width: 18, height: 18, marginTop: 1, accentColor: "var(--c-brand)", flexShrink: 0, cursor: "pointer" }} />
+            <span>
+              Acepto los <Link href="/terminos" target="_blank" style={{ color: "var(--c-brand)", fontWeight: 600 }}>términos de uso</Link> y la{" "}
+              <Link href="/privacidad" target="_blank" style={{ color: "var(--c-brand)", fontWeight: 600 }}>política de privacidad</Link>, incluido el tratamiento de mis datos personales y de los de mi empresa.
+            </span>
+          </label>
+
           <BotonGoogle onClick={handleGoogle} disabled={loading} texto="Registrarme con Google" />
           <Divisor texto="o con tu correo" />
 
@@ -185,9 +198,6 @@ export default function RegistroForm() {
             )}
 
             <BotonAuth cargando={loading}>{loading ? "Creando tu cuenta…" : "Crear mi cuenta"}</BotonAuth>
-            <p style={{ fontSize: 12.5, color: "var(--c-text-3)", lineHeight: 1.5, textAlign: "center" }}>
-              Al crear tu cuenta aceptas los <Link href="/terminos" style={{ color: "var(--c-brand)", fontWeight: 600 }}>términos</Link> y la <Link href="/privacidad" style={{ color: "var(--c-brand)", fontWeight: 600 }}>política de privacidad</Link>.
-            </p>
           </form>
         </div>
       )}

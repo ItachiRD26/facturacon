@@ -35,7 +35,7 @@ Estado al 2026-11-17. **Los textos de esta carpeta son borradores**: describen l
 | Custodia segura de certificados digitales | Listo | Cifrado con Google Cloud KMS (ver política) |
 
 ## 4. Endurecimiento recomendado antes de enviar (no es exigencia escrita, pero respalda la solicitud)
-- `[PENDIENTE]` Verificación en dos pasos (2FA) para dueños y administradores.
+- `[EN PROCESO]` Verificación en dos pasos (TOTP, Firebase Identity Platform) para dueños y administradores: código listo; falta habilitar Identity Platform en el proyecto.
 - `[PENDIENTE]` Cabecera CSP (hoy hay HSTS, X-Frame-Options, nosniff, Referrer-Policy y Permissions-Policy).
 - `[PENDIENTE]` Ambiente de pruebas separado de producción (hoy comparten Firebase).
 - `[PENDIENTE]` Alertas y monitoreo de caídas y de errores de emisión.

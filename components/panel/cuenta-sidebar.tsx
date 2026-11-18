@@ -38,6 +38,7 @@ const GRUPOS: { titulo?: string; items: ItemNav[] }[] = [
     items: [
       { seg: "plan", label: "Plan y facturación", icon: "invoice", roles: ["owner", "admin"] },
       { seg: "actividad", label: "Actividad", icon: "eye", roles: ["owner", "admin"] },
+      { seg: "seguridad", label: "Seguridad", icon: "sello" },
       { seg: "soporte", label: "Ayuda y soporte", icon: "alert" },
     ],
   },

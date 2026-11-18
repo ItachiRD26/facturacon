@@ -3,6 +3,7 @@ import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { registroAbierto } from "@/lib/registro";
 import { limitar } from "@/lib/seguridad/limite-tasa";
 import { registrarAuditoria } from "@/lib/auditoria/registrar";
+import { VERSION_LEGAL } from "@/lib/legal";
 
 const SESSION_COOKIE  = "__session";
 const SESSION_MS      = parseInt(process.env.SESSION_DURATION_MS ?? "432000000");
@@ -43,13 +44,21 @@ export async function POST(request: NextRequest) {
     if (user.disabled)
       return NextResponse.json({ error: "Cuenta deshabilitada. Contacta al administrador." }, { status: 403 });
 
+    const userRef = adminDb.collection("users").doc(decoded.uid);
+    const existente = await userRef.get();
+
     // Registro cerrado: quien ya tiene perfil entra normal; una cuenta de Auth
     // nueva (correo o Google) no obtiene sesión, así que no llega al panel.
-    if (!registroAbierto()) {
-      const perfil = await adminDb.collection("users").doc(decoded.uid).get();
-      if (!perfil.exists) {
-        return NextResponse.json({ error: "Las cuentas nuevas todavía no están abiertas. Déjanos tu correo en la lista de espera." }, { status: 403 });
-      }
+    if (!registroAbierto() && !existente.exists) {
+      return NextResponse.json({ error: "Las cuentas nuevas todavía no están abiertas. Déjanos tu correo en la lista de espera." }, { status: 403 });
+    }
+
+    // Una cuenta nueva solo se crea si aceptó los términos y la política de privacidad (consentimiento expreso,
+    // Ley 172-13). Quien ya tiene perfil, y los cajeros que entran con código (sesión "custom"), no pasan por aquí.
+    const aceptoTerminos = body.aceptaTerminos === true;
+    const esCajero = decoded.firebase?.sign_in_provider === "custom";
+    if (!existente.exists && !esCajero && !aceptoTerminos) {
+      return NextResponse.json({ error: "Para crear una cuenta debes aceptar los términos y la política de privacidad. Hazlo desde la página de registro.", codigo: "terminos_requeridos" }, { status: 403 });
     }
 
     const sessionCookie = await adminAuth.createSessionCookie(body.idToken, { expiresIn: SESSION_MS });
@@ -59,21 +68,24 @@ export async function POST(request: NextRequest) {
     // fijarse UNA sola vez, cuando el doc todavía no existe, o un login por
     // Google reescribiría `creadoEn` cada vez. Best-effort: si esto falla,
     // no debe impedir que la sesión se cree igual.
-    const userRef = adminDb.collection("users").doc(decoded.uid);
-    userRef.get().then(async (existente) => {
+    (async () => {
       const perfilUpdate: Record<string, unknown> = { ultimoAcceso: new Date().toISOString() };
       if (!existente.exists) {
         perfilUpdate.uid = decoded.uid;
         perfilUpdate.email = user.email ?? "";
         perfilUpdate.creadoEn = new Date().toISOString();
+        if (aceptoTerminos) perfilUpdate.aceptacionLegal = { version: VERSION_LEGAL, aceptadoEn: new Date().toISOString() };
       }
       if (typeof body.nombre === "string" && body.nombre.trim()) perfilUpdate.nombre = body.nombre.trim();
       if (typeof body.telefono === "string" && body.telefono.trim()) perfilUpdate.telefono = body.telefono.trim();
       if (body.tipoCuenta === "individual" || body.tipoCuenta === "gestor") perfilUpdate.tipoCuenta = body.tipoCuenta;
       await userRef.set(perfilUpdate, { merge: true });
-    }).catch(console.error);
+    })().catch(console.error);
+    if (!existente.exists && aceptoTerminos) {
+      await registrarAuditoria({ uid: decoded.uid, accion: "cuenta.terminos", detalle: { version: VERSION_LEGAL }, req: request });
+    }
 
-    await registrarAuditoria({ uid: decoded.uid, accion: "sesion.inicio", detalle: { metodo: decoded.firebase?.sign_in_provider ?? "desconocido" }, req: request });
+    await registrarAuditoria({ uid: decoded.uid, accion: "sesion.inicio", detalle: { metodo: decoded.firebase?.sign_in_provider ?? "desconocido", segundoFactor: decoded.firebase?.sign_in_second_factor ?? "ninguno" }, req: request });
 
     const response = NextResponse.json({ success: true });
     response.cookies.set(SESSION_COOKIE, sessionCookie, {

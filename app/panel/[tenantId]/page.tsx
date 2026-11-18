@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requerirRolPanel } from "@/lib/tenant/panel-acceso";
+import { tieneVerificacionDosPasos } from "@/lib/auth/mfa";
 import { calcularJornada } from "@/lib/tenant/jornada";
 import { cupoUsuarios } from "@/lib/tenant/limite-usuarios";
 import { obtenerSuscripcion } from "@/lib/payments/suscripcion";
@@ -15,14 +16,15 @@ const TODOS = ["owner", "admin", "vendedor", "operador", "contador", "viewer"] a
 
 export default async function CuentaResumenPage({ params }: { params: Promise<{ tenantId: string }> }) {
   const { tenantId } = await params;
-  const { tenant, rol } = await requerirRolPanel(tenantId, [...TODOS]);
+  const { uid, tenant, rol } = await requerirRolPanel(tenantId, [...TODOS]);
 
   const esActivo = tenant.estado === "activo";
   const esAdmin = rol === "owner" || rol === "admin";
   const veContabilidad = esAdmin || rol === "contador";
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
 
-  const [suscripcion, cupo, contab, usoMes, porMes, sandbox] = await Promise.all([
+  const [sinDosPasos, suscripcion, cupo, contab, usoMes, porMes, sandbox] = await Promise.all([
+    esAdmin ? tieneVerificacionDosPasos(uid).then((v) => !v) : Promise.resolve(false),
     esAdmin ? obtenerSuscripcion(tenantId) : Promise.resolve(null),
     esAdmin ? cupoUsuarios(tenantId) : Promise.resolve(null),
     esActivo && veContabilidad ? resumenContable(tenantId, mesValido(undefined), false) : Promise.resolve(null),
@@ -46,6 +48,18 @@ export default async function CuentaResumenPage({ params }: { params: Promise<{ 
         titulo={tenant.nombreNegocio}
         descripcion={esAdmin ? "Estado de tu cuenta, tu avance y lo más importante de tu negocio." : "Resumen de la empresa."}
       />
+
+      {sinDosPasos && (
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 16,
+          padding: "12px 16px", background: "var(--c-yellow-bg)", border: "1px solid var(--c-border)", borderRadius: "var(--radius-md)",
+        }}>
+          <div style={{ fontSize: 13, color: "var(--c-text-2)", lineHeight: 1.5, flex: "1 1 320px" }}>
+            <b>Protege tu cuenta:</b> activa la verificación en dos pasos. Quien entre a ella puede ver el certificado digital, los cobros y al equipo.
+          </div>
+          <Button variante="secondary" tamano="sm" href={`/panel/${tenantId}/seguridad`}>Activar ahora</Button>
+        </div>
+      )}
 
       {esAdmin && (
         <Card padding={0} style={{ marginBottom: 20, overflow: "hidden" }}>

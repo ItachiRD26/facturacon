@@ -3,6 +3,9 @@
 export const ACCIONES_AUDITORIA = {
   "sesion.inicio": "Inició sesión",
   "sesion.cierre": "Cerró sesión",
+  "cuenta.terminos": "Aceptó los términos y la política de privacidad",
+  "cuenta.mfa_activada": "Activó la verificación en dos pasos",
+  "cuenta.mfa_desactivada": "Desactivó la verificación en dos pasos",
   "certificado.renovado": "Cargó o renovó el certificado digital",
   "usuario.agregado": "Agregó a una persona al equipo",
   "usuario.rol": "Cambió el rol de una persona",
