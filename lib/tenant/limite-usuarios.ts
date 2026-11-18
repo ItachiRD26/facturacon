@@ -30,7 +30,7 @@ export async function cupoUsuarios(tenantId: string): Promise<CupoUsuarios> {
   // no debe ocupar un cupo del plan.
   const revocados = empleados.docs.filter((d) => d.data().activo === false && cuentaComoUsuario(String(d.data().rol))).length;
   const usados = Math.max(0, cajas - revocados);
-  const plan = suscripcion?.estado === "activa" ? buscarPlan(suscripcion.planId) : undefined;
+  const plan = suscripcion?.estado === "activa" && !suscripcion.ilimitado ? buscarPlan(suscripcion.planId) : undefined;
   const incluidos = plan?.usuarios ?? null;
   return {
     incluidos, usados, lleno: incluidos !== null && usados >= incluidos,

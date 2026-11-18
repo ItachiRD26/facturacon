@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { tieneAcceso } from "@/lib/tenant/roles";
 import { useTenant } from "@/contexts/TenantContext";
 import { useClientes } from "@/hooks/use-clientes";
 import { useCuentasPorCobrar } from "@/hooks/use-cuentas-por-cobrar";
@@ -15,6 +17,10 @@ const serif = "var(--font-serif)";
 
 export default function CuentasPorCobrarPage() {
   const tenant = useTenant();
+  const router = useRouter();
+  const permitido = tieneAcceso(tenant.rol, "cuentas-por-cobrar");
+  // Un cajero o un encargado de almacén no ve este módulo: si escribe la dirección, se le devuelve al inicio.
+  useEffect(() => { if (!permitido) router.replace("/"); }, [permitido, router]);
   const { clientes } = useClientes(tenant.tenantId);
   const { cuentas, loading, registrarAbono } = useCuentasPorCobrar(tenant.tenantId);
   const [viendo, setViendo] = useState<CuentaPorCobrar | null>(null);
@@ -24,6 +30,8 @@ export default function CuentasPorCobrarPage() {
   const vigentes  = cuentas.filter((c) => c.estado === "vigente").length;
   const pagadas   = cuentas.filter((c) => c.estado === "pagada").length;
   const porCobrar = cuentas.reduce((s, c) => s + calcPendiente(c), 0);
+
+  if (!permitido) return null;
 
   return (
     <div className="fade-in">

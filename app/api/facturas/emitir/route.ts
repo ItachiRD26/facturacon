@@ -105,9 +105,11 @@ export async function POST(req: NextRequest) {
   // adicional al cierre del mes (tarifa por plan en lib/payments/planes.ts). Solo hay
   // un tope de seguridad a 3 veces el plan, para que un error o abuso no genere un cobro
   // desmedido: ahí se pide hablar con ventas.
-  const emitidasEsteMes = await contarComprobantesEsteMes(tenantId);
-  const esAdicional = emitidasEsteMes >= suscripcion.facturasMes;
-  if (emitidasEsteMes >= suscripcion.facturasMes * 3) {
+  // Cuenta propia (ilimitado): sin tope, sin adicionales y sin contar.
+  const ilimitado = !!suscripcion.ilimitado;
+  const emitidasEsteMes = ilimitado ? 0 : await contarComprobantesEsteMes(tenantId);
+  const esAdicional = !ilimitado && emitidasEsteMes >= suscripcion.facturasMes;
+  if (!ilimitado && emitidasEsteMes >= suscripcion.facturasMes * 3) {
     return NextResponse.json({
       error: `Llegaste a ${emitidasEsteMes.toLocaleString("es-DO")} comprobantes este mes, el triple de tu plan. Por seguridad pausamos la emisión: escríbenos para pasar a un plan acorde a tu volumen.`,
     }, { status: 403 });

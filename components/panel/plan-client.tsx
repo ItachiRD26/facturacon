@@ -194,8 +194,27 @@ export default function PlanClient({
         </Card>
       )}
 
+      {/* ── Cuenta propia: sin cobro ni límites ── */}
+      {suscripcion && suscripcion.estado === "activa" && suscripcion.ilimitado && (
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 17, fontWeight: 700 }}>Plan interno</span>
+                <Pill tono="success">Activo</Pill>
+              </div>
+              <div style={{ fontSize: 13, color: "var(--c-text-2)", lineHeight: 1.6, maxWidth: 560 }}>
+                Es la cuenta de Facturacon: <b>sin cobro y sin fecha de renovación</b>, con <b>comprobantes y usuarios de caja ilimitados</b>.
+                Este mes has emitido <b className="num">{usoMes.toLocaleString("es-DO")}</b> comprobantes.
+              </div>
+            </div>
+            {urlSistema && <Button href={urlSistema}>Abrir mi sistema →</Button>}
+          </div>
+        </Card>
+      )}
+
       {/* ── Plan activo ── */}
-      {suscripcion && suscripcion.estado === "activa" && (
+      {suscripcion && suscripcion.estado === "activa" && !suscripcion.ilimitado && (
         <>
           <Card style={{ marginBottom: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap", marginBottom: 18 }}>

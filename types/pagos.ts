@@ -16,6 +16,7 @@ export interface Suscripcion {
   ern?:              string;   // número de comprobante que enviamos a Pagadito
   autorizacion?:     string;   // número de aprobación que devolvió Pagadito
   interno?:          boolean;              // cuenta propia de Facturacon (cliente cero): sin tarjeta ni cobro
+  ilimitado?:        boolean;              // sin tope de comprobantes ni de usuarios de caja (cuenta propia)
   estado:            EstadoSuscripcion;
   cardHolderName?:   string;
   ultimos4?:         string;

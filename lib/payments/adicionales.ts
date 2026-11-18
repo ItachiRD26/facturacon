@@ -51,7 +51,7 @@ export function calcularAdicionales(plan: Plan, emitidos: number, usuariosUsados
 // Uso del mes en curso (o de otro mes) de un tenant con plan activo. null si no hay plan.
 export async function resumenAdicionales(tenantId: string, mes = mesActual()): Promise<ResumenAdicionales | null> {
   const sus = await obtenerSuscripcion(tenantId);
-  const plan = sus?.estado === "activa" ? buscarPlan(sus.planId) : undefined;
+  const plan = sus?.estado === "activa" && !sus.ilimitado ? buscarPlan(sus.planId) : undefined;
   if (!plan) return null;
   const [emitidos, cupo] = await Promise.all([comprobantesDelMes(tenantId, mes), cupoUsuarios(tenantId)]);
   return calcularAdicionales(plan, emitidos, cupo.usados, mes);
