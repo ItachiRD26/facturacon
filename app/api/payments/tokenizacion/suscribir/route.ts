@@ -13,6 +13,23 @@ interface Body {
   deviceFingerprintID: string;
 }
 
+// Pagadito exige la IP PÚBLICA del navegador del cliente (acepta IPv4 e IPv6; rechaza ::1, 0.0.0.0 y las privadas).
+// En producción llega en x-forwarded-for. Solo en Sandbox, si se prueba desde localhost, se usa una IP pública de ejemplo.
+function esIpPublica(ip: string): boolean {
+  if (!ip) return false;
+  if (ip.includes(":")) return !/^(::1?|fe80:|fc|fd)/i.test(ip);                       // IPv6 pública (no loopback, link-local ni ULA)
+  const p = ip.split(".").map(Number);
+  if (p.length !== 4 || p.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return false;
+  const [a, b] = p;
+  return !(a === 0 || a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254) || a >= 224);
+}
+function ipPublicaDelCliente(req: NextRequest): string {
+  const cruda = req.headers.get("x-vercel-forwarded-for") ?? req.headers.get("x-forwarded-for")?.split(",")[0] ?? req.headers.get("x-real-ip") ?? "";
+  const ip = cruda.trim().replace(/^::ffff:/i, "");
+  if (esIpPublica(ip)) return ip;
+  return process.env.PAGADITO_ENV === "live" ? ip || "0.0.0.0" : "190.80.1.1";
+}
+
 // Activa el cobro recurrente mensual del plan de un tenant ya certificado:
 // tokeniza la tarjeta y crea la suscripción en el mismo request. Solo
 // owner/admin (no vendedor) pueden tocar la facturación del negocio.
@@ -33,10 +50,7 @@ export async function POST(req: NextRequest) {
   const verif = await requireAccesoFacturacion(body.tenantId);
   if (!verif.ok) return verif.response;
 
-  const customerIp =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    "0.0.0.0";
+  const customerIp = ipPublicaDelCliente(req);
 
   try {
     const suscripcion = await activarCobroRecurrente({
