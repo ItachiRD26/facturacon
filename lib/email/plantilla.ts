@@ -21,7 +21,11 @@ export function esc(v: unknown): string {
 
 // Solo enlaces https o mailto (nada de javascript:, data:, etc.).
 export function urlSegura(u: string): string {
-  return /^(https:\/\/|mailto:)/i.test(u.trim()) ? u.trim() : URL_SITIO;
+  const t = u.trim();
+  if (/^(https:\/\/|mailto:)/i.test(t)) return t;
+  // Solo en desarrollo: enlaces a localhost para poder probar los correos sin salir al sitio real.
+  if (process.env.NODE_ENV !== "production" && /^http:\/\/([a-z0-9-]+\.)?localhost(:\d+)?(\/|$)/i.test(t)) return t;
+  return URL_SITIO;
 }
 
 export const rd = (n: number) =>

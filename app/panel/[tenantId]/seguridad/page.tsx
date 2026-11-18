@@ -1,5 +1,6 @@
 import { requerirRolPanel } from "@/lib/tenant/panel-acceso";
 import { estadoVerificacion } from "@/lib/auth/mfa";
+import { contarCodigos } from "@/lib/auth/codigos-recuperacion";
 import { PageHeader } from "@/components/ui/kit";
 import SeguridadClient from "@/components/panel/seguridad-client";
 
@@ -12,12 +13,14 @@ export default async function SeguridadPage({ params }: { params: Promise<{ tena
   const { tenantId } = await params;
   const { uid, rol } = await requerirRolPanel(tenantId, [...TODOS]);
   const estado = await estadoVerificacion(uid);
+  // Una sola lectura (y solo si la tiene activa): cuántos códigos de recuperación le quedan.
+  const codigosRestantes = estado.activa ? await contarCodigos(uid) : 0;
   const esAdmin = rol === "owner" || rol === "admin";
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", fontFamily: "var(--font-sans)" }}>
       <PageHeader titulo="Seguridad de tu cuenta" descripcion="Protege el acceso con un segundo paso: además de tu contraseña, se pide un código de 6 dígitos de tu teléfono." />
-      <SeguridadClient activa={estado.activa} correo={estado.correo} correoVerificado={estado.correoVerificado} recomendada={esAdmin} />
+      <SeguridadClient activa={estado.activa} correo={estado.correo} correoVerificado={estado.correoVerificado} recomendada={esAdmin} codigosRestantes={codigosRestantes} />
     </div>
   );
 }

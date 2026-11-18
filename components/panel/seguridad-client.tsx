@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   EmailAuthProvider, GoogleAuthProvider, TotpMultiFactorGenerator, TotpSecret, multiFactor,
-  reauthenticateWithCredential, reauthenticateWithPopup, sendEmailVerification,
+  reauthenticateWithCredential, reauthenticateWithPopup,
 } from "firebase/auth";
 import { QRCodeSVG } from "qrcode.react";
 import { auth } from "@/lib/firebase";
@@ -19,15 +19,20 @@ const campo: React.CSSProperties = {
 
 const avisoServidor = () => fetch("/api/auth/mfa-evento", { method: "POST" }).catch(() => {});
 
-type Paso = "inicio" | "verificar-correo" | "reautenticar" | "escanear" | "listo";
+type Paso = "inicio" | "verificar-correo" | "reautenticar" | "escanear" | "codigos";
 
-export default function SeguridadClient({ activa: activaInicial, correo, correoVerificado, recomendada }: {
-  activa: boolean; correo: string; correoVerificado: boolean; recomendada: boolean;
+export default function SeguridadClient({ activa: activaInicial, correo, correoVerificado, recomendada, codigosRestantes }: {
+  activa: boolean; correo: string; correoVerificado: boolean; recomendada: boolean; codigosRestantes: number;
 }) {
   const router = useRouter();
   const [activa, setActiva] = useState(activaInicial);
   const [paso, setPaso] = useState<Paso>("inicio");
   const [pendienteDesactivar, setPendienteDesactivar] = useState(false);
+  const [pendienteRegenerar, setPendienteRegenerar] = useState(false);
+  // Códigos de recuperación recién generados (se muestran una sola vez) y cuántos quedan guardados en el servidor.
+  const [codigosNuevos, setCodigosNuevos] = useState<string[]>([]);
+  const [restantes, setRestantes] = useState(codigosRestantes);
+  const [guardados, setGuardados] = useState(false);
   const [secreto, setSecreto] = useState<TotpSecret | null>(null);
   const [codigo, setCodigo] = useState("");
   const [clave, setClave] = useState("");
@@ -79,8 +84,13 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
     const usuario = await usuarioActual();
     if (!usuario) return;
     setTrabajando(true); setError("");
-    try { await sendEmailVerification(usuario); setAviso(`Te enviamos un enlace a ${correo}. Ábrelo y vuelve aquí.`); }
-    catch (e) { setError(traducir(e)); }
+    try {
+      const res = await fetch("/api/auth/verificar-correo", { method: "POST" });
+      const d = await res.json().catch(() => ({}));
+      if (res.status === 429) setError("Ya pediste varios correos. Espera unos minutos.");
+      else if (!res.ok) setError(d.error ?? "No pudimos enviar el correo. Intenta de nuevo.");
+      else setAviso(d.yaVerificado ? "Tu correo ya está verificado: pulsa «Ya lo verifiqué»." : `Te enviamos un enlace a ${correo}. Ábrelo y vuelve aquí.`);
+    } catch { setError("No pudimos conectar. Intenta de nuevo."); }
     finally { setTrabajando(false); }
   };
 
@@ -93,6 +103,7 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
       else await reauthenticateWithCredential(usuario, EmailAuthProvider.credential(correo, clave));
       setClave("");
       if (pendienteDesactivar) { setPendienteDesactivar(false); setPaso("inicio"); await desactivar(); }
+      else if (pendienteRegenerar) { setPendienteRegenerar(false); setPaso("inicio"); await pedirCodigos("regeneracion"); }
       else await prepararSecreto();
     } catch (e) { setError(traducir(e)); }
     finally { setTrabajando(false); }
@@ -105,11 +116,36 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
     try {
       const asercion = TotpMultiFactorGenerator.assertionForEnrollment(secreto, codigo.trim());
       await multiFactor(usuario).enroll(asercion, "Aplicación autenticadora");
-      await avisoServidor();
-      setActiva(true); setSecreto(null); setPaso("listo");
+      setActiva(true); setSecreto(null);
+      await pedirCodigos("activacion");
       router.refresh();
     } catch (e) { setError(traducir(e)); }
     finally { setTrabajando(false); }
+  };
+
+  // El servidor genera los códigos, deja solo su hash, anota el evento y avisa por correo. Si pasaron más de 10
+  // minutos desde que se confirmó la identidad, se pide confirmarla otra vez.
+  const pedirCodigos = async (motivo: "activacion" | "regeneracion") => {
+    const usuario = await usuarioActual();
+    if (!usuario) return;
+    setTrabajando(true); setError("");
+    try {
+      const idToken = await usuario.getIdToken();
+      const res = await fetch("/api/auth/mfa-codigos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken, motivo }) });
+      const d = await res.json().catch(() => ({}));
+      if (res.status === 403 && d.codigo === "reciente") { setPendienteRegenerar(true); setPaso("reautenticar"); return; }
+      if (!res.ok) { setError(d.error ?? "No pudimos generar los códigos. Intenta de nuevo."); setPaso("inicio"); return; }
+      setCodigosNuevos(d.codigos); setRestantes(d.codigos.length); setGuardados(false); setPaso("codigos");
+    } catch { setError("No pudimos conectar. Intenta de nuevo."); setPaso("inicio"); }
+    finally { setTrabajando(false); }
+  };
+
+  const copiarCodigos = () => navigator.clipboard?.writeText(codigosNuevos.join("\n")).then(() => setAviso("Códigos copiados.")).catch(() => {});
+  const descargarCodigos = () => {
+    const txt = `Códigos de recuperación de Facturacon (${correo})\nCada código sirve una sola vez.\n\n${codigosNuevos.join("\n")}\n`;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain" })); a.download = "facturacon-codigos-recuperacion.txt"; a.click();
+    URL.revokeObjectURL(a.href);
   };
 
   const desactivar = async () => {
@@ -120,7 +156,7 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
       const factor = multiFactor(usuario).enrolledFactors[0];
       if (factor) await multiFactor(usuario).unenroll(factor);
       await avisoServidor();
-      setActiva(false); setPaso("inicio"); setAviso("Verificación en dos pasos desactivada.");
+      setActiva(false); setRestantes(0); setPaso("inicio"); setAviso("Verificación en dos pasos desactivada.");
       router.refresh();
     } catch (e) {
       const t = traducir(e);
@@ -152,9 +188,20 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
             <Button onClick={comenzar} disabled={trabajando}>{trabajando ? "Preparando…" : "Activar verificación en dos pasos"}</Button>
           )}
           {activa && (
-            <p style={{ fontSize: 12.5, color: "var(--c-text-3)", lineHeight: 1.55, marginTop: 14 }}>
-              Si pierdes o cambias de teléfono, escríbenos desde Ayuda y soporte: verificamos tu identidad y restablecemos el segundo paso.
-            </p>
+            <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--c-border-lt)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+                <b style={{ fontSize: 13.5 }}>Códigos de recuperación</b>
+                <Pill tono={restantes > 3 ? "success" : restantes > 0 ? "warning" : "danger"}>{restantes} disponibles</Pill>
+              </div>
+              <p style={{ fontSize: 12.5, color: "var(--c-text-3)", lineHeight: 1.55, margin: "0 0 10px" }}>
+                Si pierdes o cambias de teléfono, entras con tu contraseña y uno de estos códigos (en la pantalla de inicio de sesión, «No tengo mi teléfono»). Cada uno sirve una vez.
+                {restantes <= 3 && " Te quedan pocos: genera códigos nuevos."}
+              </p>
+              <Button variante="secondary" tamano="sm" onClick={() => pedirCodigos("regeneracion")} disabled={trabajando}>Generar códigos nuevos</Button>
+              <p style={{ fontSize: 12, color: "var(--c-text-4)", lineHeight: 1.5, marginTop: 10 }}>
+                ¿Sin teléfono y sin códigos? Escríbenos a contacto@facturacon.com.do: verificamos tu identidad y restablecemos el segundo paso.
+              </p>
+            </div>
           )}
           {alertas}
         </div>
@@ -177,7 +224,7 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
       {paso === "reautenticar" && (
         <div>
           <p style={{ fontSize: 13.5, color: "var(--c-text-2)", lineHeight: 1.6, margin: "0 0 14px" }}>
-            Por seguridad, confirma que eres tú antes de {pendienteDesactivar ? "desactivarla" : "activarla"}.
+            Por seguridad, confirma que eres tú antes de {pendienteDesactivar ? "desactivarla" : pendienteRegenerar ? "generar códigos nuevos" : "activarla"}.
           </p>
           {!conGoogle && (
             <div style={{ marginBottom: 12 }}>
@@ -218,12 +265,24 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
         </div>
       )}
 
-      {paso === "listo" && (
+      {paso === "codigos" && (
         <div>
-          <p style={{ fontSize: 14, color: "var(--c-text-2)", lineHeight: 1.6, margin: "0 0 14px" }}>
-            Listo: la verificación en dos pasos quedó <b>activada</b>. La próxima vez que inicies sesión se te pedirá el código de tu aplicación.
+          <p style={{ fontSize: 14, color: "var(--c-text-2)", lineHeight: 1.6, margin: "0 0 12px" }}>
+            La verificación en dos pasos está <b>activada</b>. Guarda estos <b>códigos de recuperación</b>: son la única forma de entrar si pierdes tu teléfono. <b>No se vuelven a mostrar.</b>
           </p>
-          <Button variante="secondary" onClick={() => setPaso("inicio")}>Entendido</Button>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 8, padding: 14, background: "var(--c-bg)", border: "1px solid var(--c-border)", borderRadius: 12, marginBottom: 12 }}>
+            {codigosNuevos.map((c) => <code key={c} style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 600, letterSpacing: "0.04em" }}>{c}</code>)}
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+            <Button variante="secondary" tamano="sm" onClick={copiarCodigos}>Copiar</Button>
+            <Button variante="secondary" tamano="sm" onClick={descargarCodigos}>Descargar (.txt)</Button>
+          </div>
+          <label style={{ display: "flex", gap: 9, alignItems: "flex-start", fontSize: 13.5, color: "var(--c-text-2)", marginBottom: 14, cursor: "pointer" }}>
+            <input type="checkbox" checked={guardados} onChange={(e) => setGuardados(e.target.checked)} style={{ width: 18, height: 18, marginTop: 1, accentColor: "var(--c-brand)" }} />
+            Ya guardé mis códigos en un lugar seguro (gestor de contraseñas o impresos).
+          </label>
+          <Button onClick={() => { setPaso("inicio"); setCodigosNuevos([]); setAviso(""); }} disabled={!guardados}>Listo</Button>
+          {alertas}
         </div>
       )}
     </Card>

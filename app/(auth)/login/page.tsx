@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import {
-  GoogleAuthProvider, TotpMultiFactorGenerator, getMultiFactorResolver, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup,
+  GoogleAuthProvider, TotpMultiFactorGenerator, getMultiFactorResolver, signInWithEmailAndPassword, signInWithPopup,
   type MultiFactorError, type MultiFactorResolver,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -32,6 +32,9 @@ function LoginForm() {
   const [resolver, setResolver] = useState<MultiFactorResolver | null>(null);
   const [codigo, setCodigo] = useState("");
   const [nombreGoogle, setNombreGoogle] = useState<string | undefined>(undefined);
+  // «No tengo mi teléfono»: entrar con contraseña + un código de recuperación para quitar el segundo paso.
+  const [recuperando, setRecuperando] = useState(false);
+  const [codigoRec, setCodigoRec] = useState("");
 
   // Si llegamos desde /registro porque el correo ya tenía cuenta, el campo viene
   // precargado (useState arriba): solo falta la contraseña.
@@ -111,18 +114,58 @@ function LoginForm() {
     } finally { setLoading(false); }
   };
 
-  // Restablecer contraseña: Firebase manda el correo con el enlace.
+  // Restablecer contraseña: el servidor manda el correo (en español, con nuestra marca) con el enlace a /accion.
   const olvide = async () => {
     setError(""); setAviso("");
     if (!email.trim()) { setError("Escribe tu correo arriba y vuelve a pulsar \"¿La olvidaste?\"."); return; }
     try {
-      await sendPasswordResetEmail(auth, email.trim());
-      setAviso(`Te enviamos un correo a ${email.trim()} para crear una contraseña nueva. Revisa también la carpeta de spam.`);
-    } catch {
-      // Misma respuesta exista o no la cuenta: no se revela qué correos están registrados.
-      setAviso(`Si ${email.trim()} tiene una cuenta, le enviamos un correo para crear una contraseña nueva.`);
-    }
+      const res = await fetch("/api/auth/recuperar-clave", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: email.trim() }) });
+      if (res.status === 429) { setError("Pediste varios correos seguidos. Espera unos minutos e intenta de nuevo."); return; }
+      if (res.status === 400) { setError("Ese correo no parece válido. Revísalo."); return; }
+    } catch { /* misma respuesta de abajo */ }
+    // Misma respuesta exista o no la cuenta: no se revela qué correos están registrados.
+    setAviso(`Si ${email.trim()} tiene una cuenta, le enviamos un correo para crear una contraseña nueva. Revisa también la carpeta de spam.`);
   };
+
+  // Quita el segundo paso usando la contraseña (ya escrita) y un código de recuperación.
+  const recuperarSegundoPaso = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    try {
+      const res = await fetch("/api/auth/recuperar-segundo-paso", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: email.trim(), password: pass, codigo: codigoRec }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error ?? "No pudimos verificar esos datos."); return; }
+      setResolver(null); setRecuperando(false); setCodigoRec(""); setCodigo("");
+      setAviso("Listo: quitamos la verificación en dos pasos. Entra con tu contraseña y actívala de nuevo en tu teléfono nuevo (menú Seguridad).");
+    } catch { setError("No pudimos conectar. Intenta de nuevo."); }
+    finally { setLoading(false); }
+  };
+
+  if (resolver && recuperando) {
+    const puede = !!pass && !!email.trim();   // quien entró con Google no tiene contraseña: esa vía es por soporte
+    return (
+      <TarjetaAuth>
+        <Encabezado titulo="No tengo mi teléfono" texto="Usa uno de los 10 códigos de recuperación que guardaste al activar la verificación en dos pasos. Cada código sirve una sola vez." />
+        {puede ? (
+          <form onSubmit={recuperarSegundoPaso} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <Campo etiqueta="Código de recuperación">
+              <Entrada required autoFocus autoComplete="off" value={codigoRec} placeholder="ABCDE-FGHJK" maxLength={11}
+                onChange={(e) => setCodigoRec(e.target.value.toUpperCase())} style={{ letterSpacing: "0.12em", textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 18 }} />
+            </Campo>
+            {error && <AlertaAuth>{error}</AlertaAuth>}
+            <BotonAuth cargando={loading} disabled={codigoRec.replace(/[\s-]/g, "").length !== 10}>{loading ? "Verificando…" : "Quitar el segundo paso"}</BotonAuth>
+          </form>
+        ) : (
+          <AlertaAuth>Para esta vía vuelve atrás e inicia sesión con tu correo y contraseña. Si entras con Google o no tienes tus códigos, escríbenos a contacto@facturacon.com.do: verificamos tu identidad y te ayudamos.</AlertaAuth>
+        )}
+        <button type="button" onClick={() => { setRecuperando(false); setError(""); }}
+          style={{ marginTop: 14, background: "none", border: "none", cursor: "pointer", fontSize: 13.5, fontWeight: 600, color: "var(--c-text-3)", fontFamily: "var(--font-sans)" }}>
+          ← Volver al código del teléfono
+        </button>
+        <p style={{ marginTop: 10, fontSize: 12.5, color: "var(--c-text-4)", lineHeight: 1.5 }}>¿Sin teléfono y sin códigos? Escríbenos a contacto@facturacon.com.do.</p>
+      </TarjetaAuth>
+    );
+  }
 
   if (resolver) {
     return (
@@ -138,6 +181,10 @@ function LoginForm() {
           <button type="button" onClick={() => { setResolver(null); setCodigo(""); setError(""); setPass(""); }}
             style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13.5, fontWeight: 600, color: "var(--c-text-3)", fontFamily: "var(--font-sans)" }}>
             ← Volver
+          </button>
+          <button type="button" onClick={() => { setRecuperando(true); setError(""); }}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13.5, fontWeight: 600, color: "var(--c-brand)", fontFamily: "var(--font-sans)" }}>
+            No tengo mi teléfono
           </button>
         </form>
       </TarjetaAuth>

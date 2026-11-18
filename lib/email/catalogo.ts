@@ -57,6 +57,12 @@ export interface DatosPorCorreo {
   // ── Seguridad ──
   acceso_nuevo: { nombre: string; dispositivo: string; fecha: string; ubicacion?: string };
   miembro_agregado: { nombre: string; negocio: string; miembro: string; rol: string; quien: string };
+  recuperar_clave: { nombre?: string; url: string; minutos: number };
+  verificar_correo: { nombre?: string; url: string };
+  segundo_paso_activado: { nombre?: string; fecha: string };
+  segundo_paso_desactivado: { nombre?: string; fecha: string };
+  codigos_recuperacion_nuevos: { nombre?: string; fecha: string };
+  segundo_paso_restablecido: { nombre?: string; fecha: string; codigosRestantes: number };
   // ── Novedades ──
   novedades: { nombre: string; titulo: string; items: string[]; urlMas?: string };
   encuesta_opinion: { nombre: string; urlEncuesta: string };
@@ -299,6 +305,63 @@ export const CATALOGO: Catalogo = {
       asunto: `${d.miembro} se agregó al equipo de ${d.negocio}`, titulo: "Cambió el equipo de tu negocio",
       parrafos: [saludo(d.nombre), `${d.quien} agregó a ${d.miembro} a ${d.negocio} con el rol de ${d.rol}.`, "Si no reconoces este cambio, revisa los permisos de tu equipo."],
       boton: { texto: "Ver mi equipo", url: PANEL },
+    }),
+  },
+  recuperar_clave: {
+    meta: { categoria: "seguridad", nombre: "Recuperar contraseña", cuando: "Cuando la persona pide restablecer su contraseña", destino: "usuario", naturaleza: "transaccional" },
+    render: (d) => ({
+      asunto: "Restablece tu contraseña de Facturacon", preheader: `El enlace dura ${d.minutos} minutos.`,
+      titulo: "Restablece tu contraseña",
+      parrafos: [saludo(d.nombre), "Recibimos una solicitud para crear una contraseña nueva en tu cuenta de Facturacon. Usa el botón para elegirla."],
+      boton: { texto: "Crear contraseña nueva", url: d.url },
+      alerta: { tipo: "aviso", texto: `Por seguridad, el enlace funciona una sola vez y vence en ${d.minutos} minutos.` },
+      notaFinal: "Si tú no lo pediste, ignora este correo: tu contraseña actual sigue igual. Si te llegan varios sin pedirlos, escríbenos.",
+    }),
+  },
+  verificar_correo: {
+    meta: { categoria: "seguridad", nombre: "Verificar correo", cuando: "Cuando la persona pide verificar su correo (para activar la verificación en dos pasos)", destino: "usuario", naturaleza: "transaccional" },
+    render: (d) => ({
+      asunto: "Confirma tu correo en Facturacon", preheader: "Un clic y listo.",
+      titulo: "Confirma tu correo",
+      parrafos: [saludo(d.nombre), "Pulsa el botón para confirmar que este correo es tuyo. Es necesario para activar la verificación en dos pasos."],
+      boton: { texto: "Confirmar mi correo", url: d.url },
+      notaFinal: "Si no fuiste tú, ignora este mensaje.",
+    }),
+  },
+  segundo_paso_activado: {
+    meta: { categoria: "seguridad", nombre: "Verificación en dos pasos activada", cuando: "Al activar la verificación en dos pasos", destino: "usuario", naturaleza: "aviso" },
+    render: (d) => ({
+      asunto: "Activaste la verificación en dos pasos", titulo: "Tu cuenta ahora pide un segundo paso",
+      parrafos: [saludo(d.nombre), `El ${d.fecha} se activó la verificación en dos pasos en tu cuenta. Desde ahora, al iniciar sesión se pedirá el código de tu aplicación autenticadora.`, "Guarda tus códigos de recuperación en un lugar seguro: son la única forma de entrar si pierdes tu teléfono."],
+      alerta: { tipo: "aviso", texto: "Si no fuiste tú, cambia tu contraseña de inmediato y escríbenos." },
+      boton: { texto: "Revisar la seguridad de mi cuenta", url: `${PANEL}` },
+    }),
+  },
+  segundo_paso_desactivado: {
+    meta: { categoria: "seguridad", nombre: "Verificación en dos pasos desactivada", cuando: "Al desactivar la verificación en dos pasos", destino: "usuario", naturaleza: "aviso" },
+    render: (d) => ({
+      asunto: "Se desactivó la verificación en dos pasos", titulo: "Tu cuenta ya no pide un segundo paso",
+      parrafos: [saludo(d.nombre), `El ${d.fecha} se desactivó la verificación en dos pasos en tu cuenta. Tus códigos de recuperación anteriores dejaron de servir.`],
+      alerta: { tipo: "error", texto: "Si no fuiste tú, cambia tu contraseña ahora mismo y escríbenos: alguien pudo entrar a tu cuenta." },
+      boton: { texto: "Revisar la seguridad de mi cuenta", url: PANEL },
+    }),
+  },
+  codigos_recuperacion_nuevos: {
+    meta: { categoria: "seguridad", nombre: "Códigos de recuperación nuevos", cuando: "Al generar códigos de recuperación nuevos", destino: "usuario", naturaleza: "aviso" },
+    render: (d) => ({
+      asunto: "Generaste códigos de recuperación nuevos", titulo: "Tus códigos de recuperación cambiaron",
+      parrafos: [saludo(d.nombre), `El ${d.fecha} se generaron códigos de recuperación nuevos. Los anteriores ya no sirven.`],
+      alerta: { tipo: "aviso", texto: "Si no fuiste tú, cambia tu contraseña de inmediato y escríbenos." },
+      boton: { texto: "Revisar la seguridad de mi cuenta", url: PANEL },
+    }),
+  },
+  segundo_paso_restablecido: {
+    meta: { categoria: "seguridad", nombre: "Segundo paso restablecido con un código de recuperación", cuando: "Cuando alguien usa un código de recuperación para entrar sin su teléfono", destino: "usuario", naturaleza: "aviso" },
+    render: (d) => ({
+      asunto: "Se usó un código de recuperación en tu cuenta", titulo: "Se restableció tu verificación en dos pasos",
+      parrafos: [saludo(d.nombre), `El ${d.fecha} alguien usó uno de tus códigos de recuperación para quitar la verificación en dos pasos de tu cuenta. Te quedaban ${d.codigosRestantes} códigos, que dejaron de servir.`, "Al entrar de nuevo podrás activarla otra vez con tu teléfono."],
+      alerta: { tipo: "error", texto: "Si no fuiste tú, cambia tu contraseña ahora mismo y escríbenos: alguien tiene tu contraseña y uno de tus códigos." },
+      boton: { texto: "Revisar la seguridad de mi cuenta", url: PANEL },
     }),
   },
 
