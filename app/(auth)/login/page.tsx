@@ -11,6 +11,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AlertaAuth, BotonAuth, BotonGoogle, Campo, Divisor, Encabezado, Entrada, EntradaClave, TarjetaAuth } from "@/components/auth/ui-auth";
 import { registroAbierto } from "@/lib/registro-cliente";
 
+// Solo se acepta una ruta interna ("/panel/…") o una dirección https de este mismo sitio o de sus subdominios de empresa:
+// cualquier otra cosa (https://sitio-malo, //sitio-malo) se ignora. Evita usar el login para mandar a alguien a otro sitio.
+function destinoSeguro(valor: string | null): string {
+  if (!valor) return "/panel";
+  if (valor.startsWith("/") && !valor.startsWith("//") && !valor.includes("\\")) return valor;
+  try {
+    const u = new URL(valor);
+    const raiz = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "").split(":")[0];
+    if (u.protocol === "https:" && raiz && (u.hostname === raiz || u.hostname.endsWith(`.${raiz}`))) return valor;
+  } catch { /* no era una URL */ }
+  return "/panel";
+}
+
 export default function LoginPage() {
   return (
     <Suspense>
@@ -48,7 +61,7 @@ function LoginForm() {
       const data = await res.json();
       throw new Error(data.error ?? "Error al crear sesión");
     }
-    router.push(searchParams.get("redirect") || "/panel");
+    router.push(destinoSeguro(searchParams.get("redirect")));
     router.refresh();
   };
 

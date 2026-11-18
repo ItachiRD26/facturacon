@@ -1,3 +1,4 @@
+import { avisarCertificadosPorVencer } from "@/lib/certificacion/avisos-vencimiento";
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { cobrarCiclo } from "@/lib/payments/cobros";
@@ -42,5 +43,8 @@ export async function GET(req: NextRequest) {
       console.error(`[cobros][${id}]`, e instanceof Error ? e.message : e);
     }
   }
-  return NextResponse.json(resumen);
+  // Aviso diario de certificados por vencer (usa este mismo cron para no sumar otro).
+  let certificados: { revisados: number; avisados: number } | null = null;
+  if (!soloTenant) certificados = await avisarCertificadosPorVencer(ids).catch(() => null);
+  return NextResponse.json({ ...resumen, certificados });
 }

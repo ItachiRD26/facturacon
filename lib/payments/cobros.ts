@@ -40,7 +40,7 @@ function lineasCobro(plan: Plan, periodo: PeriodoPlan, monto: MontoCiclo, cuanto
   return l;
 }
 
-async function datosDestinatario(tenantId: string): Promise<{ email: string; nombre: string; negocio: string } | null> {
+export async function datosDestinatario(tenantId: string): Promise<{ email: string; nombre: string; negocio: string } | null> {
   try {
     const t = (await adminDb.collection("tenants").doc(tenantId).get()).data() as { creadoPorUid?: string; nombreNegocio?: string } | undefined;
     if (!t?.creadoPorUid) return null;
@@ -199,7 +199,9 @@ async function ejecutarCobro(tenantId: string, sus: Suscripcion, hoy: string): P
 
     if (intento < INTENTOS_POR_CICLO) {
       const proximo = fechas[intento];   // intento 1 → +2 días; intento 2 → +5 días
-      await ref.set({ estado: "pago_fallido", intentosFallidos: intento, proximoIntentoEn: proximo, ultimoErn: ern, ultimoError: detalle, actualizadoEn: new Date().toISOString() }, { merge: true });
+      // Gracia: durante los reintentos la cuenta sigue ACTIVA (el cliente no deja de facturar). Solo si falla también el
+      // último intento pasa a pago_fallido y se suspende (abajo). El aviso al cliente sale del panel y del correo.
+      await ref.set({ intentosFallidos: intento, proximoIntentoEn: proximo, ultimoErn: ern, ultimoError: detalle, actualizadoEn: new Date().toISOString() }, { merge: true });
       if (dest) void enviarPlantilla("pago_fallido", { nombre: dest.nombre, plan: etiquetaPlan(plan), monto: monto.totalRD, motivo: MOTIVO_CLIENTE, fechaLimite: limitePago, proximoIntento: fechaDMA(proximo), urlFacturacion: URL_FACTURACION }, { para: dest.email });
       if (intento === 1) void enviarPlantilla("interno_pago_fallido", { negocio: dest?.negocio ?? tenantId, plan: etiquetaPlan(plan), monto: monto.totalRD, motivo: detalle });
       return "reintento";

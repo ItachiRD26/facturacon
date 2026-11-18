@@ -24,6 +24,11 @@ const BASE_URL = SANDBOX
   : "https://api.pagadito.com/v1/";
 
 function credenciales(): { uid: string; wsk: string } {
+  // En producción el entorno debe ser explícito: si faltara PAGADITO_ENV, el sistema "cobraría" contra el sandbox y los clientes
+  // quedarían activos sin pagar. Mejor fallar y avisar que seguir en silencio.
+  if (process.env.VERCEL_ENV === "production" && process.env.PAGADITO_ENV !== "live" && process.env.PAGADITO_ENV !== "sandbox") {
+    throw new Error("PAGADITO_ENV no está definido en producción (debe ser \"live\" o \"sandbox\").");
+  }
   // trim(): al pegar una variable en Vercel suele colarse un espacio o salto de línea al final, y con eso
   // la autenticación Basic falla (401) aunque la clave sea correcta.
   const uid = process.env.PAGADITO_UID?.trim();

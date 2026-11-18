@@ -14,6 +14,7 @@ import Badge from "@/components/ui/badge";
 import Icon  from "@/components/ui/icon";
 import ModalNuevaFactura from "@/components/modals/modal-nueva-factura";
 import PrintModal from "@/components/print/print-modal";
+import ModalNotaCredito from "@/components/modals/modal-nota-credito";
 import { guardarFactura } from "@/lib/sandbox/acciones";
 
 import { nombresImpresion } from "@/lib/tenant/nombres";
@@ -39,7 +40,7 @@ export default function FacturasPage() {
   // Un cajero (vendedor) solo puede leer sus propias facturas — ver
   // firestore.rules y hooks/use-facturas.ts. Los demás roles ven todas.
   const filtroCreadoPor = (tenant.rol === "vendedor" || tenant.rol === "operador") ? (firebaseUser?.uid ?? null) : undefined;
-  const { facturas, loading, agregar: agregarFactura, cambiarEstado } = useFacturas(tenant.tenantId, filtroCreadoPor);
+  const { facturas, loading, agregar: agregarFactura } = useFacturas(tenant.tenantId, filtroCreadoPor);
   const { agregar: agregarCuenta } = useCuentasPorCobrar(tenant.tenantId);
   const { personalizacion } = usePersonalizacion(tenant.tenantId);
 
@@ -47,6 +48,12 @@ export default function FacturasPage() {
   const [imprimiendo,  setImprimiendo]  = useState<Factura | null>(null);
   const [busqueda,     setBusqueda]     = useState("");
   const [reintentando, setReintentando] = useState<string | null>(null);
+  const [notaPara, setNotaPara] = useState<Factura | null>(null);
+  // Quien puede corregir o anular un comprobante emitido: solo dueño y administradores (decisión de seguridad por defecto).
+  const puedeCorregir = tenant.rol === "owner" || tenant.rol === "admin";
+  // Una nota de crédito solo aplica a comprobantes ya entregados a la DGII y que no sean notas ni estén ya anulados.
+  const admiteNota = (f: Factura) => !!f.eCF && f.tipoECF !== "E33" && f.tipoECF !== "E34" && f.estado !== "anulada"
+    && (f.estadoDGII === "Aceptado" || f.estadoDGII === "AceptadoCondicional" || f.estadoDGII === "Enviado");
   const [filtroEstado, setFiltroEstado] = useState<EstadoFactura | "todos">("todos");
 
   // Reenvía a la DGII un comprobante que quedó pendiente (mismo e-NCF y mismo XML firmado).
@@ -174,9 +181,9 @@ export default function FacturasPage() {
                             {reintentando === f.id ? "Enviando…" : "Reintentar envío"}
                           </button>
                         )}
-                        {f.estado !== "anulada" && (
-                          <button onClick={() => cambiarEstado(f.id, "anulada")} style={{ padding: "5px 10px", background: "var(--c-surface)", border: "1px solid var(--c-red-border)", borderRadius: 10, cursor: "pointer", color: "var(--c-red)", fontSize: 12, fontFamily: sans }}>
-                            Anular
+                        {puedeCorregir && admiteNota(f) && (
+                          <button onClick={() => setNotaPara(f)} title="Anular o devolver: emite una nota de crédito ante la DGII" style={{ padding: "5px 10px", background: "var(--c-surface)", border: "1px solid var(--c-red-border)", borderRadius: 10, cursor: "pointer", color: "var(--c-red)", fontSize: 12, fontFamily: sans }}>
+                            Nota de crédito
                           </button>
                         )}
                       </div>
@@ -196,6 +203,11 @@ export default function FacturasPage() {
         nombreEmisor={nombresImpresion(tenant).nombre} nombreComercialEmisor={tenant.nombreComercial} rncEmisor={tenant.rnc}
         logoA4Url={personalizacion?.logoA4Url} logoTermicoUrl={personalizacion?.logoTermicoUrl}
         onSave={onSave}
+      />
+
+      <ModalNotaCredito
+        key={notaPara?.id ?? "sin-factura"} open={!!notaPara} onClose={() => setNotaPara(null)} tenantId={tenant.tenantId} factura={notaPara}
+        onEmitida={(nota) => setImprimiendo(nota)}
       />
 
       <PrintModal

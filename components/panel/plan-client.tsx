@@ -194,6 +194,18 @@ export default function PlanClient({
         </Card>
       )}
 
+      {/* ── Cobro fallido en gracia: la cuenta sigue activa y se reintenta ── */}
+      {suscripcion?.estado === "activa" && (suscripcion.intentosFallidos ?? 0) > 0 && !suscripcion.interno && (
+        <Card style={{ marginBottom: 18, background: "var(--c-yellow-bg)", borderColor: "var(--c-border)" }}>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>No pudimos cobrar tu plan, pero sigues facturando</div>
+          <p style={{ fontSize: 13, color: "var(--c-text-2)", lineHeight: 1.55, marginBottom: 14 }}>
+            {suscripcion.proximoCobroEn ? <>Actualiza tu tarjeta antes del <b>{fmtFecha(fechaLimitePago(suscripcion.proximoCobroEn))}</b> para evitar la suspensión de tu cuenta.</> : "Actualiza tu tarjeta para evitar la suspensión de tu cuenta."}
+            {suscripcion.proximoIntentoEn ? <> Volveremos a intentar el cobro el {fmtFecha(suscripcion.proximoIntentoEn)}.</> : null}
+          </p>
+          <Button onClick={() => abrir(suscripcion.planId, suscripcion.periodo === "anual" ? "anual" : "mensual")}>Actualizar mi tarjeta →</Button>
+        </Card>
+      )}
+
       {/* ── Cuenta propia: sin cobro ni límites ── */}
       {suscripcion && suscripcion.estado === "activa" && suscripcion.ilimitado && (
         <Card style={{ marginBottom: 16 }}>

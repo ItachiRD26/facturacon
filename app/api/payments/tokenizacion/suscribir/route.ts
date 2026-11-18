@@ -4,6 +4,7 @@ import { activarCobroRecurrente } from "@/lib/payments/cobros";
 import { ErrorPagadito, type TarjetaPagadito } from "@/lib/payments/pagadito-tokenizacion";
 import { marcaAceptada, TEXTO_MARCAS_ACEPTADAS } from "@/lib/payments/tarjeta";
 import { registrarAuditoria } from "@/lib/auditoria/registrar";
+import { limitar } from "@/lib/seguridad/limite-tasa";
 
 interface Body {
   tenantId: string;
@@ -49,6 +50,10 @@ export async function POST(req: NextRequest) {
 
   const verif = await requireAccesoFacturacion(body.tenantId);
   if (!verif.ok) return verif.response;
+
+  // Tope de intentos (evita probar tarjetas robadas): por persona y por IP, compartido entre instancias.
+  const lim = await limitar(req, { nombre: "suscribir-tarjeta", id: verif.uid, max: 8, ventanaSeg: 3600, compartido: true });
+  if (lim) return lim;
 
   const customerIp = ipPublicaDelCliente(req);
 

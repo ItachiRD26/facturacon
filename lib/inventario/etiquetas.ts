@@ -10,6 +10,10 @@ export const LABEL_SIZES = [
 
 export type LabelSizeId = typeof LABEL_SIZES[number]["id"];
 
+// Todo texto que escribe una persona (nombre/código del producto, nombre del negocio) se escapa antes de entrar al HTML de la
+// etiqueta: ese HTML se abre en una ventana que hereda el origen de la aplicación, así que un nombre con <script> no debe correr.
+const esc = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
 export function generarEtiquetasHTML(
   seleccion: { producto: Producto; cantidad: number }[],
   sizeId: LabelSizeId,
@@ -37,7 +41,7 @@ export function generarEtiquetasHTML(
     const barcodeSVG = svgEl.outerHTML;
 
     // ── Font size dinámico para el nombre ────────────────────────
-    const desc       = p.nombre;
+    const desc       = p.nombre;   // texto original (largo/tamaño); al HTML entra siempre escapado (descHtml)
     const basePt     = Math.max(4, hMm * 0.155);
     const charsPerLine = Math.floor((wMm - 3) / (basePt * 0.55 * 0.353));
     const lineasNeeded = Math.ceil(desc.length / Math.max(1, charsPerLine));
@@ -49,10 +53,10 @@ export function generarEtiquetasHTML(
 
     return Array.from({ length: cantidad }).map(() => `
       <div class="label">
-        ${mostrarEmpresa ? `<div class="empresa">${nombreNegocio}</div>` : ""}
-        <div class="desc" style="font-size:${descPt}pt">${desc}</div>
+        ${mostrarEmpresa ? `<div class="empresa">${esc(nombreNegocio)}</div>` : ""}
+        <div class="desc" style="font-size:${descPt}pt">${esc(desc)}</div>
         <div class="barcode-wrap" style="width:${bcW}mm">${barcodeSVG}</div>
-        <div class="codigo">${p.codigo}</div>
+        <div class="codigo">${esc(p.codigo)}</div>
       </div>
     `);
   });
@@ -61,7 +65,7 @@ export function generarEtiquetasHTML(
 <html>
 <head>
 <meta charset="utf-8"/>
-<title>Etiquetas ${nombreNegocio}</title>
+<title>Etiquetas ${esc(nombreNegocio)}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, Helvetica, sans-serif; background: #f0f0f0; padding: 16px; }
