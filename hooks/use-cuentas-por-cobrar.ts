@@ -1,14 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  collection, onSnapshot, addDoc, updateDoc,
-  doc, query, orderBy, serverTimestamp,
-} from "firebase/firestore";
+import { collection, addDoc, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Abono, CuentaPorCobrar } from "@/types";
 import { calcPendiente } from "@/types";
-import { excluirMuestra } from "@/lib/tenant/excluir-muestra";
+import { useColeccionCompartida } from "./use-coleccion-compartida";
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -17,19 +13,8 @@ function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
 }
 
 export function useCuentasPorCobrar(tenantId: string) {
-  const [cuentas, setCuentas] = useState<CuentaPorCobrar[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!tenantId) return;
-    const q = query(collection(db, "tenants", tenantId, "cuentas_por_cobrar"), orderBy("fecha", "desc"));
-    const unsub = onSnapshot(q,
-      (snap) => { setCuentas(excluirMuestra(snap.docs.map((d) => ({ id: d.id, ...d.data() } as CuentaPorCobrar)))); setLoading(false); },
-      (err) => { console.error("[useCuentasPorCobrar]", err); setError("Error cargando cuentas por cobrar"); setLoading(false); }
-    );
-    return () => unsub();
-  }, [tenantId]);
+  // Una sola escucha compartida por colección (ver use-coleccion-compartida.ts): no se relee al cambiar de pantalla.
+  const { datos: cuentas, loading, error } = useColeccionCompartida<CuentaPorCobrar>({ tenantId, coleccion: "cuentas_por_cobrar", orden: ["fecha", "desc"], mensajeError: "Error cargando cuentas por cobrar" });
 
   const agregar = async (data: Omit<CuentaPorCobrar, "id">) => {
     const ref = await addDoc(collection(db, "tenants", tenantId, "cuentas_por_cobrar"), cleanData({ ...data, creadoEn: serverTimestamp() }));

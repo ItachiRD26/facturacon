@@ -1,13 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  collection, onSnapshot, addDoc, updateDoc, deleteDoc,
-  doc, query, orderBy, serverTimestamp, arrayUnion,
-} from "firebase/firestore";
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Cotizacion, EstadoCotizacion } from "@/types";
-import { excluirMuestra } from "@/lib/tenant/excluir-muestra";
+import { useColeccionCompartida } from "./use-coleccion-compartida";
 
 // Quién hace la acción — se guarda en el historial de la cotización. No
 // hay sentinel de servidor (serverTimestamp) dentro de un arrayUnion, así
@@ -22,19 +18,8 @@ function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
 }
 
 export function useCotizaciones(tenantId: string) {
-  const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!tenantId) return;
-    const q = query(collection(db, "tenants", tenantId, "cotizaciones"), orderBy("fecha", "desc"));
-    const unsub = onSnapshot(q,
-      (snap) => { setCotizaciones(excluirMuestra(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Cotizacion)))); setLoading(false); },
-      (err) => { console.error("[useCotizaciones]", err); setError("Error cargando cotizaciones"); setLoading(false); }
-    );
-    return () => unsub();
-  }, [tenantId]);
+  // Una sola escucha compartida por colección (ver use-coleccion-compartida.ts): no se relee al cambiar de pantalla.
+  const { datos: cotizaciones, loading, error } = useColeccionCompartida<Cotizacion>({ tenantId, coleccion: "cotizaciones", orden: ["fecha", "desc"], mensajeError: "Error cargando cotizaciones" });
 
   const agregar = async (data: Omit<Cotizacion, "id">) => {
     const ref = await addDoc(collection(db, "tenants", tenantId, "cotizaciones"), cleanData({ ...data, creadoEn: serverTimestamp() }));

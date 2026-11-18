@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { signInWithCustomToken } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -17,6 +17,11 @@ export default function EmpleadoLoginPage() {
   const [codigo, setCodigo] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // El navegador guarda UNA sola sesión: si ya hay una abierta (p. ej. la del dueño), entrar con este código la cierra.
+  const [sesionPrevia, setSesionPrevia] = useState<string | null>(null);
+  useEffect(() => {
+    fetch("/api/auth/sesion-actual").then((r) => r.json()).then((d) => { if (d?.activa) setSesionPrevia(d.nombre); }).catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +76,12 @@ export default function EmpleadoLoginPage() {
             fontSize: 15, textAlign: "center", letterSpacing: "0.08em", fontFamily: mono, outline: "none",
           }}
         />
+
+        {sesionPrevia && (
+          <div role="status" style={{ marginTop: 12, padding: "10px 12px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6, fontSize: 12, color: "#92400e", lineHeight: 1.5 }}>
+            Ya hay una sesión abierta en este navegador (<b>{sesionPrevia}</b>). Al entrar con este código esa sesión se cierra para dar paso a la tuya.
+          </div>
+        )}
 
         {error && (
           <div style={{ marginTop: 12, padding: "9px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, fontSize: 12, color: "#991b1b" }}>

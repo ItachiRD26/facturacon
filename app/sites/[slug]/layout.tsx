@@ -4,6 +4,7 @@ import { resolveTenantBySlug, getTenantById } from "@/lib/tenant/resolve-tenant"
 import { getMembership, listMembershipsForUser } from "@/lib/tenant/get-memberships";
 import { TenantProvider, type TenantSummary } from "@/contexts/TenantContext";
 import TenantShell from "@/components/tenant/tenant-shell";
+import SesionFirebase from "@/components/tenant/sesion-firebase";
 import { obtenerSuscripcion } from "@/lib/payments/suscripcion";
 import { buscarPlan } from "@/lib/payments/planes";
 import { puedeEmitir as rolPuedeEmitir } from "@/lib/tenant/roles";
@@ -54,7 +55,8 @@ export default async function TenantLayout({
       rolPuedeFacturar: rolPuedeEmitir(membership.rol, tenant, buscarPlan(suscripcion?.planId ?? "")?.soloUnUsuario),
       motivoSinPlan,
     }}>
-      <TenantShell>{children}</TenantShell>
+      {/* El navegador debe estar conectado a Firebase con el mismo usuario antes de leer o escribir datos. */}
+      <SesionFirebase uid={uid}><TenantShell>{children}</TenantShell></SesionFirebase>
     </TenantProvider>
   );
 }

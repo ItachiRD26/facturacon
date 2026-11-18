@@ -1,14 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  collection, onSnapshot, addDoc, updateDoc, deleteDoc,
-  doc, query, orderBy, serverTimestamp,
-} from "firebase/firestore";
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Cliente } from "@/types";
 import { verificarLimite } from "@/lib/sandbox/verificar-limite";
-import { excluirMuestra } from "@/lib/tenant/excluir-muestra";
+import { useColeccionCompartida } from "./use-coleccion-compartida";
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -17,19 +13,8 @@ function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
 }
 
 export function useClientes(tenantId: string) {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!tenantId) return;
-    const q = query(collection(db, "tenants", tenantId, "clientes"), orderBy("nombre", "asc"));
-    const unsub = onSnapshot(q,
-      (snap) => { setClientes(excluirMuestra(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Cliente)))); setLoading(false); },
-      (err) => { console.error("[useClientes]", err); setError("Error cargando clientes"); setLoading(false); }
-    );
-    return () => unsub();
-  }, [tenantId]);
+  // Una sola escucha compartida por colección (ver use-coleccion-compartida.ts): no se relee al cambiar de pantalla.
+  const { datos: clientes, loading, error } = useColeccionCompartida<Cliente>({ tenantId, coleccion: "clientes", orden: ["nombre", "asc"], mensajeError: "Error cargando clientes" });
 
   const agregar = async (data: Omit<Cliente, "id">) => {
     await verificarLimite(tenantId, "clientes");

@@ -3,6 +3,7 @@ import { getSessionUid } from "@/lib/auth/session";
 import { getMembership, listMembershipsForUser } from "@/lib/tenant/get-memberships";
 import { getTenantById } from "@/lib/tenant/resolve-tenant";
 import CuentaShell from "@/components/panel/cuenta-shell";
+import SesionFirebase from "@/components/tenant/sesion-firebase";
 
 export default async function CuentaLayout({
   children, params,
@@ -19,8 +20,10 @@ export default async function CuentaLayout({
   if (!membership || !tenant) redirect("/panel");
 
   return (
-    <CuentaShell tenant={tenant} tenantId={tenantId} multiplesEmpresas={memberships.length > 1} rol={membership.rol}>
-      {children}
-    </CuentaShell>
+    <SesionFirebase uid={uid} bloquear={false}>
+      <CuentaShell tenant={tenant} tenantId={tenantId} multiplesEmpresas={memberships.length > 1} rol={membership.rol}>
+        {children}
+      </CuentaShell>
+    </SesionFirebase>
   );
 }

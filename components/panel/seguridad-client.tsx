@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   EmailAuthProvider, GoogleAuthProvider, TotpMultiFactorGenerator, TotpSecret, multiFactor,
-  reauthenticateWithCredential, reauthenticateWithPopup,
+  reauthenticateWithCredential, reauthenticateWithPopup, getMultiFactorResolver,
+  type MultiFactorError, type MultiFactorResolver,
 } from "firebase/auth";
 import { QRCodeSVG } from "qrcode.react";
 import { auth } from "@/lib/firebase";
@@ -19,7 +20,7 @@ const campo: React.CSSProperties = {
 
 const avisoServidor = () => fetch("/api/auth/mfa-evento", { method: "POST" }).catch(() => {});
 
-type Paso = "inicio" | "verificar-correo" | "reautenticar" | "escanear" | "codigos";
+type Paso = "inicio" | "verificar-correo" | "reautenticar" | "reauth-mfa" | "escanear" | "codigos";
 
 export default function SeguridadClient({ activa: activaInicial, correo, correoVerificado, recomendada, codigosRestantes }: {
   activa: boolean; correo: string; correoVerificado: boolean; recomendada: boolean; codigosRestantes: number;
@@ -28,7 +29,10 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
   const [activa, setActiva] = useState(activaInicial);
   const [paso, setPaso] = useState<Paso>("inicio");
   const [pendienteDesactivar, setPendienteDesactivar] = useState(false);
-  const [pendienteRegenerar, setPendienteRegenerar] = useState(false);
+  // Si el servidor pide confirmar la identidad otra vez, se recuerda para qué eran los códigos (activación o regeneración).
+  const [pendienteCodigos, setPendienteCodigos] = useState<"activacion" | "regeneracion" | null>(null);
+  // Con la verificación activa, volver a confirmar la identidad exige también el código de la aplicación.
+  const [resolver, setResolver] = useState<MultiFactorResolver | null>(null);
   // Códigos de recuperación recién generados (se muestran una sola vez) y cuántos quedan guardados en el servidor.
   const [codigosNuevos, setCodigosNuevos] = useState<string[]>([]);
   const [restantes, setRestantes] = useState(codigosRestantes);
@@ -102,9 +106,32 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
       if (conGoogle) await reauthenticateWithPopup(usuario, new GoogleAuthProvider());
       else await reauthenticateWithCredential(usuario, EmailAuthProvider.credential(correo, clave));
       setClave("");
-      if (pendienteDesactivar) { setPendienteDesactivar(false); setPaso("inicio"); await desactivar(); }
-      else if (pendienteRegenerar) { setPendienteRegenerar(false); setPaso("inicio"); await pedirCodigos("regeneracion"); }
-      else await prepararSecreto();
+      await continuarTrasReautenticar();
+    } catch (e) {
+      // Cuenta con segundo paso: Firebase pide el código de la aplicación para dar por buena la confirmación.
+      if ((e as { code?: string })?.code === "auth/multi-factor-auth-required") {
+        setResolver(getMultiFactorResolver(auth, e as MultiFactorError)); setCodigo(""); setError(""); setPaso("reauth-mfa");
+      } else setError(traducir(e));
+    }
+    finally { setTrabajando(false); }
+  };
+
+  // Sigue con lo que la persona quería hacer cuando se le pidió confirmar su identidad.
+  const continuarTrasReautenticar = async () => {
+    if (pendienteDesactivar) { setPendienteDesactivar(false); setPaso("inicio"); await desactivar(); }
+    else if (pendienteCodigos) { const m = pendienteCodigos; setPendienteCodigos(null); setPaso("inicio"); await pedirCodigos(m); }
+    else await prepararSecreto();
+  };
+
+  const confirmarReautenticacionMfa = async () => {
+    if (!resolver) return;
+    setTrabajando(true); setError("");
+    try {
+      const hint = resolver.hints.find((h) => h.factorId === TotpMultiFactorGenerator.FACTOR_ID);
+      if (!hint) { setError("No encontramos tu aplicación autenticadora. Escríbenos a soporte."); return; }
+      await resolver.resolveSignIn(TotpMultiFactorGenerator.assertionForSignIn(hint.uid, codigo.trim()));
+      setResolver(null); setCodigo("");
+      await continuarTrasReautenticar();
     } catch (e) { setError(traducir(e)); }
     finally { setTrabajando(false); }
   };
@@ -130,10 +157,10 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
     if (!usuario) return;
     setTrabajando(true); setError("");
     try {
-      const idToken = await usuario.getIdToken();
+      const idToken = await usuario.getIdToken(true);
       const res = await fetch("/api/auth/mfa-codigos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken, motivo }) });
       const d = await res.json().catch(() => ({}));
-      if (res.status === 403 && d.codigo === "reciente") { setPendienteRegenerar(true); setPaso("reautenticar"); return; }
+      if (res.status === 403 && d.codigo === "reciente") { setPendienteCodigos(motivo); setPaso("reautenticar"); return; }
       if (!res.ok) { setError(d.error ?? "No pudimos generar los códigos. Intenta de nuevo."); setPaso("inicio"); return; }
       setCodigosNuevos(d.codigos); setRestantes(d.codigos.length); setGuardados(false); setPaso("codigos");
     } catch { setError("No pudimos conectar. Intenta de nuevo."); setPaso("inicio"); }
@@ -224,7 +251,7 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
       {paso === "reautenticar" && (
         <div>
           <p style={{ fontSize: 13.5, color: "var(--c-text-2)", lineHeight: 1.6, margin: "0 0 14px" }}>
-            Por seguridad, confirma que eres tú antes de {pendienteDesactivar ? "desactivarla" : pendienteRegenerar ? "generar códigos nuevos" : "activarla"}.
+            Por seguridad, confirma que eres tú antes de {pendienteDesactivar ? "desactivarla" : pendienteCodigos === "regeneracion" ? "generar códigos nuevos" : pendienteCodigos === "activacion" ? "terminar de activarla" : "activarla"}.
           </p>
           {!conGoogle && (
             <div style={{ marginBottom: 12 }}>
@@ -233,6 +260,22 @@ export default function SeguridadClient({ activa: activaInicial, correo, correoV
             </div>
           )}
           <Button onClick={reautenticar} disabled={trabajando || (!conGoogle && !clave)}>{conGoogle ? "Confirmar con Google" : "Confirmar"}</Button>
+          {alertas}
+        </div>
+      )}
+
+      {paso === "reauth-mfa" && (
+        <div>
+          <p style={{ fontSize: 13.5, color: "var(--c-text-2)", lineHeight: 1.6, margin: "0 0 14px" }}>
+            Para continuar escribe el código de 6 dígitos que muestra tu aplicación autenticadora.
+          </p>
+          <input id="codigo-reauth" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={codigo} autoFocus
+            onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))} placeholder="123456"
+            style={{ ...campo, maxWidth: 200, letterSpacing: "0.3em", fontFamily: "var(--font-mono)", fontSize: 18, textAlign: "center" }} />
+          <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+            <Button onClick={confirmarReautenticacionMfa} disabled={trabajando || codigo.length !== 6}>{trabajando ? "Verificando…" : "Confirmar"}</Button>
+            <Button variante="ghost" onClick={() => { setPaso("inicio"); setResolver(null); setPendienteCodigos(null); setPendienteDesactivar(false); setError(""); }}>Cancelar</Button>
+          </div>
           {alertas}
         </div>
       )}

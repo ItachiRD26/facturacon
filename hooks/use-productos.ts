@@ -1,14 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  collection, onSnapshot, addDoc, updateDoc, deleteDoc,
-  doc, query, orderBy, serverTimestamp,
-} from "firebase/firestore";
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Producto } from "@/types";
 import { verificarLimite } from "@/lib/sandbox/verificar-limite";
-import { excluirMuestra } from "@/lib/tenant/excluir-muestra";
+import { useColeccionCompartida } from "./use-coleccion-compartida";
 
 function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
@@ -17,19 +13,8 @@ function cleanData(obj: Record<string, unknown>): Record<string, unknown> {
 }
 
 export function useProductos(tenantId: string) {
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!tenantId) return;
-    const q = query(collection(db, "tenants", tenantId, "productos"), orderBy("nombre", "asc"));
-    const unsub = onSnapshot(q,
-      (snap) => { setProductos(excluirMuestra(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Producto)))); setLoading(false); },
-      (err) => { console.error("[useProductos]", err); setError("Error cargando inventario"); setLoading(false); }
-    );
-    return () => unsub();
-  }, [tenantId]);
+  // Una sola escucha compartida por colección (ver use-coleccion-compartida.ts): no se relee al cambiar de pantalla.
+  const { datos: productos, loading, error } = useColeccionCompartida<Producto>({ tenantId, coleccion: "productos", orden: ["nombre", "asc"], mensajeError: "Error cargando inventario" });
 
   const agregar = async (data: Omit<Producto, "id">) => {
     await verificarLimite(tenantId, "productos");
