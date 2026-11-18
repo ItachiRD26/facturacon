@@ -3,12 +3,14 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { applyActionCode, confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
+import { applyActionCode, checkActionCode, confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { AlertaAuth, BotonAuth, Campo, Encabezado, EntradaClave, TarjetaAuth } from "@/components/auth/ui-auth";
 
-// Destino de los enlaces de los correos de seguridad (restablecer contraseña y confirmar correo). Reemplaza la
-// pantalla en inglés de Firebase: la acción la ejecuta el SDK del navegador con el código del enlace.
+// Destino de los enlaces de los correos de seguridad. Reemplaza la pantalla en inglés de Firebase: la acción la
+// ejecuta el SDK del navegador con el código del enlace. Acepta los dos formatos de enlace:
+//  - los nuestros (?modo=…&codigo=…, de los correos que manda el servidor por Zoho), y
+//  - los de Firebase (?mode=…&oobCode=…, de sus plantillas: aviso de segundo paso agregado, cambio de correo).
 export default function AccionPage() {
   return <Suspense><Accion /></Suspense>;
 }
@@ -17,10 +19,10 @@ const enlaceInvalido = "Este enlace ya se usó o venció. Pide uno nuevo y vuelv
 
 function Accion() {
   const p = useSearchParams();
-  const modo = p.get("modo");
-  const codigo = p.get("codigo") ?? "";
+  const modo = p.get("modo") ?? p.get("mode");
+  const codigo = p.get("codigo") ?? p.get("oobCode") ?? "";
 
-  if (!codigo || (modo !== "resetPassword" && modo !== "verifyEmail")) {
+  if (!codigo || !modo || !MODOS.includes(modo)) {
     return (
       <TarjetaAuth>
         <Encabezado titulo="Enlace no válido" texto="Revisa que abriste el enlace completo del correo, o pide uno nuevo." />
@@ -28,8 +30,10 @@ function Accion() {
       </TarjetaAuth>
     );
   }
-  return modo === "resetPassword" ? <NuevaClave codigo={codigo} /> : <ConfirmarCorreo codigo={codigo} />;
+  return modo === "resetPassword" ? <NuevaClave codigo={codigo} /> : <AplicarCodigo codigo={codigo} modo={modo} />;
 }
+
+const MODOS = ["resetPassword", "verifyEmail", "verifyAndChangeEmail", "recoverEmail", "revertSecondFactorAddition"];
 
 function NuevaClave({ codigo }: { codigo: string }) {
   const [correo, setCorreo] = useState<string | null>(null);
@@ -92,20 +96,43 @@ function NuevaClave({ codigo }: { codigo: string }) {
   );
 }
 
-function ConfirmarCorreo({ codigo }: { codigo: string }) {
+// Acciones de un solo paso: se aplican apenas se abre el enlace (confirmar correo, deshacer un cambio).
+const TEXTOS: Record<string, { ok: string; okTexto: (extra?: string) => string; alerta?: boolean }> = {
+  verifyEmail: { ok: "Correo confirmado", okTexto: () => "Listo. Vuelve a la pantalla de Seguridad de tu panel y continúa con la activación." },
+  verifyAndChangeEmail: { ok: "Correo actualizado", okTexto: () => "Tu correo de inicio de sesión quedó actualizado. Desde ahora entra con el nuevo." },
+  recoverEmail: {
+    ok: "Restauramos tu correo", alerta: true,
+    okTexto: (extra) => `Tu correo de inicio de sesión volvió a ${extra ?? "el anterior"}. Si no pediste el cambio, alguien pudo entrar a tu cuenta: cambia tu contraseña de inmediato.`,
+  },
+  revertSecondFactorAddition: {
+    ok: "Quitamos el segundo paso", alerta: true,
+    okTexto: () => "Se deshizo la verificación en dos pasos que se agregó a tu cuenta. Si no fuiste tú, alguien tiene tu contraseña: cámbiala ahora y escríbenos a contacto@facturacon.com.do.",
+  },
+};
+
+function AplicarCodigo({ codigo, modo }: { codigo: string; modo: string }) {
   const [estado, setEstado] = useState<"trabajando" | "ok" | "mal">("trabajando");
+  const [extra, setExtra] = useState<string | undefined>(undefined);
   useEffect(() => {
-    applyActionCode(auth, codigo).then(() => setEstado("ok")).catch(() => setEstado("mal"));
-  }, [codigo]);
+    (async () => {
+      try {
+        // Al restaurar un correo, el código dice a cuál se vuelve (hay que leerlo antes de gastarlo).
+        if (modo === "recoverEmail") setExtra((await checkActionCode(auth, codigo)).data.email ?? undefined);
+        await applyActionCode(auth, codigo);
+        setEstado("ok");
+      } catch { setEstado("mal"); }
+    })();
+  }, [codigo, modo]);
+  const t = TEXTOS[modo];
   return (
     <TarjetaAuth>
-      {estado === "trabajando" && <Encabezado titulo="Confirmando tu correo…" />}
+      {estado === "trabajando" && <Encabezado titulo="Un momento…" />}
       {estado === "ok" && <>
-        <Encabezado titulo="Correo confirmado" texto="Listo. Vuelve a la pantalla de Seguridad de tu panel y continúa con la activación." />
-        <Link href="/panel" style={{ display: "inline-block", background: "var(--c-brand)", color: "#fff", fontWeight: 700, padding: "12px 22px", borderRadius: 10, textDecoration: "none" }}>Ir a mi panel</Link>
+        <Encabezado titulo={t.ok} texto={t.okTexto(extra)} />
+        <Link href={t.alerta ? "/login" : "/panel"} style={{ display: "inline-block", background: "var(--c-brand)", color: "#fff", fontWeight: 700, padding: "12px 22px", borderRadius: 10, textDecoration: "none" }}>{t.alerta ? "Iniciar sesión" : "Ir a mi panel"}</Link>
       </>}
       {estado === "mal" && <>
-        <Encabezado titulo="No se pudo confirmar" texto={enlaceInvalido} />
+        <Encabezado titulo="No se pudo completar" texto={enlaceInvalido} />
         <Link href="/panel" style={{ color: "var(--c-brand)", fontWeight: 700, fontSize: 14 }}>Ir a mi panel</Link>
       </>}
     </TarjetaAuth>
