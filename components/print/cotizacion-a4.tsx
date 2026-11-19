@@ -64,7 +64,7 @@ export default function CotizacionA4({ cotizacion, cliente, empresa, esMuestra =
                 <td style={{ padding: "6px 4px" }}>{item.cant}</td>
                 <td style={{ padding: "6px 4px" }}>{item.descripcion}</td>
                 <td style={{ padding: "6px 4px", textAlign: "right" }}>{fmt(item.precio)}</td>
-                <td style={{ padding: "6px 4px", textAlign: "right" }}>{c.descAmt > 0 ? fmt(c.descAmt) : "—"}</td>
+                <td style={{ padding: "6px 4px", textAlign: "right" }}>{c.descFinal > 0 ? fmt(c.descFinal) : "—"}</td>
                 <td style={{ padding: "6px 4px", textAlign: "right" }}>{item.itbis > 0 ? `${fmt(c.itbisAmt)}` : "Exento"}</td>
                 <td style={{ padding: "6px 4px", textAlign: "right" }}>{fmt(c.total)}</td>
               </tr>

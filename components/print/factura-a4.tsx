@@ -1,6 +1,7 @@
 import { QRCodeSVG } from "qrcode.react";
 import type { Cliente, Factura } from "@/types";
-import { calcLinea, calcTotales, fmt, fmtDate } from "@/types";
+import { calcLinea, fmt, fmtDate } from "@/types";
+import { totalesFiscales, modoDeTipo, r2 } from "@/lib/fiscal/calculo";
 import { fmtRNCDisplay } from "@/lib/dgii/xml-builder";
 import SelloMuestra from "./sello-muestra";
 import { FUENTE_NOMBRE } from "@/lib/print/fuente-impresion";
@@ -34,7 +35,10 @@ export function fechaFirmaDe(f: { xmlFirmado?: string; fechaEnvioDGII?: string }
 }
 
 export default function FacturaA4({ factura, cliente, empresa, esMuestra = true }: { factura: Factura; cliente?: Cliente; empresa: EmpresaImpresion; esMuestra?: boolean }) {
-  const totales = calcTotales(factura.items);
+  // Los totales impresos son EXACTAMENTE los que se declaran a la DGII en el XML (mismo cálculo).
+  const fisc = totalesFiscales(factura.items, modoDeTipo(factura.tipoECF));
+  const hayIncluido = factura.items.some((i) => i.incluyeITBIS && i.itbis > 0);
+  const descTotal = r2(factura.items.reduce((s, i) => s + calcLinea(i).descFinal, 0));
   const titulo = `Comprobante Fiscal Electrónico ${factura.tipoECF}`;
 
   return (
@@ -106,7 +110,7 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
             <th style={{ padding: "6px 4px" }}>Descripción</th>
             <th style={{ padding: "6px 4px", textAlign: "right" }}>Precio</th>
             <th style={{ padding: "6px 4px", textAlign: "right" }}>Desc.</th>
-            <th style={{ padding: "6px 4px", textAlign: "right" }}>ITBIS</th>
+            <th style={{ padding: "6px 4px", textAlign: "right" }}>{hayIncluido ? "ITBIS incl." : "ITBIS"}</th>
             <th style={{ padding: "6px 4px", textAlign: "right" }}>Valor</th>
           </tr>
         </thead>
@@ -118,7 +122,7 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
                 <td style={{ padding: "6px 4px" }}>{item.cant}</td>
                 <td style={{ padding: "6px 4px" }}>{item.descripcion}</td>
                 <td style={{ padding: "6px 4px", textAlign: "right" }}>{fmt(item.precio)}</td>
-                <td style={{ padding: "6px 4px", textAlign: "right" }}>{c.descAmt > 0 ? fmt(c.descAmt) : "—"}</td>
+                <td style={{ padding: "6px 4px", textAlign: "right" }}>{c.descFinal > 0 ? fmt(c.descFinal) : "—"}</td>
                 <td style={{ padding: "6px 4px", textAlign: "right" }}>{item.itbis > 0 ? `${fmt(c.itbisAmt)}` : "Exento"}</td>
                 <td style={{ padding: "6px 4px", textAlign: "right" }}>{fmt(c.total)}</td>
               </tr>
@@ -130,14 +134,17 @@ export default function FacturaA4({ factura, cliente, empresa, esMuestra = true 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
         <table style={{ minWidth: 240 }}>
           <tbody>
-            {totales.desc > 0 && (
-              <tr><td style={{ padding: "3px 8px" }}>Descuentos</td><td style={{ padding: "3px 8px", textAlign: "right" }}>RD$ {fmt(totales.desc)}</td></tr>
+            {descTotal > 0 && (
+              <tr><td style={{ padding: "3px 8px" }}>Descuentos aplicados</td><td style={{ padding: "3px 8px", textAlign: "right" }}>RD$ {fmt(descTotal)}</td></tr>
             )}
-            <tr><td style={{ padding: "3px 8px" }}>Subtotal Gravado</td><td style={{ padding: "3px 8px", textAlign: "right" }}>RD$ {fmt(totales.sub)}</td></tr>
-            <tr><td style={{ padding: "3px 8px" }}>Total ITBIS</td><td style={{ padding: "3px 8px", textAlign: "right" }}>RD$ {fmt(totales.itbis)}</td></tr>
+            {fisc.gravadoI1 + fisc.gravadoI2 > 0 && <tr><td style={{ padding: "3px 8px" }}>Monto gravado (sin ITBIS)</td><td style={{ padding: "3px 8px", textAlign: "right" }}>RD$ {fmt(fisc.gravadoI1 + fisc.gravadoI2)}</td></tr>}
+            {fisc.gravadoI3 > 0 && <tr><td style={{ padding: "3px 8px" }}>Monto gravado tasa 0%</td><td style={{ padding: "3px 8px", textAlign: "right" }}>RD$ {fmt(fisc.gravadoI3)}</td></tr>}
+            {fisc.exento > 0 && <tr><td style={{ padding: "3px 8px" }}>Monto exento</td><td style={{ padding: "3px 8px", textAlign: "right" }}>RD$ {fmt(fisc.exento)}</td></tr>}
+            {fisc.itbis1 > 0 && <tr><td style={{ padding: "3px 8px" }}>ITBIS 18%</td><td style={{ padding: "3px 8px", textAlign: "right" }}>RD$ {fmt(fisc.itbis1)}</td></tr>}
+            {fisc.itbis2 > 0 && <tr><td style={{ padding: "3px 8px" }}>ITBIS 16%</td><td style={{ padding: "3px 8px", textAlign: "right" }}>RD$ {fmt(fisc.itbis2)}</td></tr>}
             <tr style={{ background: "#111", color: "#fff" }}>
               <td style={{ padding: "6px 8px", fontWeight: 700 }}>TOTAL</td>
-              <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700 }}>RD$ {fmt(totales.total)}</td>
+              <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700 }}>RD$ {fmt(fisc.total)}</td>
             </tr>
           </tbody>
         </table>

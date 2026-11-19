@@ -1,13 +1,15 @@
 import { QRCodeSVG } from "qrcode.react";
 import type { Cliente, Factura } from "@/types";
-import { calcLinea, calcTotales, fmt, fmtDate } from "@/types";
+import { calcLinea, fmt, fmtDate } from "@/types";
+import { totalesFiscales, modoDeTipo } from "@/lib/fiscal/calculo";
 import { CODIGO_MODIFICACION, fechaFirmaDe, type EmpresaImpresion } from "./factura-a4";
 import { FUENTE_NOMBRE } from "@/lib/print/fuente-impresion";
 import { fmtRNCDisplay } from "@/lib/dgii/xml-builder";
 import SelloMuestra from "./sello-muestra";
 
 export default function FacturaTermica({ factura, cliente, empresa, esMuestra = true }: { factura: Factura; cliente?: Cliente; empresa: EmpresaImpresion; esMuestra?: boolean }) {
-  const totales = calcTotales(factura.items);
+  // Los totales impresos son EXACTAMENTE los que se declaran a la DGII en el XML (mismo cálculo).
+  const fisc = totalesFiscales(factura.items, modoDeTipo(factura.tipoECF));
 
   return (
     <div style={{ fontFamily: "monospace", fontSize: 11, color: "#111", width: 280, position: "relative" }}>
@@ -62,21 +64,27 @@ export default function FacturaTermica({ factura, cliente, empresa, esMuestra = 
 
       {factura.items.map((item, i) => {
         const c = calcLinea(item);
+        const incluye = !!item.incluyeITBIS && item.itbis > 0;   // el precio es FINAL: el ITBIS ya va dentro
         return (
           <div key={i} style={{ marginBottom: 4, borderTop: "1px dashed #ccc", paddingTop: 4 }}>
             <div style={{ fontWeight: 700 }}>{item.descripcion}</div>
-            <div>{item.cant} × RD$ {fmt(item.precio)} = RD$ {fmt(c.bruto)}</div>
-            {c.descAmt > 0 && <div style={{ color: "var(--c-red)" }}>Desc: -RD$ {fmt(c.descAmt)}</div>}
-            {item.itbis > 0 ? <div style={{ color: "#555" }}>ITBIS: RD$ {fmt(c.itbisAmt)}</div> : <div style={{ color: "#555" }}>(Exento de ITBIS)</div>}
+            <div>{item.cant} × RD$ {fmt(item.precio)} = RD$ {fmt(c.brutoFinal)}</div>
+            {c.descFinal > 0 && <div style={{ color: "var(--c-red)" }}>Desc: -RD$ {fmt(c.descFinal)}</div>}
+            {incluye && c.descFinal > 0 && <div style={{ fontWeight: 700 }}>Importe: RD$ {fmt(c.total)}</div>}
+            {item.itbis > 0
+              ? <div style={{ color: "#555" }}>{incluye ? `Incluye ITBIS (${Math.round(item.itbis * 100)}%)` : "ITBIS"}: RD$ {fmt(c.itbisAmt)}</div>
+              : <div style={{ color: "#555" }}>(Exento de ITBIS)</div>}
           </div>
         );
       })}
 
       <div style={{ borderTop: "1px solid #000", marginTop: 6, paddingTop: 6 }}>
-        {totales.desc > 0 && <div>Descuentos: -RD$ {fmt(totales.desc)}</div>}
-        <div>Sub Total: RD$ {fmt(totales.sub)}</div>
-        {totales.itbis > 0 && <div>ITBIS: RD$ {fmt(totales.itbis)}</div>}
-        <div style={{ fontWeight: 700, fontSize: 13 }}>TOTAL: RD$ {fmt(totales.total)}</div>
+        {fisc.gravadoI1 + fisc.gravadoI2 > 0 && <div>Monto gravado (sin ITBIS): RD$ {fmt(fisc.gravadoI1 + fisc.gravadoI2)}</div>}
+        {fisc.gravadoI3 > 0 && <div>Monto gravado tasa 0%: RD$ {fmt(fisc.gravadoI3)}</div>}
+        {fisc.exento > 0 && <div>Monto exento: RD$ {fmt(fisc.exento)}</div>}
+        {fisc.itbis1 > 0 && <div>ITBIS 18%: RD$ {fmt(fisc.itbis1)}</div>}
+        {fisc.itbis2 > 0 && <div>ITBIS 16%: RD$ {fmt(fisc.itbis2)}</div>}
+        <div style={{ fontWeight: 700, fontSize: 13 }}>TOTAL: RD$ {fmt(fisc.total)}</div>
       </div>
 
       <div style={{ marginTop: 6, borderTop: "1px dashed #ccc", paddingTop: 6 }}>

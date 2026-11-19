@@ -87,6 +87,10 @@ export function lineaConPrecisionInsuficiente(items: LineaServicio[]): number {
   });
 }
 
+/** Tratamiento de los totales según el tipo de comprobante (el mismo que aplica el servidor al emitir). */
+export const modoDeTipo = (tipoECF: string): "normal" | "exento" | "tasa3" =>
+  tipoECF === "E46" ? "tasa3" : ["E43", "E44", "E47"].includes(tipoECF) ? "exento" : "normal";
+
 export type TratamientoITBIS = "normal" | "exento" | "tasa3";
 
 export interface TotalesFiscales {

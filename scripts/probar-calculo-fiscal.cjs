@@ -226,6 +226,7 @@ console.log("F) Pantalla (types/index.ts) = servidor"); seccion = "F";
     igual(r2(c.total), s.total, "pantalla: total"); igual(r2(c.itbis), s.itbis, "pantalla: ITBIS"); igual(r2(c.sub), r2(s.gravadoI1 + s.gravadoI2 + s.gravadoI3 + s.exento), "pantalla: subtotal");
     igual(r2(c.sub + c.itbis), r2(c.total), "pantalla: subtotal + ITBIS = total");
     for (const it of items) { const l = tipos.calcLinea(it); if (it.itbis > 0) igual(r2(l.total), calc.lineaFiscal(it).neto, "pantalla: línea = lo que paga el cliente"); }
+    for (const it of items) { const l = tipos.calcLinea(it); igual(r2(l.brutoFinal - l.descFinal), r2(l.total - (it.incluyeITBIS && it.itbis > 0 ? 0 : l.itbisAmt)), "impresión: cantidad × precio − descuento = importe de la línea"); }
   }
   // Sin la marca, la pantalla sigue como siempre (precio = base)
   const sinMarca = [{ codigo: "A", descripcion: "A", modo: "unidad", cant: 2, pax: 0, precio: 100, descuentoMonto: 0, itbis: 0.18 }];

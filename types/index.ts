@@ -257,14 +257,16 @@ export interface CuentaPorCobrar {
 export function calcLinea(item: LineaServicio) {
   if (item.incluyeITBIS && (item.itbis || 0) > 0) {
     const l = lineaFiscal(item);
-    return { bruto: r2(l.monto + l.desc), descAmt: l.desc, sub: l.monto, itbisAmt: r2(l.neto - l.monto), total: l.neto };
+    // brutoFinal / descFinal: cantidad × precio y descuento tal como los ve el cliente (precio FINAL, con ITBIS).
+    const brutoFinal = r2(l.cant * item.precio);
+    return { bruto: r2(l.monto + l.desc), descAmt: l.desc, sub: l.monto, itbisAmt: r2(l.neto - l.monto), total: l.neto, brutoFinal, descFinal: r2(brutoFinal - l.neto) };
   }
   const cantidad = item.modo === "unidad" ? (item.cant || 1) : (item.pax || 1);
   const bruto    = item.modo === "por_grupo" ? item.precio : item.precio * cantidad;
   const descAmt  = Math.min(item.descuentoMonto || 0, bruto);
   const sub      = Math.max(0, bruto - descAmt);
   const itbisAmt = sub * (item.itbis || 0);
-  return { bruto, descAmt, sub, itbisAmt, total: sub + itbisAmt };
+  return { bruto, descAmt, sub, itbisAmt, total: sub + itbisAmt, brutoFinal: bruto, descFinal: descAmt };
 }
 
 // Los totales de la pantalla son SIEMPRE los del servidor (base, ITBIS y total al centavo, con el mismo redondeo por
