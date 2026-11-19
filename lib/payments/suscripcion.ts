@@ -36,10 +36,14 @@ export async function cancelarSuscripcionEnPagadito(subscriptionCode: string): P
 // Solo para suscripciones del modelo viejo: con el cobro propio, el resultado se conoce al cobrar.
 export async function marcarPagoRecurrenteExitoso(tenantId: string): Promise<void> {
   const tenantRef = adminDb.collection("tenants").doc(tenantId);
-  await refSuscripcion(tenantId).set(
-    { estado: "activa", actualizadoEn: new Date().toISOString(), ultimoPagoEn: new Date().toISOString() },
-    { merge: true },
-  );
+  // Solo actualiza una suscripción que ya existe: antes, un aviso viejo creaba una a medias (sin plan) que rompía la página de planes.
+  const refSus = refSuscripcion(tenantId);
+  if ((await refSus.get()).exists) {
+    await refSus.set(
+      { estado: "activa", actualizadoEn: new Date().toISOString(), ultimoPagoEn: new Date().toISOString() },
+      { merge: true },
+    );
+  }
   await adminDb.runTransaction(async (tx) => {
     const snap = await tx.get(tenantRef);
     if (snap.exists && snap.data()?.estado === "suspendido") {

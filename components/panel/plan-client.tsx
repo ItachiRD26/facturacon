@@ -130,7 +130,9 @@ export default function PlanClient({
     ? new Date(new Date(suscripcion.ultimoPagoEn).setMonth(new Date(suscripcion.ultimoPagoEn).getMonth() + (suscripcion.periodo === "anual" ? 12 : 1))).toLocaleDateString("es-DO", { day: "numeric", month: "long", ...(suscripcion.periodo === "anual" ? { year: "numeric" } : {}) })
     : null;
   const estado = suscripcion ? ESTADO_PILL[suscripcion.estado] : null;
-  const sinPlanActivo = !suscripcion || suscripcion.estado === "cancelada";
+  // Una suscripción a medias (sin plan: la dejó un aviso viejo de Pagadito) cuenta como "sin plan": se muestran los planes, no se rompe la página.
+  const suscripcionIncompleta = !!suscripcion && typeof suscripcion.facturasMes !== "number" && suscripcion.estado !== "pago_fallido";
+  const sinPlanActivo = !suscripcion || suscripcion.estado === "cancelada" || suscripcionIncompleta;
 
   return (
     <div style={{ maxWidth: certificado && sinPlanActivo ? 1160 : 860, margin: "0 auto", fontFamily: "var(--font-sans)" }}>
@@ -207,7 +209,7 @@ export default function PlanClient({
       )}
 
       {/* ── Cuenta propia: sin cobro ni límites ── */}
-      {suscripcion && suscripcion.estado === "activa" && suscripcion.ilimitado && (
+      {suscripcion && !suscripcionIncompleta && suscripcion.estado === "activa" && suscripcion.ilimitado && (
         <Card style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
             <div>
@@ -226,13 +228,13 @@ export default function PlanClient({
       )}
 
       {/* ── Plan activo ── */}
-      {suscripcion && suscripcion.estado === "activa" && !suscripcion.ilimitado && (
+      {suscripcion && !suscripcionIncompleta && suscripcion.estado === "activa" && !suscripcion.ilimitado && (
         <>
           <Card style={{ marginBottom: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap", marginBottom: 18 }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 17, fontWeight: 700 }}>Plan de <span className="num">{suscripcion.facturasMes.toLocaleString("es-DO")}</span> comprobantes al mes</span>
+                  <span style={{ fontSize: 17, fontWeight: 700 }}>Plan de <span className="num">{(suscripcion.facturasMes ?? 0).toLocaleString("es-DO")}</span> comprobantes al mes</span>
                   {estado && <Pill tono={estado.tono}>{estado.texto}</Pill>}
                 </div>
                 <div className="num" style={{ fontSize: 13, color: "var(--c-text-3)" }}>
