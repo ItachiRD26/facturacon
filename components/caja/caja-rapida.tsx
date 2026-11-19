@@ -101,7 +101,7 @@ function CajaAbierta({
       if (i >= 0) return prev.map((l, k) => (k === i ? { ...l, cant: redondear(l.cant + cant) } : l));
       return [...prev, {
         codigo: p.codigo, descripcion: p.nombre, modo: "unidad", cant, pax: 1, precio: p.precio,
-        descuentoMonto: 0, itbis: p.itbis, servicioId: p.id, fromCatalog: true,
+        descuentoMonto: 0, itbis: p.itbis, incluyeITBIS: p.itbis > 0, servicioId: p.id, fromCatalog: true,
       }];
     });
   };

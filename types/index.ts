@@ -1,4 +1,6 @@
 // ── Cliente ───────────────────────────────────────────────────────
+import { lineaFiscal, totalesFiscales, r2 } from "@/lib/fiscal/calculo";
+
 export type TipoPersona     = "fisica" | "juridica" | "consumidor";
 export type SubtipoJuridica = "regular" | "gobierno" | "zona_franca" | "exportacion";
 
@@ -94,6 +96,9 @@ export interface LineaServicio {
   precio:         number;
   descuentoMonto: number;
   itbis:          number;
+  // true → `precio` es el PRECIO FINAL y ya incluye el ITBIS (se separa hacia atrás). Lo decide el servidor al emitir
+  // (ver lib/fiscal/calculo.ts); la pantalla lo marca al armar la línea para que la vista previa coincida.
+  incluyeITBIS?:  boolean;
   fechaTour?:     string;
 }
 
@@ -246,7 +251,14 @@ export interface CuentaPorCobrar {
 // ── calcLinea ─────────────────────────────────────────────────────
 // Por grupo: precio es PLANO (total del grupo, no × cant)
 // Por persona: precio × cant
+// Si la línea trae `incluyeITBIS`, el precio es el FINAL (ya incluye el ITBIS) y se separa hacia atrás con el mismo
+// cálculo que usa el servidor para lo que se declara a la DGII (lib/fiscal/calculo.ts): así lo que se ve y se
+// imprime coincide siempre con el XML.
 export function calcLinea(item: LineaServicio) {
+  if (item.incluyeITBIS && (item.itbis || 0) > 0) {
+    const l = lineaFiscal(item);
+    return { bruto: r2(l.monto + l.desc), descAmt: l.desc, sub: l.monto, itbisAmt: r2(l.neto - l.monto), total: l.neto };
+  }
   const cantidad = item.modo === "unidad" ? (item.cant || 1) : (item.pax || 1);
   const bruto    = item.modo === "por_grupo" ? item.precio : item.precio * cantidad;
   const descAmt  = Math.min(item.descuentoMonto || 0, bruto);
@@ -255,20 +267,13 @@ export function calcLinea(item: LineaServicio) {
   return { bruto, descAmt, sub, itbisAmt, total: sub + itbisAmt };
 }
 
+// Los totales de la pantalla son SIEMPRE los del servidor (base, ITBIS y total al centavo, con el mismo redondeo por
+// línea y por tasa que va en el XML): lo que se ve y se imprime coincide con lo que se declara a la DGII.
 export function calcTotales(items: LineaServicio[]): Totales {
-  return items.reduce(
-    (acc, item) => {
-      const c = calcLinea(item);
-      return {
-        bruto: acc.bruto + c.bruto,
-        desc:  acc.desc  + c.descAmt,
-        sub:   acc.sub   + c.sub,
-        itbis: acc.itbis + c.itbisAmt,
-        total: acc.total + c.total,
-      };
-    },
-    { bruto: 0, desc: 0, sub: 0, itbis: 0, total: 0 }
-  );
+  const t = totalesFiscales(items);
+  const desc = r2(items.reduce((s, i) => s + calcLinea(i).descAmt, 0));
+  const sub = r2(t.gravadoI1 + t.gravadoI2 + t.gravadoI3 + t.exento);
+  return { bruto: r2(sub + desc), desc, sub, itbis: t.itbis, total: t.total };
 }
 
 // ── Helpers de formato ────────────────────────────────────────────

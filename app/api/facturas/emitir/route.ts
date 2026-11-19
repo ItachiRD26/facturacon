@@ -3,6 +3,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import { requireTenantActivo } from "@/lib/tenant/auth";
 import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { buildXML, buildRFCEXml, totalesFiscales, LIMITE_RFCE, fmtRNC } from "@/lib/dgii/xml-builder";
+import { conItbisIncluido, lineaConPrecisionInsuficiente } from "@/lib/fiscal/calculo";
 import { firmarXML, extraerSignatureValue } from "@/lib/dgii/xml-signer";
 import { calcularCodigoSeguridad, generarURLQR, formatFechaQR, formatFechaHoraQR, extraerFechaHoraFirmaISO } from "@/lib/dgii/qr-builder";
 import { getToken, enviarECF, enviarRFCE } from "@/lib/dgii/dgii-client";
@@ -130,7 +131,11 @@ export async function POST(req: NextRequest) {
   try {
     if (!/^[A-Za-z0-9-]{16,64}$/.test(body.idempotencyKey ?? "")) throw new ErrorEntrada("Solicitud sin identificador. Recarga la página e intenta de nuevo.");
     if (!TIPOS_CON_SECUENCIA.includes(body.tipoECF)) throw new ErrorEntrada("Tipo de comprobante no válido.");
-    items = limpiarItems(body.items);
+    // El precio de un producto con ITBIS es el precio FINAL: el servidor marca las líneas gravadas para separar el ITBIS
+    // hacia atrás (lib/fiscal/calculo.ts). El cliente no decide esto.
+    items = conItbisIncluido(limpiarItems(body.items), body.tipoECF);
+    const lineaMal = lineaConPrecisionInsuficiente(items);
+    if (lineaMal >= 0) throw new ErrorEntrada(`La línea ${lineaMal + 1} tiene una cantidad demasiado grande para declarar el ITBIS con precisión. Divídela en varias líneas (por ejemplo, de 5,000 unidades cada una).`);
 
     if (!body.esConsumidorFinal && body.clienteId) {
       const cs = await adminDb.collection("tenants").doc(tenantId).collection("clientes").doc(body.clienteId).get();

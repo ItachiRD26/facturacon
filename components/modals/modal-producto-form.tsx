@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { Producto } from "@/types";
-import { ITBIS_RATES } from "@/types";
+import { ITBIS_RATES, fmt } from "@/types";
+import { r2 } from "@/lib/fiscal/calculo";
 import Modal from "./modal";
 import { Boton, Campo, Input, Select } from "@/components/sandbox/ui";
 
@@ -93,7 +94,7 @@ export default function ModalProductoForm({
         </Campo>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <Campo label="Precio unitario RD$">
+          <Campo label="Precio de venta RD$ (final)">
             <Input value={precio} onChange={(e) => setPrecio(e.target.value)} type="number" min={0} step="0.01" />
           </Campo>
           <Campo label="ITBIS">
@@ -102,6 +103,14 @@ export default function ModalProductoForm({
             </Select>
           </Campo>
         </div>
+        {/* El precio es el FINAL: si el producto lleva ITBIS, ya viene incluido; si no lo lleva, se elige «Exento». */}
+        {(() => {
+          const p = Number(precio) || 0;
+          if (p <= 0) return <div style={{ fontSize: 11.5, color: "var(--c-text-3)" }}>El precio es el que paga el cliente: si el producto lleva ITBIS, ya va incluido. Si no lleva, elige «Exento».</div>;
+          if (itbis === 0) return <div style={{ fontSize: 11.5, color: "var(--c-text-3)" }}>Exento de ITBIS · el cliente paga RD$ {fmt(p)}.</div>;
+          const base = r2(p / (1 + itbis));
+          return <div style={{ fontSize: 11.5, color: "var(--c-text-3)" }}>El cliente paga <b>RD$ {fmt(p)}</b>: base RD$ {fmt(base)} + ITBIS ({Math.round(itbis * 100)} %) RD$ {fmt(r2(p - base))}.</div>;
+        })()}
 
         {!esServicio && (
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>

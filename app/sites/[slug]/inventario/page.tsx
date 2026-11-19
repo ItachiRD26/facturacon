@@ -113,7 +113,7 @@ export default function InventarioPage() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#FAFAF8", borderBottom: "2px solid var(--c-border)" }}>
-                {["Código", "Nombre", "Tipo", "Precio", "ITBIS", "Stock", "Estado", ""].map((h) => (
+                {["Código", "Nombre", "Tipo", "Precio final", "ITBIS", "Stock", "Estado", ""].map((h) => (
                   <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "var(--c-text-3)", fontFamily: sans, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>

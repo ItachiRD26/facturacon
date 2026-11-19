@@ -7,6 +7,12 @@
 
 import type { Factura, Cliente, LineaServicio } from "@/types";
 import type { EmpresaConfig } from "@/types/tenant";
+import { r2, lineaFiscal, totalesFiscales, type LineaFiscal, type TratamientoITBIS, type TotalesFiscales } from "@/lib/fiscal/calculo";
+
+// El cálculo vive en lib/fiscal/calculo.ts (una sola fuente de verdad, compartida con la pantalla). Se reexporta aquí
+// porque la ruta de emisión y la certificación lo importan desde este módulo.
+export { totalesFiscales };
+export type { TratamientoITBIS, TotalesFiscales };
 
 const VERSION = "1.0";
 
@@ -221,50 +227,10 @@ function compradorExtranjero(f: Factura): string {
 // totales son la suma de los MontoItem por tasa. Antes los ítems "unidad"
 // (todo producto de inventario) salían con CantidadItem=1 aunque se vendieran
 // varios, y el ITBIS al 16% se declaraba como 18%: la DGII lo rechaza.
-const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 // Precio con 2 a 4 decimales (el XSD admite hasta 4).
 function fmtPrecio(n: number): string {
   return (Math.round(n * 10000) / 10000).toFixed(4).replace(/0{1,2}$/, "");
-}
-
-interface LineaFiscal { cant: number; precioU: number; desc: number; monto: number; tasa: number }
-
-function lineaFiscal(item: LineaServicio): LineaFiscal {
-  // por_grupo = un solo paquete al precio indicado (cantidad 1): evita dividir
-  // el precio entre pax y que la multiplicación no cuadre por redondeo.
-  const cant = item.modo === "por_grupo" ? 1 : item.modo === "unidad" ? (item.cant || 1) : (item.pax || 1);
-  const bruto = r2(cant * item.precio);
-  const desc  = Math.min(r2(item.descuentoMonto || 0), bruto);
-  return { cant, precioU: item.precio, desc, monto: r2(bruto - desc), tasa: item.itbis || 0 };
-}
-
-export type TratamientoITBIS = "normal" | "exento" | "tasa3";
-
-export interface TotalesFiscales {
-  gravadoI1: number; gravadoI2: number; gravadoI3: number; exento: number;
-  itbis1: number; itbis2: number; itbis: number; total: number;
-}
-
-// Totales exactamente como van en <Totales>. "exento" fuerza todo a exento
-// (E43/E44/E47) y "tasa3" todo a tasa 0% gravada (E46 exportaciones).
-export function totalesFiscales(items: LineaServicio[], modo: TratamientoITBIS = "normal"): TotalesFiscales {
-  let g1 = 0, g2 = 0, g3 = 0, ex = 0;
-  for (const it of items) {
-    const l = lineaFiscal(it);
-    if (modo === "exento") ex += l.monto;
-    else if (modo === "tasa3") g3 += l.monto;
-    else if (l.tasa === 0.18) g1 += l.monto;
-    else if (l.tasa === 0.16) g2 += l.monto;
-    else ex += l.monto;
-  }
-  g1 = r2(g1); g2 = r2(g2); g3 = r2(g3); ex = r2(ex);
-  const itbis1 = r2(g1 * 0.18), itbis2 = r2(g2 * 0.16);
-  return {
-    gravadoI1: g1, gravadoI2: g2, gravadoI3: g3, exento: ex,
-    itbis1, itbis2, itbis: r2(itbis1 + itbis2),
-    total: r2(g1 + g2 + g3 + ex + itbis1 + itbis2),
-  };
 }
 
 // ── Items ─────────────────────────────────────────────────────────

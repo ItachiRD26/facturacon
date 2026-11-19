@@ -14,7 +14,7 @@ export default function TablaItems({
   const agregarDeCatalogo = (p: Producto) => {
     onChange([...items, {
       codigo: p.codigo, descripcion: p.nombre, modo: "unidad",
-      cant: 1, pax: 1, precio: p.precio, descuentoMonto: 0, itbis: p.itbis,
+      cant: 1, pax: 1, precio: p.precio, descuentoMonto: 0, itbis: p.itbis, incluyeITBIS: p.itbis > 0,
       servicioId: p.id, fromCatalog: true,
     }]);
     setBuscando(false); setBusqueda("");
@@ -92,7 +92,7 @@ export default function TablaItems({
                   style={{ padding: "5px 6px", fontSize: 12 }} />
                 <Input type="number" min={0} step="0.01" value={item.descuentoMonto} onChange={(e) => actualizarLinea(i, { descuentoMonto: parseFloat(e.target.value) || 0 })}
                   style={{ padding: "5px 6px", fontSize: 12 }} />
-                <Select value={item.itbis} onChange={(e) => actualizarLinea(i, { itbis: parseFloat(e.target.value) })} style={{ padding: "5px 6px", fontSize: 12 }}>
+                <Select value={item.itbis} onChange={(e) => { const t = parseFloat(e.target.value); actualizarLinea(i, { itbis: t, incluyeITBIS: t > 0 }); }} style={{ padding: "5px 6px", fontSize: 12 }}>
                   {ITBIS_RATES.map((r) => <option key={r.val} value={r.val}>{r.label}</option>)}
                 </Select>
                 <span style={{ fontSize: 12, fontWeight: 700, textAlign: "right" }}>{fmt(c.total)}</span>

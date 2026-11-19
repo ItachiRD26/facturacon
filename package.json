@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:calculo": "node scripts/probar-calculo-fiscal.cjs"
   },
   "dependencies": {
     "@google-cloud/kms": "^4.3.0",

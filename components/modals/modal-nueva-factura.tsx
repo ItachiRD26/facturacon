@@ -85,7 +85,7 @@ export default function ModalNuevaFactura({
         }
         return [...prev, {
           codigo: p.codigo, descripcion: p.nombre, modo: "unidad",
-          cant: 1, pax: 1, precio: p.precio, descuentoMonto: 0, itbis: p.itbis,
+          cant: 1, pax: 1, precio: p.precio, descuentoMonto: 0, itbis: p.itbis, incluyeITBIS: p.itbis > 0,
           servicioId: p.id, fromCatalog: true,
         }];
       });
