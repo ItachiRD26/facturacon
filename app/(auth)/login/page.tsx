@@ -15,7 +15,7 @@ import { registroAbierto } from "@/lib/registro-cliente";
 // cualquier otra cosa (https://sitio-malo, //sitio-malo) se ignora. Evita usar el login para mandar a alguien a otro sitio.
 function destinoSeguro(valor: string | null): string {
   if (!valor) return "/panel";
-  if (valor.startsWith("/") && !valor.startsWith("//") && !valor.includes("\\")) return valor;
+  if (valor.startsWith("/") && !valor.startsWith("//") && !/[\x00-\x20\\]/.test(valor)) return valor;
   try {
     const u = new URL(valor);
     const raiz = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "").split(":")[0];

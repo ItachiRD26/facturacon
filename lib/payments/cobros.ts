@@ -72,7 +72,8 @@ export async function activarCobroRecurrente(params: {
   if (!plan) throw new Error("Plan inválido.");
 
   const actual = await obtenerSuscripcion(params.tenantId);
-  if (actual?.estado === "activa") throw new Error("Este tenant ya tiene una suscripción activa. Cancélala antes de crear una nueva.");
+  // En gracia (activa pero con un cobro fallido en curso) SÍ se puede pagar de nuevo con otra tarjeta: es justo lo que evita la suspensión.
+  if (actual?.estado === "activa" && (actual.intentosFallidos ?? 0) === 0) throw new Error("Este tenant ya tiene una suscripción activa. Cancélala antes de crear una nueva.");
   // Una suscripción anterior que Pagadito aún cobra por su cuenta (modelo viejo) hay que cancelarla para no cobrar doble.
   if (actual?.subscriptionCode && !actual.cobroPropio) {
     await cancelarSuscripcionEnPagadito(actual.subscriptionCode).catch((e) => console.warn(`[cobros][${params.tenantId}] no se pudo cancelar la suscripción vieja:`, motivoCorto(e)));
